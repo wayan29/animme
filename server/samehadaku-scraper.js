@@ -34,7 +34,8 @@ function extractSlug(url) {
 // Scrape Homepage - Anime Terbaru
 async function scrapeHome() {
     try {
-        const { data } = await axios.get(BASE_URL, {
+        const url = `${BASE_URL}/anime-terbaru/`;
+        const { data } = await axios.get(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
@@ -45,21 +46,41 @@ async function scrapeHome() {
             recent_anime: []
         };
         
-        // Parse Anime Terbaru dari homepage
+        // Parse Anime Terbaru dari halaman anime-terbaru
         $('.post-show ul li').each((i, el) => {
             const $el = $(el);
-            const $link = $el.find('.dtla h2 a');
+            const $link = $el.find('.dtla h2.entry-title a');
             const $img = $el.find('.thumb img');
             
-            const anime = {
-                title: $link.text().trim(),
-                slug: extractSlug($link.attr('href')),
-                poster: proxyImageUrl($img.attr('src')),
-                current_episode: $el.find('.dtla span:contains("Episode")').text().replace(/Episode\s*/i, '').replace(/\s*Posted by.*/, '').trim(),
-                release_date: $el.find('.dtla span:contains("Released on")').text().replace(/Released on:\s*/, '').trim()
-            };
+            // Extract episode number - remove "Episode " prefix
+            let episodeText = '';
+            const $episodeSpan = $el.find('.dtla span:contains("Episode")');
+            if ($episodeSpan.length > 0) {
+                const episodeAuthor = $episodeSpan.find('author').text().trim();
+                episodeText = episodeAuthor || $episodeSpan.text().replace(/Episode\s*/i, '').replace(/\s*Posted by.*/i, '').trim();
+            }
             
-            result.recent_anime.push(anime);
+            // Extract release date
+            let releaseText = '';
+            const $releaseSpan = $el.find('.dtla span:contains("Released on")');
+            if ($releaseSpan.length > 0) {
+                releaseText = $releaseSpan.text().replace(/Released on:\s*/i, '').trim();
+            }
+            
+            const title = $link.text().trim();
+            const href = $link.attr('href');
+            
+            if (title && href) {
+                const anime = {
+                    title: title,
+                    slug: extractSlug(href),
+                    poster: proxyImageUrl($img.attr('src')),
+                    current_episode: episodeText,
+                    release_date: releaseText
+                };
+                
+                result.recent_anime.push(anime);
+            }
         });
         
         return {
