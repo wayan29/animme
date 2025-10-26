@@ -31,11 +31,10 @@ function extractSlug(url) {
     return match ? match[1] : '';
 }
 
-// Scrape Homepage - Anime Terbaru
+// Scrape Homepage - Top 10 & Anime Terbaru
 async function scrapeHome() {
     try {
-        const url = `${BASE_URL}/anime-terbaru/`;
-        const { data } = await axios.get(url, {
+        const { data } = await axios.get(BASE_URL, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
@@ -43,16 +42,38 @@ async function scrapeHome() {
         
         const $ = cheerio.load(data);
         const result = {
+            top10_weekly: [],
             recent_anime: []
         };
         
-        // Parse Anime Terbaru dari halaman anime-terbaru
+        // Parse Top 10 minggu ini
+        $('.topten-animesu ul li').each((i, el) => {
+            const $el = $(el);
+            const $link = $el.find('a.series');
+            const href = $link.attr('href');
+            const title = $link.find('.judul').text().trim();
+            const img = $link.find('img').attr('src');
+            const rating = $link.find('.rating').text().replace(/★/g, '').trim();
+            const rank = $link.find('.is-topten b:last-child').text().trim();
+            
+            if (title && href) {
+                result.top10_weekly.push({
+                    rank: parseInt(rank) || i + 1,
+                    title: title,
+                    slug: extractSlug(href),
+                    poster: proxyImageUrl(img),
+                    rating: rating
+                });
+            }
+        });
+        
+        // Parse Anime Terbaru dari homepage
         $('.post-show ul li').each((i, el) => {
             const $el = $(el);
             const $link = $el.find('.dtla h2.entry-title a');
             const $img = $el.find('.thumb img');
             
-            // Extract episode number - remove "Episode " prefix
+            // Extract episode number
             let episodeText = '';
             const $episodeSpan = $el.find('.dtla span:contains("Episode")');
             if ($episodeSpan.length > 0) {
@@ -71,15 +92,13 @@ async function scrapeHome() {
             const href = $link.attr('href');
             
             if (title && href) {
-                const anime = {
+                result.recent_anime.push({
                     title: title,
                     slug: extractSlug(href),
                     poster: proxyImageUrl($img.attr('src')),
                     current_episode: episodeText,
                     release_date: releaseText
-                };
-                
-                result.recent_anime.push(anime);
+                });
             }
         });
         

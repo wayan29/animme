@@ -96,30 +96,31 @@ async function loadHomePage() {
     const isV2 = data.data.recent_anime !== undefined;
     
     if (isV2) {
-        // V2 format - Samehadaku (recent_anime only)
+        // V2 format - Samehadaku (top10_weekly + recent_anime)
+        const top10 = data.data.top10_weekly || [];
         const recentAnime = data.data.recent_anime || [];
         
         // Update section titles for V2
-        document.getElementById('ongoingTitle').textContent = 'Anime Terbaru';
-        document.getElementById('completedTitle').textContent = 'Rilis Terbaru Lainnya';
+        document.getElementById('ongoingTitle').textContent = 'Top 10 Minggu Ini';
+        document.getElementById('completedTitle').textContent = 'Anime Terbaru';
         
-        // Display featured anime
-        if (recentAnime.length > 0) {
+        // Display featured anime from top 10 or recent
+        if (top10.length > 0) {
+            displayFeaturedAnime(top10[0]);
+        } else if (recentAnime.length > 0) {
             displayFeaturedAnime(recentAnime[0]);
         }
         
-        // Split recent anime into two sections (first 8 as "ongoing", rest as "completed")
-        const ongoingSection = recentAnime.slice(0, 8);
-        const completedSection = recentAnime.slice(8, 16);
-        
-        if (ongoingSection.length > 0) {
-            displayAnimeList('ongoingAnime', ongoingSection, 'ongoing');
+        // Display Top 10 in first section
+        if (top10.length > 0) {
+            displayAnimeList('ongoingAnime', top10, 'top10');
         } else {
             showError('ongoingAnime');
         }
         
-        if (completedSection.length > 0) {
-            displayAnimeList('completedAnime', completedSection, 'completed');
+        // Display Recent Anime in second section
+        if (recentAnime.length > 0) {
+            displayAnimeList('completedAnime', recentAnime.slice(0, 8), 'recent');
         } else {
             showError('completedAnime');
         }
@@ -203,9 +204,18 @@ function displayAnimeList(containerId, animeList, type = 'ongoing') {
         
         if (isV2Format) {
             // V2 Samehadaku format
-            episodeInfo = `Ep ${anime.current_episode || 'N/A'}`;
-            if (anime.release_date) {
-                episodeInfo += ` • ${anime.release_date}`;
+            if (type === 'top10' && anime.rating) {
+                // Top 10 format - show rank and rating
+                episodeInfo = `⭐ ${anime.rating}`;
+                if (anime.rank) {
+                    episodeInfo = `#${anime.rank} • ${episodeInfo}`;
+                }
+            } else {
+                // Recent anime format
+                episodeInfo = `Ep ${anime.current_episode || 'N/A'}`;
+                if (anime.release_date) {
+                    episodeInfo += ` • ${anime.release_date}`;
+                }
             }
         } else {
             // V1 Otakudesu format
