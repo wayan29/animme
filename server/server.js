@@ -576,11 +576,16 @@ app.get('/api/v2/terbaru/:page?', async (req, res) => {
         
         if (pagesToLoad === 1) {
             const data = await samehadakuScraper.scrapeAnimeList(page);
+            // Add items_per_page for consistency
+            if (data.status === 'success' && data.data.paginationData) {
+                data.data.paginationData.items_per_page = 16;
+                data.data.paginationData.total_items = data.data.animeData.length;
+            }
             res.json(data);
         } else {
             // Load multiple pages and combine results
             const allAnimeData = [];
-            let lastPaginationData = null;
+            let basePaginationData = null;
             
             for (let i = 0; i < pagesToLoad; i++) {
                 const currentPageNum = page + i;
@@ -588,7 +593,11 @@ app.get('/api/v2/terbaru/:page?', async (req, res) => {
                     const data = await samehadakuScraper.scrapeAnimeList(currentPageNum);
                     if (data.status === 'success' && data.data.animeData) {
                         allAnimeData.push(...data.data.animeData);
-                        lastPaginationData = data.data.paginationData;
+                        
+                        // Get base pagination from first page
+                        if (basePaginationData === null) {
+                            basePaginationData = data.data.paginationData;
+                        }
                         
                         // Stop if this page has no data or is last page
                         if (!data.data.paginationData.has_next_page) {
@@ -601,15 +610,27 @@ app.get('/api/v2/terbaru/:page?', async (req, res) => {
                 }
             }
             
+            // Calculate adjusted pagination for combined pages
+            const totalPages = basePaginationData ? Math.ceil(basePaginationData.last_page / pagesToLoad) : 1;
+            const currentPageAdjusted = Math.ceil(page / pagesToLoad);
+            const hasNextPageAdjusted = (currentPageAdjusted * pagesToLoad) < basePaginationData.last_page;
+            
             res.json({
                 status: 'success',
                 data: {
                     animeData: allAnimeData,
                     paginationData: {
-                        ...lastPaginationData,
-                        current_page: page,
+                        current_page: currentPageAdjusted,
+                        last_page: totalPages,
+                        total_pages: totalPages,
+                        has_next_page: hasNextPageAdjusted,
+                        has_previous_page: currentPageAdjusted > 1,
+                        next_page: currentPageAdjusted + 1,
+                        previous_page: currentPageAdjusted - 1,
                         items_per_page: pagesToLoad * 16,
-                        total_items: allAnimeData.length
+                        total_items: allAnimeData.length,
+                        // Keep original pagination for reference
+                        original_pagination: basePaginationData
                     }
                 }
             });

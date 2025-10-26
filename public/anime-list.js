@@ -154,6 +154,9 @@ async function loadPage(page) {
         if (response.data.animeData) {
             displayAnimeList(response.data.animeData);
             displayPagination(response.data.paginationData);
+            
+            // Update current page for navigation based on response
+            currentPage = response.data.paginationData.current_page || page;
         } else {
             // Fallback: direct array format
             displayAnimeList(response.data);
