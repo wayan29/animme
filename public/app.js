@@ -1,6 +1,63 @@
-const API_BASE = '/api';
+// Server configuration
+let currentServer = localStorage.getItem('selectedServer') || 'v1';
+let API_BASE = currentServer === 'v2' ? '/api/v2' : '/api';
 
 let homeData = null;
+
+// Initialize server selector on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const serverSelect = document.getElementById('serverSelect');
+    if (serverSelect) {
+        serverSelect.value = currentServer;
+        serverSelect.addEventListener('change', (e) => {
+            changeServer(e.target.value);
+        });
+    }
+});
+
+function changeServer(server) {
+    currentServer = server;
+    localStorage.setItem('selectedServer', server);
+    API_BASE = server === 'v2' ? '/api/v2' : '/api';
+    
+    // Reload page data with new server
+    if (window.location.pathname === '/') {
+        loadHomePage();
+    }
+    
+    // Show notification
+    showServerNotification(server);
+}
+
+function showServerNotification(server) {
+    const serverName = server === 'v2' ? 'Samehadaku' : 'Otakudesu';
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'server-notification';
+    notification.textContent = `Server beralih ke ${serverName}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background-color: #e50914;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 5px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
 
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');

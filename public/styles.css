@@ -41,6 +41,32 @@ body {
     cursor: pointer;
 }
 
+.server-selector {
+    display: flex;
+    align-items: center;
+    margin-left: 20px;
+}
+
+.server-select {
+    padding: 8px 15px;
+    background-color: #1a1a1a;
+    color: #fff;
+    border: 1px solid #333;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.server-select:hover {
+    border-color: #e50914;
+}
+
+.server-select:focus {
+    outline: none;
+    border-color: #e50914;
+}
+
 .search-container {
     display: flex;
     gap: 10px;
@@ -1181,5 +1207,28 @@ body {
     
     .anime-list-item {
         padding: 12px 15px;
+    }
+}
+
+/* Server Notification Animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
     }
 }

@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const axios = require('axios');
 const cheerio = require('cheerio');
 const scraper = require('./scraper');
+const samehadakuScraper = require('./samehadaku-scraper');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -245,8 +246,11 @@ app.get('/img/:hash', async (req, res) => {
         }
         
         // Not cached - need original URL to download
-        const imageUrlMap = scraper.getImageUrlMap();
-        const originalUrl = imageUrlMap.get(hash);
+        // Check both scrapers for image URL
+        const imageUrlMapV1 = scraper.getImageUrlMap();
+        const imageUrlMapV2 = samehadakuScraper.getImageUrlMap();
+        
+        let originalUrl = imageUrlMapV1.get(hash) || imageUrlMapV2.get(hash);
         
         if (!originalUrl) {
             return res.status(404).send('Image not found and no URL mapping');
@@ -514,6 +518,78 @@ app.get('/api/resolve-stream', async (req, res) => {
     }
 });
 
+// ==================== API V2 - SAMEHADAKU ====================
+
+app.get('/api/v2/home', async (req, res) => {
+    try {
+        console.log('[V2] Scraping samehadaku homepage...');
+        const data = await samehadakuScraper.scrapeHome();
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /home:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v2/anime/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`[V2] Scraping samehadaku anime detail: ${slug}`);
+        const data = await samehadakuScraper.scrapeAnimeDetail(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v2/search/:keyword', async (req, res) => {
+    try {
+        const keyword = req.params.keyword;
+        console.log(`[V2] Searching samehadaku for: ${keyword}`);
+        const data = await samehadakuScraper.scrapeSearch(keyword);
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /search:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v2/anime-list/:page?', async (req, res) => {
+    try {
+        const page = parseInt(req.params.page) || 1;
+        console.log(`[V2] Scraping samehadaku anime list page ${page}`);
+        const data = await samehadakuScraper.scrapeAnimeList(page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /anime-list:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v2/schedule', async (req, res) => {
+    try {
+        console.log('[V2] Scraping samehadaku schedule...');
+        const data = await samehadakuScraper.scrapeSchedule();
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /schedule:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v2/episode/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`[V2] Scraping samehadaku episode: ${slug}`);
+        const data = await samehadakuScraper.scrapeEpisode(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /episode:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // Route untuk halaman utama
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -561,6 +637,8 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
     console.log(`\n🚀 AnimMe Server berjalan di http://localhost:${PORT}`);
-    console.log(`📺 Menggunakan scraper langsung dari otakudesu.best`);
+    console.log(`📺 Multi-Server Support:`);
+    console.log(`   ├─ V1 (Otakudesu): /api/...`);
+    console.log(`   └─ V2 (Samehadaku): /api/v2/...`);
     console.log(`🌐 Buka browser dan akses: http://localhost:${PORT}\n`);
 });
