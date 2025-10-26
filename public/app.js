@@ -13,12 +13,30 @@ document.addEventListener('DOMContentLoaded', () => {
             changeServer(e.target.value);
         });
     }
+    
+    // Apply server class to body on load
+    applyServerClass(currentServer);
 });
+
+function applyServerClass(server) {
+    // Remove all server classes
+    document.body.classList.remove('server-v1', 'server-v2');
+    
+    // Add current server class
+    if (server === 'v2') {
+        document.body.classList.add('server-v2');
+    } else {
+        document.body.classList.add('server-v1');
+    }
+}
 
 function changeServer(server) {
     currentServer = server;
     localStorage.setItem('selectedServer', server);
     API_BASE = server === 'v2' ? '/api/v2' : '/api';
+    
+    // Apply server class to body for menu visibility
+    applyServerClass(server);
     
     // Reload page data with new server
     if (window.location.pathname === '/') {

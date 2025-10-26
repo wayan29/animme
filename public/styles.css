@@ -1210,6 +1210,15 @@ body {
     }
 }
 
+/* Server Specific Menu Items */
+.v1-only {
+    display: inline-block;
+}
+
+.server-v2 .v1-only {
+    display: none !important;
+}
+
 /* Server Notification Animations */
 @keyframes slideIn {
     from {

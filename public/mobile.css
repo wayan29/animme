@@ -45,6 +45,11 @@
         width: 100%;
     }
     
+    /* Hide V1-only menu items on mobile for V2 server */
+    .server-v2 .v1-only {
+        display: none !important;
+    }
+    
     .nav-link {
         font-size: 0.85rem;
         padding: 6px 10px;
