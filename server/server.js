@@ -570,9 +570,50 @@ app.get('/api/v2/anime-list/:page?', async (req, res) => {
 app.get('/api/v2/terbaru/:page?', async (req, res) => {
     try {
         const page = parseInt(req.params.page) || 1;
-        console.log(`[V2] Scraping samehadaku anime terbaru page ${page}`);
-        const data = await samehadakuScraper.scrapeAnimeList(page);
-        res.json(data);
+        const pagesToLoad = parseInt(req.query.pages) || 1; // Load multiple pages
+        
+        console.log(`[V2] Scraping samehadaku anime terbaru, page ${page}, loading ${pagesToLoad} pages`);
+        
+        if (pagesToLoad === 1) {
+            const data = await samehadakuScraper.scrapeAnimeList(page);
+            res.json(data);
+        } else {
+            // Load multiple pages and combine results
+            const allAnimeData = [];
+            let lastPaginationData = null;
+            
+            for (let i = 0; i < pagesToLoad; i++) {
+                const currentPageNum = page + i;
+                try {
+                    const data = await samehadakuScraper.scrapeAnimeList(currentPageNum);
+                    if (data.status === 'success' && data.data.animeData) {
+                        allAnimeData.push(...data.data.animeData);
+                        lastPaginationData = data.data.paginationData;
+                        
+                        // Stop if this page has no data or is last page
+                        if (!data.data.paginationData.has_next_page) {
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`[V2] Failed to load page ${currentPageNum}:`, error.message);
+                    break;
+                }
+            }
+            
+            res.json({
+                status: 'success',
+                data: {
+                    animeData: allAnimeData,
+                    paginationData: {
+                        ...lastPaginationData,
+                        current_page: page,
+                        items_per_page: pagesToLoad * 16,
+                        total_items: allAnimeData.length
+                    }
+                }
+            });
+        }
     } catch (error) {
         console.error('[V2] API Error /terbaru:', error.message);
         res.status(500).json({ status: 'error', message: error.message });

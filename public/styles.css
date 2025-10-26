@@ -471,6 +471,38 @@ body {
     text-align: center;
 }
 
+.items-per-page-control {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.items-per-page-control label {
+    color: #333;
+    font-weight: 500;
+}
+
+.items-select {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.items-select:hover {
+    border-color: #e50914;
+}
+
+.items-select:focus {
+    outline: none;
+    border-color: #e50914;
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
+}
+
 .pagination-buttons {
     display: flex;
     justify-content: center;

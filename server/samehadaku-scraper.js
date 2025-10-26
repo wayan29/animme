@@ -283,6 +283,7 @@ async function scrapeAnimeList(page = 1) {
         const $ = cheerio.load(data);
         const results = [];
         
+        // Scrape dari post-show area (16 items)
         $('.post-show ul li').each((i, el) => {
             const $el = $(el);
             const $link = $el.find('.dtla h2 a');
@@ -292,12 +293,15 @@ async function scrapeAnimeList(page = 1) {
                 title: $link.text().trim(),
                 slug: extractSlug($link.attr('href')),
                 poster: proxyImageUrl($img.attr('src')),
-                current_episode: $el.find('.dtla span:contains("Episode")').text().replace(/Episode\s*/i, '').replace(/\s*Posted by.*/, '').trim(),
+                current_episode: $el.find('.dtla span').first().text().replace(/Episode\s*/i, '').replace(/\s*Posted by.*/, '').trim(),
                 release_date: $el.find('.dtla span:contains("Released on")').text().replace(/Released on:\s*/, '').trim()
             };
             
             results.push(anime);
         });
+        
+        // Debug info can be uncommented if needed
+        // console.log(`[V2] Scraped ${results.length} anime from page ${page}`);
         
         // Parse Pagination - Extract from HTML structure
         let lastPage = page;

@@ -4,10 +4,15 @@ let currentPage = 1;
 let paginationData = null;
 let selectedServer = localStorage.getItem('selectedServer') || 'v2';
 
-async function fetchAnimeList(page = 1) {
+async function fetchAnimeList(page = 1, pagesToLoad = 1) {
     try {
         // Force use V2 API for anime terbaru
-        const response = await fetch(`${API_BASE}/terbaru/${page}`);
+        let url = `${API_BASE}/terbaru/${page}`;
+        if (pagesToLoad > 1) {
+            url += `?pages=${pagesToLoad}`;
+        }
+        
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -119,8 +124,11 @@ function displayPagination(pagination) {
     }
     
     // Add page info and wrap buttons
+    const itemsPerLoad = pagination.items_per_page || 16;
+    const totalItems = pagination.total_items || 'N/A';
+    
     paginationHTML = `
-        <div class="pagination-info">Page ${currentPage} of ${lastPage} (${lastPage} total pages)</div>
+        <div class="pagination-info">Page ${currentPage} of ${lastPage} (${lastPage} total pages) • Showing ${itemsPerLoad} items (${totalItems} loaded)</div>
         <div class="pagination-buttons">${paginationHTML}</div>
     `;
     
@@ -135,7 +143,11 @@ async function loadPage(page) {
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    const response = await fetchAnimeList(page);
+    // Get items per page preferences from localStorage or default to 1 page (16 items)
+    const itemsPreference = localStorage.getItem('animeListItemsPerPage') || '1';
+    const pagesToLoad = parseInt(itemsPreference);
+    
+    const response = await fetchAnimeList(page, pagesToLoad);
     
     if (response && response.status === 'success' && response.data) {
         // Check if data has pagination structure
@@ -231,6 +243,13 @@ async function loadAnimeListPage() {
     await loadPage(page);
 }
 
+// Handle items per page change
+function onItemsPerPageChange(value) {
+    localStorage.setItem('animeListItemsPerPage', value);
+    // Reload current page with new preference
+    loadPage(currentPage);
+}
+
 // Initialize page load
 document.addEventListener('DOMContentLoaded', () => {
     loadAnimeListPage();
@@ -244,5 +263,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Apply initial server class
         applyServerClass();
+    }
+    
+    // Add items per page change event
+    const itemsPerPage = document.getElementById('itemsPerPage');
+    if (itemsPerPage) {
+        // Set initial value from localStorage
+        const savedPreference = localStorage.getItem('animeListItemsPerPage') || '1';
+        itemsPerPage.value = savedPreference;
+        
+        itemsPerPage.addEventListener('change', (e) => {
+            onItemsPerPageChange(e.target.value);
+        });
     }
 });
