@@ -567,6 +567,18 @@ app.get('/api/v2/anime-list/:page?', async (req, res) => {
     }
 });
 
+app.get('/api/v2/terbaru/:page?', async (req, res) => {
+    try {
+        const page = parseInt(req.params.page) || 1;
+        console.log(`[V2] Scraping samehadaku anime terbaru page ${page}`);
+        const data = await samehadakuScraper.scrapeAnimeList(page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /terbaru:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 app.get('/api/v2/schedule', async (req, res) => {
     try {
         console.log('[V2] Scraping samehadaku schedule...');
@@ -629,6 +641,14 @@ createRoutes('completed', 'completed');
 createRoutes('ongoing', 'ongoing');
 createRoutes('genres', 'genres');
 createRoutes('all-anime', 'all-anime');
+
+// Route for anime-terbaru page (V2 only)
+app.get('/anime-terbaru', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/anime-list.html'));
+});
+app.get('/anime-terbaru.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/anime-list.html'));
+});
 
 // 404 handler
 app.use((req, res) => {

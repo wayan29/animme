@@ -299,17 +299,64 @@ async function scrapeAnimeList(page = 1) {
             results.push(anime);
         });
         
-        // Parse Pagination
+        // Parse Pagination - Extract from HTML structure
+        let lastPage = page;
+        
+        // Method 1: Look for the span that contains "Page 1 of 675"
+        const $paginationSpan = $('.pagination span').first();
+        if ($paginationSpan.length > 0) {
+            const spanText = $paginationSpan.text();
+            const pageMatch = spanText.match(/Page\s+\d+\s+of\s+(\d+)/i);
+            if (pageMatch) {
+                lastPage = parseInt(pageMatch[1]);
+            }
+        }
+        
+        // Method 2: Get the highest page number from pagination links
+        if (lastPage === page) {
+            let highestPage = page;
+            $('.pagination a').each((i, el) => {
+                const href = $(el).attr('href');
+                if (href) {
+                    const pageMatch = href.match(/page\/(\d+)/);
+                    if (pageMatch) {
+                        const pageNum = parseInt(pageMatch[1]);
+                        if (pageNum > highestPage) {
+                            highestPage = pageNum;
+                        }
+                    }
+                }
+            });
+            lastPage = highestPage;
+        }
+        
+        // Method 3: Fallback - use any page number found in pagination text
+        if (lastPage === page) {
+            const paginationText = $('.pagination').text().trim();
+            const allNumbers = paginationText.match(/\b\d{1,4}\b/g);
+            if (allNumbers && allNumbers.length > 0) {
+                // Find the largest reasonable page number (not too big like 675123)
+                const reasonablePages = allNumbers
+                    .map(n => parseInt(n))
+                    .filter(n => n > page && n < 10000)
+                    .sort((a, b) => a - b);
+                if (reasonablePages.length > 0) {
+                    lastPage = reasonablePages[reasonablePages.length - 1];
+                }
+            }
+        }
+        
         const pagination = {
             current_page: page,
-            has_next_page: false,
+            has_next_page: page < lastPage,
             has_previous_page: page > 1,
             next_page: page + 1,
             previous_page: page - 1,
-            last_visible_page: page
+            last_page: lastPage,
+            total_pages: lastPage
         };
         
-        // Check if next page exists
+        // Also check if next button exists as fallback
         const $nextBtn = $('.pagination .next');
         if ($nextBtn.length > 0) {
             pagination.has_next_page = true;
