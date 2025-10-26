@@ -355,13 +355,23 @@ async function scrapeOngoingAnime(page = 1) {
                 lastPage = pageNum;
             }
         });
-        pagination.last_visible_page = lastPage;
+        // Create complete pagination object with consistent fields (Ongoing)
+        const finalPagination = {
+            current_page: pagination.current_page,
+            has_next_page: pagination.has_next_page,
+            has_previous_page: pagination.has_previous_page,
+            next_page: pagination.next_page,
+            previous_page: pagination.previous_page,
+            last_page: lastPage,
+            total_pages: lastPage,
+            last_visible_page: lastPage
+        };
         
         return {
             status: 'success',
             data: {
                 ongoingAnimeData: results,
-                paginationData: pagination
+                paginationData: finalPagination
             }
         };
     } catch (error) {
@@ -439,13 +449,23 @@ async function scrapeCompleteAnime(page = 1) {
                 lastPage = pageNum;
             }
         });
-        pagination.last_visible_page = lastPage;
+        // Create complete pagination object with consistent fields (Complete)
+        const finalPagination = {
+            current_page: pagination.current_page,
+            has_next_page: pagination.has_next_page,
+            has_previous_page: pagination.has_previous_page,
+            next_page: pagination.next_page,
+            previous_page: pagination.previous_page,
+            last_page: lastPage,
+            total_pages: lastPage,
+            last_visible_page: lastPage
+        };
         
         return {
             status: 'success',
             data: {
                 completedAnimeData: results,
-                paginationData: pagination
+                paginationData: finalPagination
             }
         };
     } catch (error) {

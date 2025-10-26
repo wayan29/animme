@@ -60,7 +60,7 @@ function displayPagination(pagination) {
     
     const maxButtons = 5;
     const currentPage = pagination.current_page;
-    const lastPage = pagination.last_visible_page;
+    const lastPage = pagination.last_page || pagination.total_pages || pagination.last_visible_page;
     
     let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
     let endPage = Math.min(lastPage, startPage + maxButtons - 1);
