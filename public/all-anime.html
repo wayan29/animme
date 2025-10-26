@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semua Anime - AnimMe</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+</head>
+<body>
+    <nav class="navbar scrolled">
+        <div class="nav-container">
+            <h1 class="logo" onclick="window.location.href='/'">AnimMe</h1>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Beranda</a>
+                <a href="/ongoing" class="nav-link">Anime Ongoing</a>
+                <a href="/completed" class="nav-link">Anime Tamat</a>
+                <a href="/all-anime" class="nav-link active">Semua Anime</a>
+                <a href="/genres" class="nav-link">Genre</a>
+                <a href="/schedule" class="nav-link">Jadwal Rilis</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <section class="all-anime-header">
+            <h2>Daftar Lengkap Anime</h2>
+            <p>Semua anime A-Z</p>
+        </section>
+
+        <div class="alphabet-nav" id="alphabetNav">
+            <div class="loading">Memuat navigasi...</div>
+        </div>
+
+        <div class="all-anime-container" id="allAnimeContainer">
+            <div class="loading">Memuat daftar anime...</div>
+        </div>
+    </main>
+
+    <footer class="footer">
+
+    </footer>
+
+    <script src="/all-anime.js"></script>
+</body>
+</html>

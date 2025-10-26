@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimMe - Nonton Anime Online</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">AnimMe</h1>
+            <div class="nav-menu">
+                <a href="/" class="nav-link active">Beranda</a>
+                <a href="/ongoing" class="nav-link">Anime Ongoing</a>
+                <a href="/completed" class="nav-link">Anime Tamat</a>
+                <a href="/all-anime" class="nav-link">Semua Anime</a>
+                <a href="/genres" class="nav-link">Genre</a>
+                <a href="/schedule" class="nav-link">Jadwal Rilis</a>
+            </div>
+            <div class="search-container">
+                <button class="search-icon-mobile" id="searchIconBtn" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                </button>
+                <input type="text" id="searchInput" placeholder="Cari anime..." class="search-input">
+                <button onclick="searchAnime()" class="search-btn">Cari</button>
+                <button class="search-close-btn" id="searchCloseBtn" aria-label="Close">×</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero" id="heroSection">
+        <div class="hero-content">
+            <h2 class="hero-title" id="heroTitle">Loading...</h2>
+            <p class="hero-description" id="heroDescription">Loading...</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" id="heroPlayBtn">▶ Tonton Sekarang</button>
+                <button class="btn btn-secondary" id="heroInfoBtn">ℹ Info Lebih</button>
+            </div>
+        </div>
+        <div class="hero-fade"></div>
+    </div>
+
+    <main class="main-content">
+        <section class="anime-section">
+            <h3 class="section-title">Anime Ongoing</h3>
+            <div class="anime-row" id="ongoingAnime">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+
+        <section class="anime-section">
+            <h3 class="section-title">Anime Tamat</h3>
+            <div class="anime-row" id="completedAnime">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+
+    </footer>
+
+    <script src="/app.js"></script>
+</body>
+</html>

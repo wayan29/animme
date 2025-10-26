@@ -1,0 +1,243 @@
+const express = require('express');
+const path = require('path');
+const crypto = require('crypto');
+const fs = require('fs').promises;
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+const API_TARGET = 'https://www.sankavollerei.com/anime';
+const CACHE_DIR = path.join(__dirname, '../cache/images');
+
+// Ensure cache directory exists
+fs.mkdir(CACHE_DIR, { recursive: true }).catch(console.error);
+
+// Serve static files FIRST (important for .js, .css, etc)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Helper: Generate hash from URL
+function getImageHash(url) {
+    return crypto.createHash('md5').update(url).digest('hex');
+}
+
+// Helper: Get file extension from URL or content-type
+function getFileExtension(url, contentType) {
+    // Try to get from URL first
+    const urlExt = path.extname(new URL(url).pathname).toLowerCase();
+    if (urlExt && ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(urlExt)) {
+        return urlExt;
+    }
+    
+    // Fallback to content-type
+    if (contentType) {
+        const typeMap = {
+            'image/jpeg': '.jpg',
+            'image/png': '.png',
+            'image/gif': '.gif',
+            'image/webp': '.webp'
+        };
+        return typeMap[contentType] || '.jpg';
+    }
+    
+    return '.jpg';
+}
+
+// Map hash to original URLs (stored in memory - in production use Redis/DB)
+const imageUrlMap = new Map();
+
+// Serve cached images with auto-download - URL SEPENUHNYA TERSEMBUNYI
+app.get('/img/:hash', async (req, res) => {
+    try {
+        const hash = req.params.hash;
+        
+        // Try to find cached file
+        const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        let filePath = null;
+        
+        for (const ext of extensions) {
+            const testPath = path.join(CACHE_DIR, hash + ext);
+            try {
+                await fs.access(testPath);
+                filePath = testPath;
+                break;
+            } catch (e) {
+                // Continue checking
+            }
+        }
+        
+        // If cached, serve immediately
+        if (filePath) {
+            const ext = path.extname(filePath);
+            const contentTypeMap = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp'
+            };
+            
+            res.set('Content-Type', contentTypeMap[ext] || 'image/jpeg');
+            res.set('Cache-Control', 'public, max-age=31536000'); // 1 year
+            
+            const imageBuffer = await fs.readFile(filePath);
+            return res.send(imageBuffer);
+        }
+        
+        // Not cached - need original URL to download
+        const originalUrl = imageUrlMap.get(hash);
+        if (!originalUrl) {
+            return res.status(404).send('Image not found and no URL mapping');
+        }
+        
+        // Download and cache
+        const fetch = (await import('node-fetch')).default;
+        const response = await fetch(originalUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'https://otakudesu.best/'
+            },
+            timeout: 10000
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        const ext = getFileExtension(originalUrl, contentType);
+        const newFilePath = path.join(CACHE_DIR, hash + ext);
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        await fs.writeFile(newFilePath, buffer);
+        
+        console.log(`✓ Downloaded & cached: ${hash}${ext}`);
+        
+        res.set('Content-Type', contentType || 'image/jpeg');
+        res.set('Cache-Control', 'public, max-age=31536000');
+        res.send(buffer);
+    } catch (error) {
+        console.error('Image serve error:', error.message);
+        res.status(500).send('Failed to load image');
+    }
+});
+
+// Register image URL mapping (called from API proxy)
+app.post('/register-image', express.json(), (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) {
+            return res.status(400).json({ error: 'Missing URL' });
+        }
+        
+        const hash = getImageHash(url);
+        imageUrlMap.set(hash, url);
+        
+        res.json({ hash });
+    } catch (error) {
+        console.error('Register image error:', error.message);
+        res.status(500).json({ error: 'Failed to register image' });
+    }
+});
+
+// Helper: Convert image URLs to hashes recursively
+function convertImageUrlsToHashes(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    
+    if (Array.isArray(obj)) {
+        return obj.map(item => convertImageUrlsToHashes(item));
+    }
+    
+    const converted = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (key === 'poster' && typeof value === 'string' && value.startsWith('http')) {
+            // Convert poster URL to hash
+            const hash = getImageHash(value);
+            imageUrlMap.set(hash, value); // Store mapping
+            converted[key] = `/img/${hash}`;
+        } else if (typeof value === 'object') {
+            converted[key] = convertImageUrlsToHashes(value);
+        } else {
+            converted[key] = value;
+        }
+    }
+    return converted;
+}
+
+// API Proxy - menyembunyikan API eksternal dari user
+app.use('/api', async (req, res) => {
+    try {
+        // req.url sudah tidak mengandung /api prefix, langsung path setelahnya
+        const targetUrl = `${API_TARGET}${req.url}`;
+        
+        console.log('Proxying request to:', targetUrl);
+        
+        const fetch = (await import('node-fetch')).default;
+        const response = await fetch(targetUrl, {
+            method: req.method,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Convert all poster URLs to hashes
+        const convertedData = convertImageUrlsToHashes(data);
+        
+        res.json(convertedData);
+    } catch (error) {
+        console.error('API Proxy Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch data from API', details: error.message });
+    }
+});
+
+// Route untuk halaman utama
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Clean URL routes with path parameters
+// IMPORTANT: These must exclude files with extensions
+app.get('/detail/:slug([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/detail.html'));
+});
+
+app.get('/player/:episode([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/player.html'));
+});
+
+app.get('/genre/:slug([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/genre.html'));
+});
+
+app.get('/search/:keyword([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/search.html'));
+});
+
+// Static routes (no parameters)
+const createRoutes = (routePath, fileName) => {
+    const filePath = path.join(__dirname, `../public/${fileName}.html`);
+    app.get(`/${routePath}`, (req, res) => res.sendFile(filePath));
+    app.get(`/${routePath}.html`, (req, res) => res.sendFile(filePath));
+};
+
+createRoutes('schedule', 'schedule');
+createRoutes('completed', 'completed');
+createRoutes('ongoing', 'ongoing');
+createRoutes('genres', 'genres');
+createRoutes('all-anime', 'all-anime');
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).send('<h1>404 - Halaman tidak ditemukan</h1><a href="/">Kembali ke Beranda</a>');
+});
+
+app.listen(PORT, () => {
+    console.log(`\n🚀 AnimMe Server berjalan di http://localhost:${PORT}`);
+    console.log(`📺 Buka browser dan akses: http://localhost:${PORT}\n`);
+});

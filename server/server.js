@@ -1,0 +1,566 @@
+const express = require('express');
+const path = require('path');
+const crypto = require('crypto');
+const fs = require('fs').promises;
+const axios = require('axios');
+const cheerio = require('cheerio');
+const scraper = require('./scraper');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+const CACHE_DIR = path.join(__dirname, '../cache/images');
+
+const DEFAULT_REQUEST_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
+};
+
+const ITAG_QUALITY_MAP = {
+    '18': '360p',
+    '22': '720p',
+    '37': '1080p',
+    '59': '480p',
+    '78': '480p',
+    '82': '360p',
+    '83': '480p',
+    '84': '720p',
+    '85': '1080p'
+};
+
+// Ensure cache directory exists
+fs.mkdir(CACHE_DIR, { recursive: true }).catch(console.error);
+
+// Serve static files FIRST (important for .js, .css, etc)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Helper: Generate hash from URL
+function getImageHash(url) {
+    return crypto.createHash('md5').update(url).digest('hex');
+}
+
+// Helper: Get file extension from URL or content-type
+function getFileExtension(url, contentType) {
+    // Try to get from URL first
+    const urlExt = path.extname(new URL(url).pathname).toLowerCase();
+    if (urlExt && ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(urlExt)) {
+        return urlExt;
+    }
+    
+    // Fallback to content-type
+    if (contentType) {
+        const typeMap = {
+            'image/jpeg': '.jpg',
+            'image/png': '.png',
+            'image/gif': '.gif',
+            'image/webp': '.webp'
+        };
+        return typeMap[contentType] || '.jpg';
+    }
+    
+    return '.jpg';
+}
+
+function buildRequestHeaders(customHeaders = {}, refererUrl = '') {
+    const headers = { ...DEFAULT_REQUEST_HEADERS, ...customHeaders };
+    if (refererUrl) {
+        headers['Referer'] = refererUrl;
+    } else if (!headers['Referer']) {
+        headers['Referer'] = 'https://otakudesu.best/';
+    }
+    return headers;
+}
+
+async function fetchHtmlContent(url, options = {}) {
+    const headers = buildRequestHeaders(options.headers || {}, options.referer);
+    const response = await axios.get(url, {
+        headers,
+        timeout: options.timeout || 12000,
+        responseType: 'text'
+    });
+    return response.data;
+}
+
+function normalizeUrl(value, baseUrl) {
+    if (!value) return null;
+    try {
+        if (value.startsWith('//')) {
+            return `https:${value}`;
+        }
+        return new URL(value, baseUrl).toString();
+    } catch (error) {
+        return value;
+    }
+}
+
+function extractIframeSource(html, baseUrl) {
+    if (!html) return null;
+    try {
+        const $ = cheerio.load(html);
+        const iframe = $('iframe').first();
+        if (!iframe || iframe.length === 0) return null;
+        const srcAttr = iframe.attr('src') || iframe.attr('data-src');
+        if (!srcAttr || srcAttr === 'about:blank') return null;
+        return normalizeUrl(srcAttr.trim(), baseUrl);
+    } catch (error) {
+        return null;
+    }
+}
+
+function extractMimeFromUrl(url) {
+    if (!url) return null;
+    try {
+        const parsed = new URL(url);
+        const mime = parsed.searchParams.get('mime');
+        return mime ? decodeURIComponent(mime) : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+function mapItagToQuality(formatId) {
+    if (!formatId) return null;
+    if (ITAG_QUALITY_MAP[formatId]) return ITAG_QUALITY_MAP[formatId];
+    if (/^\d+$/.test(formatId)) {
+        return `${formatId}p`;
+    }
+    return formatId;
+}
+
+function extractBloggerVideoFromHtml(html) {
+    if (!html) return null;
+    const match = html.match(/var\s+VIDEO_CONFIG\s*=\s*(\{[\s\S]*?\});/);
+    if (!match) return null;
+    try {
+        const config = JSON.parse(match[1]);
+        const streams = Array.isArray(config.streams) ? config.streams : [];
+        const sources = streams.map((stream) => {
+            if (!stream.play_url) return null;
+            return {
+                url: stream.play_url,
+                mime: stream.mime || extractMimeFromUrl(stream.play_url),
+                format_id: stream.format_id || null,
+                quality: stream.quality || mapItagToQuality(stream.format_id) || null,
+                label: stream.label || mapItagToQuality(stream.format_id) || null
+            };
+        }).filter(Boolean);
+        if (!sources.length) return null;
+        return {
+            type: 'video',
+            provider: 'blogger',
+            poster: config.thumbnail || null,
+            sources
+        };
+    } catch (error) {
+        console.warn('VIDEO_CONFIG parse error:', error.message);
+        return null;
+    }
+}
+
+async function tryJsonVideoEndpoint(streamUrl) {
+    try {
+        const separator = streamUrl.includes('?') ? '&' : '?';
+        const jsonUrl = `${streamUrl}${separator}mode=json&_=${Date.now()}`;
+        const response = await axios.get(jsonUrl, {
+            headers: buildRequestHeaders({}, streamUrl),
+            timeout: 8000
+        });
+        if (response.data && response.data.video) {
+            return normalizeUrl(response.data.video, streamUrl);
+        }
+    } catch (error) {
+        return null;
+    }
+    return null;
+}
+
+async function resolveStreamUrl(streamUrl, depth = 0, visited = new Set()) {
+    if (!streamUrl || depth > 4 || visited.has(streamUrl)) {
+        return null;
+    }
+    visited.add(streamUrl);
+    let html;
+    try {
+        html = await fetchHtmlContent(streamUrl, { referer: 'https://otakudesu.best/' });
+    } catch (error) {
+        console.warn('Failed to fetch stream html:', error.message);
+        return null;
+    }
+    const bloggerVideo = extractBloggerVideoFromHtml(html);
+    if (bloggerVideo) {
+        return bloggerVideo;
+    }
+    const iframeSrc = extractIframeSource(html, streamUrl);
+    if (iframeSrc) {
+        const nested = await resolveStreamUrl(iframeSrc, depth + 1, visited);
+        if (nested) {
+            return nested;
+        }
+    }
+    const jsonSrc = await tryJsonVideoEndpoint(streamUrl);
+    if (jsonSrc) {
+        const nestedFromJson = await resolveStreamUrl(jsonSrc, depth + 1, visited);
+        if (nestedFromJson) {
+            return nestedFromJson;
+        }
+    }
+    return null;
+}
+
+// Serve cached images with auto-download - URL SEPENUHNYA TERSEMBUNYI
+app.get('/img/:hash', async (req, res) => {
+    try {
+        const hash = req.params.hash;
+        
+        // Try to find cached file
+        const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        let filePath = null;
+        
+        for (const ext of extensions) {
+            const testPath = path.join(CACHE_DIR, hash + ext);
+            try {
+                await fs.access(testPath);
+                filePath = testPath;
+                break;
+            } catch (e) {
+                // Continue checking
+            }
+        }
+        
+        // If cached, serve immediately
+        if (filePath) {
+            const ext = path.extname(filePath);
+            const contentTypeMap = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp'
+            };
+            
+            res.set('Content-Type', contentTypeMap[ext] || 'image/jpeg');
+            res.set('Cache-Control', 'public, max-age=31536000'); // 1 year
+            
+            const imageBuffer = await fs.readFile(filePath);
+            return res.send(imageBuffer);
+        }
+        
+        // Not cached - need original URL to download
+        const imageUrlMap = scraper.getImageUrlMap();
+        const originalUrl = imageUrlMap.get(hash);
+        
+        if (!originalUrl) {
+            return res.status(404).send('Image not found and no URL mapping');
+        }
+        
+        // Download and cache
+        const fetch = (await import('node-fetch')).default;
+        const response = await fetch(originalUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'https://otakudesu.best/'
+            },
+            timeout: 10000
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        const ext = getFileExtension(originalUrl, contentType);
+        const newFilePath = path.join(CACHE_DIR, hash + ext);
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        await fs.writeFile(newFilePath, buffer);
+        
+        console.log(`✓ Downloaded & cached: ${hash}${ext}`);
+        
+        res.set('Content-Type', contentType || 'image/jpeg');
+        res.set('Cache-Control', 'public, max-age=31536000');
+        res.send(buffer);
+    } catch (error) {
+        console.error('Image serve error:', error.message);
+        res.status(500).send('Failed to load image');
+    }
+});
+
+// API Endpoints - Using Scraper
+app.get('/api/home', async (req, res) => {
+    try {
+        console.log('Scraping homepage...');
+        const data = await scraper.scrapeHome();
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /home:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/anime/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`Scraping anime detail: ${slug}`);
+        const data = await scraper.scrapeAnimeDetail(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/search/:keyword', async (req, res) => {
+    try {
+        const keyword = req.params.keyword;
+        console.log(`Searching for: ${keyword}`);
+        const data = await scraper.scrapeSearch(keyword);
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /search:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/ongoing-anime/:page?', async (req, res) => {
+    try {
+        const page = parseInt(req.params.page) || 1;
+        console.log(`Scraping ongoing anime page ${page}`);
+        const data = await scraper.scrapeOngoingAnime(page);
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /ongoing-anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/complete-anime/:page?', async (req, res) => {
+    try {
+        const page = parseInt(req.params.page) || 1;
+        console.log(`Scraping complete anime page ${page}`);
+        const data = await scraper.scrapeCompleteAnime(page);
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /complete-anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/all-anime', async (req, res) => {
+    try {
+        console.log('Scraping all anime list...');
+        const data = await scraper.scrapeAllAnime();
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /all-anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/genres', async (req, res) => {
+    try {
+        console.log('Scraping genre list...');
+        const data = await scraper.scrapeGenreList();
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /genres:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/genre/:slug/:page?', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        const page = parseInt(req.params.page) || 1;
+        console.log(`Scraping genre ${slug} page ${page}`);
+        const data = await scraper.scrapeGenreAnime(slug, page);
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /genre:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/episode/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`Scraping episode: ${slug}`);
+        const data = await scraper.scrapeEpisode(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /episode:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/batch/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`Scraping batch: ${slug}`);
+        const data = await scraper.scrapeBatch(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /batch:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/schedule', async (req, res) => {
+    try {
+        console.log('Scraping schedule...');
+        const data = await scraper.scrapeSchedule();
+        res.json(data);
+    } catch (error) {
+        console.error('API Error /schedule:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// API to get stream URL for specific quality/server
+app.get('/api/stream/:postId/:quality/:serverIndex', async (req, res) => {
+    try {
+        const { postId, quality, serverIndex } = req.params;
+        const shouldResolve = req.query.resolve === '1';
+        console.log(`Fetching stream URL for post ${postId}, quality ${quality}, server ${serverIndex}`);
+        
+        // Step 1: Get nonce
+        const nonceResponse = await axios.post('https://otakudesu.best/wp-admin/admin-ajax.php', 
+            new URLSearchParams({
+                action: 'aa1208d27f29ca340c92c66d1926f13f'
+            }), {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            }
+        );
+        
+        const nonce = nonceResponse.data.data;
+        
+        if (!nonce) {
+            throw new Error('Failed to get nonce');
+        }
+        
+        // Step 2: Get stream URL with nonce
+        const streamResponse = await axios.post('https://otakudesu.best/wp-admin/admin-ajax.php',
+            new URLSearchParams({
+                id: postId,
+                i: serverIndex,
+                q: quality,
+                nonce: nonce,
+                action: '2a3505c93b0035d3f455df82bf976b84'
+            }), {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            }
+        );
+        
+        // Step 3: Decode base64 response
+        const base64Html = streamResponse.data.data;
+        const decodedHtml = Buffer.from(base64Html, 'base64').toString('utf-8');
+        
+        // Step 4: Extract iframe src
+        const srcMatch = decodedHtml.match(/src="([^"]+)"/);
+        const streamUrl = srcMatch ? srcMatch[1] : null;
+        
+        if (!streamUrl) {
+            throw new Error('Failed to extract stream URL');
+        }
+        
+        let resolved = null;
+        if (shouldResolve) {
+            resolved = await resolveStreamUrl(streamUrl);
+        }
+        
+        res.json({
+            status: 'success',
+            data: {
+                stream_url: streamUrl,
+                quality: quality,
+                server_index: serverIndex,
+                resolved: resolved
+            }
+        });
+    } catch (error) {
+        console.error('API Error /stream:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/resolve-stream', async (req, res) => {
+    try {
+        const rawUrl = req.query.url;
+        if (!rawUrl) {
+            return res.status(400).json({ status: 'error', message: 'Parameter url wajib diisi' });
+        }
+        let decodedUrl = rawUrl;
+        try {
+            decodedUrl = decodeURIComponent(rawUrl);
+        } catch (error) {
+            // Keep original when decode fails
+        }
+        const resolved = await resolveStreamUrl(decodedUrl);
+        res.json({
+            status: 'success',
+            data: {
+                stream_url: decodedUrl,
+                resolved
+            }
+        });
+    } catch (error) {
+        console.error('API Error /resolve-stream:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Route untuk halaman utama
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Clean URL routes with path parameters
+// IMPORTANT: These must exclude files with extensions
+app.get('/detail/:slug([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/detail.html'));
+});
+
+app.get('/player/:episode([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/player.html'));
+});
+
+app.get('/batch/:slug([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/batch.html'));
+});
+
+app.get('/genre/:slug([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/genre.html'));
+});
+
+app.get('/search/:keyword([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/search.html'));
+});
+
+// Static routes (no parameters)
+const createRoutes = (routePath, fileName) => {
+    const filePath = path.join(__dirname, `../public/${fileName}.html`);
+    app.get(`/${routePath}`, (req, res) => res.sendFile(filePath));
+    app.get(`/${routePath}.html`, (req, res) => res.sendFile(filePath));
+};
+
+createRoutes('schedule', 'schedule');
+createRoutes('completed', 'completed');
+createRoutes('ongoing', 'ongoing');
+createRoutes('genres', 'genres');
+createRoutes('all-anime', 'all-anime');
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).send('<h1>404 - Halaman tidak ditemukan</h1><a href="/">Kembali ke Beranda</a>');
+});
+
+app.listen(PORT, () => {
+    console.log(`\n🚀 AnimMe Server berjalan di http://localhost:${PORT}`);
+    console.log(`📺 Menggunakan scraper langsung dari otakudesu.best`);
+    console.log(`🌐 Buka browser dan akses: http://localhost:${PORT}\n`);
+});
