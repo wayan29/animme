@@ -111,7 +111,12 @@ function displayPagination(pagination) {
         paginationHTML += `<button class="pagination-btn disabled" disabled>Next ›</button>`;
     }
     
-    container.innerHTML = paginationHTML;
+    // Wrap pagination buttons in pagination-buttons div for proper styling
+    const wrappedPaginationHTML = `
+        <div class="pagination-buttons">${paginationHTML}</div>
+    `;
+    
+    container.innerHTML = wrappedPaginationHTML;
 }
 
 async function loadPage(page) {

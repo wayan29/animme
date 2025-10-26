@@ -504,11 +504,17 @@ body {
 }
 
 .pagination-buttons {
-    display: flex;
+    display: flex !important;
     justify-content: center;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+/* Ensure pagination container renders correctly */
+.pagination-container .pagination-buttons {
+    flex-direction: row !important;
 }
 
 .pagination-btn {
