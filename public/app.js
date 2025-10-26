@@ -92,23 +92,62 @@ async function loadHomePage() {
     
     homeData = data;
     
-    // Display featured anime from ongoing
-    if (data.data.ongoing_anime && data.data.ongoing_anime.length > 0) {
-        displayFeaturedAnime(data.data.ongoing_anime[0]);
-    }
+    // Check if using V1 (Otakudesu) or V2 (Samehadaku) format
+    const isV2 = data.data.recent_anime !== undefined;
     
-    // Display ongoing anime list
-    if (data.data.ongoing_anime && data.data.ongoing_anime.length > 0) {
-        displayAnimeList('ongoingAnime', data.data.ongoing_anime, 'ongoing');
+    if (isV2) {
+        // V2 format - Samehadaku (recent_anime only)
+        const recentAnime = data.data.recent_anime || [];
+        
+        // Update section titles for V2
+        document.getElementById('ongoingTitle').textContent = 'Anime Terbaru';
+        document.getElementById('completedTitle').textContent = 'Rilis Terbaru Lainnya';
+        
+        // Display featured anime
+        if (recentAnime.length > 0) {
+            displayFeaturedAnime(recentAnime[0]);
+        }
+        
+        // Split recent anime into two sections (first 8 as "ongoing", rest as "completed")
+        const ongoingSection = recentAnime.slice(0, 8);
+        const completedSection = recentAnime.slice(8, 16);
+        
+        if (ongoingSection.length > 0) {
+            displayAnimeList('ongoingAnime', ongoingSection, 'ongoing');
+        } else {
+            showError('ongoingAnime');
+        }
+        
+        if (completedSection.length > 0) {
+            displayAnimeList('completedAnime', completedSection, 'completed');
+        } else {
+            showError('completedAnime');
+        }
     } else {
-        showError('ongoingAnime');
-    }
-    
-    // Display completed anime list
-    if (data.data.complete_anime && data.data.complete_anime.length > 0) {
-        displayAnimeList('completedAnime', data.data.complete_anime, 'completed');
-    } else {
-        showError('completedAnime');
+        // V1 format - Otakudesu (ongoing_anime & complete_anime)
+        
+        // Update section titles for V1
+        document.getElementById('ongoingTitle').textContent = 'Anime Ongoing';
+        document.getElementById('completedTitle').textContent = 'Anime Tamat';
+        
+        // Display featured anime from ongoing
+        if (data.data.ongoing_anime && data.data.ongoing_anime.length > 0) {
+            displayFeaturedAnime(data.data.ongoing_anime[0]);
+        }
+        
+        // Display ongoing anime list
+        if (data.data.ongoing_anime && data.data.ongoing_anime.length > 0) {
+            displayAnimeList('ongoingAnime', data.data.ongoing_anime, 'ongoing');
+        } else {
+            showError('ongoingAnime');
+        }
+        
+        // Display completed anime list
+        if (data.data.complete_anime && data.data.complete_anime.length > 0) {
+            displayAnimeList('completedAnime', data.data.complete_anime, 'completed');
+        } else {
+            showError('completedAnime');
+        }
     }
 }
 
@@ -156,20 +195,33 @@ function displayAnimeList(containerId, animeList, type = 'ongoing') {
     }
     
     container.innerHTML = animeList.map(anime => {
-        // Determine episode info based on type
+        // Determine episode info based on type and available fields
         let episodeInfo = '';
-        if (type === 'ongoing') {
-            episodeInfo = anime.current_episode || 'Episode N/A';
-            if (anime.release_day) {
-                episodeInfo += ` • ${anime.release_day}`;
-            }
-        } else if (type === 'completed') {
-            episodeInfo = `${anime.episode_count || 'N/A'} Episode`;
-            if (anime.rating) {
-                episodeInfo += ` • ⭐ ${anime.rating}`;
+        
+        // Check if V2 format (has release_date instead of release_day)
+        const isV2Format = anime.release_date !== undefined;
+        
+        if (isV2Format) {
+            // V2 Samehadaku format
+            episodeInfo = `Ep ${anime.current_episode || 'N/A'}`;
+            if (anime.release_date) {
+                episodeInfo += ` • ${anime.release_date}`;
             }
         } else {
-            episodeInfo = anime.current_episode || anime.episode_count || 'Episode N/A';
+            // V1 Otakudesu format
+            if (type === 'ongoing') {
+                episodeInfo = anime.current_episode || 'Episode N/A';
+                if (anime.release_day) {
+                    episodeInfo += ` • ${anime.release_day}`;
+                }
+            } else if (type === 'completed') {
+                episodeInfo = `${anime.episode_count || 'N/A'} Episode`;
+                if (anime.rating) {
+                    episodeInfo += ` • ⭐ ${anime.rating}`;
+                }
+            } else {
+                episodeInfo = anime.current_episode || anime.episode_count || 'Episode N/A';
+            }
         }
         
         return `
