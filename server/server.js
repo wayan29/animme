@@ -675,6 +675,11 @@ app.get('/detail/:slug([^.]+)', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/detail.html'));
 });
 
+// Route untuk V2 detail pages
+app.get('/detail-v2/:slug([^.]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/detail-v2.html'));
+});
+
 app.get('/player/:episode([^.]+)', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/player.html'));
 });

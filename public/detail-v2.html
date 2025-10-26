@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Detail - AnimMe</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <style>
+        .detail-container {
+            max-width: 1400px;
+            margin: 100px auto 0;
+            padding: 0 4%;
+        }
+        
+        .detail-header {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .detail-poster {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        
+        .detail-info h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #e50914;
+        }
+        
+        .detail-info .meta-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+        
+        .meta-item {
+            background: rgba(229, 9, 20, 0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .meta-value {
+            color: #666;
+        }
+        
+        .synopsis {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            line-height: 1.6;
+            margin: 30px 0;
+            text-align: justify;
+            white-space: pre-wrap;
+        }
+        
+        .episode-list {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .episode-item {
+            display: grid;
+            grid-template-columns: 60px 1fr 60px;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .episode-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            border-color: #e50914;
+        }
+        
+        .episode-number {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #e50914;
+        }
+        
+        .episode-title {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #fff;
+            text-align: center;
+        }
+        
+        .episode-date {
+            font-size: 0.8rem;
+            color: #999;
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        .quality-size {
+            color: #999;
+            font-size: 0.95rem;
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        .watch-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #e50914, #c00);
+            color: #fff;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .watch-btn:hover {
+            background: linear-gradient(135deg, #c00, #900);
+            transform: translateY(-2px);
+        }
+        
+        .related-anime {
+            margin-top: 50px;
+        }
+        
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .batch-download-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .batch-link-btn {
+            padding: 10px 20px;
+            background-color: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.ime;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .batch-link-btn:hover {
+            background-color: #e50914;
+            border-color: #e50914;
+            transform: translateY(-2px);
+        }
+        
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .detail-header {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .detail-header .anime-poster {
+                margin-bottom: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar scrolled">
+        <div class="nav-container">
+            <h1 class="logo" onclick="window.location.href='/'">AnimMe</h1>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Beranda</a>
+                <a href="/ongoing" class="nav-link">Anime Ongoing</a>
+                <a href="/completed" class="nav-link">Anime Tamat</a>
+                <a href="/all-anime" class="nav-link">Semua Anime</a>
+                <a href="/genres" class="nav-link">Genre</a>
+                <a href="/schedule" class="nav-link">Jadwal Rilis</a>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Cari anime..." class="search-input">
+                <button onclick="searchAnime()" class="search-btn">Cari</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="detail-container">
+            <div class="detail-header">
+                <div class="anime-poster" id="animePoster">
+                    <div id="posterLoading" class="loading">Loading...</div>
+                </div>
+                <div class="detail-info">
+                    <h1 id="animeTitle">Loading...</h1>
+                    <div id="animeMeta" class="meta-info">
+                        <div class="loading">Loading...</div>
+                    </div>
+                    <div class="synopsis" id="animeSynopsis">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="animeEpisodes" class="episode-list">
+                <div class="loading">Loading episodes...</div>
+            </div>
+
+            <div class="related-anime">
+                <h3>Related Anime</h3>
+                <div class="related-grid" id="relatedAnime">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <div class="back-btn-container">
+                <a href="#" onclick="goBack()" class="back-btn">← Kembali</a>
+            </div>
+
+            <div id="notification" class="notification" style="display: none;"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+    </footer>
+
+    <script src="/detail-v2.js"></script>
+</body>
+</html>
