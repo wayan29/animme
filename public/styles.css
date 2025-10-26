@@ -1219,6 +1219,14 @@ body {
     display: none !important;
 }
 
+.v2-only {
+    display: none;
+}
+
+.server-v2 .v2-only {
+    display: block !important;
+}
+
 /* Server Notification Animations */
 @keyframes slideIn {
     from {

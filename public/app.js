@@ -114,13 +114,20 @@ async function loadHomePage() {
     const isV2 = data.data.recent_anime !== undefined;
     
     if (isV2) {
-        // V2 format - Samehadaku (top10_weekly + recent_anime)
+        // V2 format - Samehadaku (top10_weekly + project_movie + recent_anime)
         const top10 = data.data.top10_weekly || [];
+        const projectMovie = data.data.project_movie || [];
         const recentAnime = data.data.recent_anime || [];
         
         // Update section titles for V2
         document.getElementById('ongoingTitle').textContent = 'Top 10 Minggu Ini';
         document.getElementById('completedTitle').textContent = 'Anime Terbaru';
+        
+        // Show Project Movie section for V2
+        const projectMovieSection = document.getElementById('projectMovieSection');
+        if (projectMovieSection) {
+            projectMovieSection.style.display = 'block';
+        }
         
         // Display featured anime from top 10 or recent
         if (top10.length > 0) {
@@ -142,8 +149,21 @@ async function loadHomePage() {
         } else {
             showError('completedAnime');
         }
+        
+        // Display Project Movie in third section
+        if (projectMovie.length > 0) {
+            displayAnimeList('projectMovie', projectMovie, 'movie');
+        } else {
+            showError('projectMovie');
+        }
     } else {
         // V1 format - Otakudesu (ongoing_anime & complete_anime)
+        
+        // Hide Project Movie section for V1
+        const projectMovieSection = document.getElementById('projectMovieSection');
+        if (projectMovieSection) {
+            projectMovieSection.style.display = 'none';
+        }
         
         // Update section titles for V1
         document.getElementById('ongoingTitle').textContent = 'Anime Ongoing';
@@ -224,9 +244,15 @@ function displayAnimeList(containerId, animeList, type = 'ongoing') {
             // V2 Samehadaku format
             if (type === 'top10' && anime.rating) {
                 // Top 10 format - show rank and rating
-                episodeInfo = `⭐ ${anime.rating}`;
+                episodeInfo = anime.rating ? `⭐ ${anime.rating}` : 'No Rating';
                 if (anime.rank) {
                     episodeInfo = `#${anime.rank} • ${episodeInfo}`;
+                }
+            } else if (type === 'movie' && anime.genres) {
+                // Movie format - show genres and release date
+                episodeInfo = anime.genres.length > 0 ? anime.genres.join(', ') : 'Movie';
+                if (anime.release_date) {
+                    episodeInfo = `🎬 ${anime.release_date}`;
                 }
             } else {
                 // Recent anime format

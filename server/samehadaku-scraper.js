@@ -43,6 +43,7 @@ async function scrapeHome() {
         const $ = cheerio.load(data);
         const result = {
             top10_weekly: [],
+            project_movie: [],
             recent_anime: []
         };
         
@@ -63,6 +64,35 @@ async function scrapeHome() {
                     slug: extractSlug(href),
                     poster: proxyImageUrl(img),
                     rating: rating
+                });
+            }
+        });
+        
+        // Parse Project Movie Samehadaku
+        $('.widgets h3:contains("Project Movie")').next('.widget-post').find('.widgetseries ul li').each((i, el) => {
+            const $el = $(el);
+            const $link = $el.find('.lftinfo h2 a.series');
+            const $img = $el.find('.imgseries a.series img');
+            const href = $link.attr('href');
+            const title = $link.text().trim();
+            const img = $img.attr('src');
+            
+            // Parse genres
+            const genres = [];
+            $el.find('.lftinfo span:contains("Genres") a').each((j, genreEl) => {
+                genres.push($(genreEl).text().trim());
+            });
+            
+            // Parse release date
+            const releaseDate = $el.find('.lftinfo span').last().text().trim();
+            
+            if (title && href) {
+                result.project_movie.push({
+                    title: title,
+                    slug: extractSlug(href),
+                    poster: proxyImageUrl(img),
+                    genres: genres,
+                    release_date: releaseDate
                 });
             }
         });
