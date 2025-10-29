@@ -1595,10 +1595,10 @@ async function scrapeBatch(animeId, slug, batchRange) {
                 const sizeMatch = headerText.match(/—\s*\(([^)]+)\)/);
                 currentSize = sizeMatch ? sizeMatch[1].trim() : '';
                 
-                // Build full quality string
+                // Build full quality string with size included
                 if (currentFormat && resolution) {
-                    currentQuality = `${currentFormat} ${resolution}${subTypeStr ? ' (' + subTypeStr + ')' : ''}`.trim();
-                    console.log(`[Batch] Found quality: ${currentQuality}, size: ${currentSize}`);
+                    currentQuality = `${currentFormat} ${resolution}${subTypeStr ? ' (' + subTypeStr + ')' : ''}${currentSize ? ' ' + currentSize : ''}`.trim();
+                    console.log(`[Batch] Found quality: ${currentQuality}`);
                 }
             }
             // Check if this is a download link
@@ -1612,7 +1612,6 @@ async function scrapeBatch(animeId, slug, batchRange) {
                     !linkText.toLowerCase().includes('sebentar')) {
                     result.download_links.push({
                         quality: currentQuality,
-                        size: currentSize,
                         provider: linkText,
                         url: href
                     });

@@ -474,7 +474,7 @@
         function displayBatchDownloads(batch) {
             const content = document.getElementById('batchModalContent');
             
-            // Group download links by quality
+            // Group download links by quality (quality now includes size)
             const groupedLinks = {};
             if (batch.download_links) {
                 batch.download_links.forEach(link => {
@@ -513,8 +513,7 @@
                                               font-weight:bold;
                                               transition:all 0.3s;"
                                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.5)';"
-                                       onmouseout="this.style.transform=''; this.style.boxShadow='';"
-                                       title="${link.size ? 'Size: ' + link.size : ''}">
+                                       onmouseout="this.style.transform=''; this.style.boxShadow='';">
                                         ${link.provider}
                                     </a>
                                 `).join('')}
