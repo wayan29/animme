@@ -160,17 +160,17 @@
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="logo" onclick="window.location.href='/v3'">🎌 Kuramanime V3</div>
+            <div class="logo" onclick="window.location.href='/v3/home'">🎌 Kuramanime V3</div>
             <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Beranda</a>
-                <a href="/properties-v3.html" style="text-decoration: none; color: #4facfe; font-weight: 600; border-bottom: 2px solid #4facfe;">Properti</a>
-                <a href="/search-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Cari</a>
+                <a href="/v3/home" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Beranda</a>
+                <a href="/v3/properties" style="text-decoration: none; color: #4facfe; font-weight: 600; border-bottom: 2px solid #4facfe;">Properti</a>
+                <a href="/v3/search" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Cari</a>
             </div>
         </div>
     </nav>
 
     <div class="container">
-        <a href="/properties-v3.html" class="back-btn">← Kembali ke Properti</a>
+        <a href="/v3/properties" class="back-btn">← Kembali ke Properti</a>
 
         <div class="header">
             <h1>🏢 Daftar Kualitas Anime</h1>
@@ -217,7 +217,7 @@
 
             grid.innerHTML = qualities.map(quality => {
                 return `
-                    <a href="/quality-v3.html?quality=${quality.slug}" class="quality-card">
+                    <a href="/v3/quality?quality=${quality.slug}" class="quality-card">
                         <div class="quality-icon">🎬</div>
                         <div class="quality-name">${quality.name}</div>
                     </a>

@@ -143,11 +143,11 @@
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="logo" onclick="window.location.href='/v3'">🎌 AnimMe V3</div>
+            <div class="logo" onclick="window.location.href='/v3/home'">🎌 AnimMe V3</div>
             <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
-                <a href="/properties-v3.html" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Properti</a>
-                <a href="/search-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Cari</a>
+                <a href="/v3/home" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
+                <a href="/v3/properties" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Properti</a>
+                <a href="/v3/search" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Cari</a>
             </div>
         </div>
     </nav>
@@ -222,7 +222,7 @@
             grid.innerHTML = genres.map(genre => {
                 const icon = genreIcons[genre.slug] || '🎬';
                 return `
-                    <a href="/genre-v3.html?genre=${genre.slug}&name=${encodeURIComponent(genre.name)}" class="genre-card">
+                    <a href="/v3/genre?genre=${genre.slug}&name=${encodeURIComponent(genre.name)}" class="genre-card">
                         <div class="genre-icon">${icon}</div>
                         <div class="genre-name">${genre.name}</div>
                     </a>

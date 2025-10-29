@@ -1,4 +1,80 @@
 const API_BASE = '/api';
+const PLACEHOLDER_POSTER = 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image';
+
+function handlePosterError(event) {
+    const img = event.target;
+    const original = img.dataset.original;
+    if (original && img.src !== original) {
+        img.src = original;
+        return;
+    }
+    if (img.src !== PLACEHOLDER_POSTER) {
+        img.src = PLACEHOLDER_POSTER;
+    }
+}
+
+function getPosterSrc(anime) {
+    return anime.poster || anime.poster_original || PLACEHOLDER_POSTER;
+}
+
+function escapeAttribute(value) {
+    if (!value) return '';
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function escapeHtml(value) {
+    if (!value) return '';
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function buildEpisodeInfo(anime) {
+    const parts = [];
+    parts.push(anime.current_episode ? `Ep ${anime.current_episode}` : 'Episode N/A');
+    if (anime.release_day) {
+        parts.push(anime.release_day);
+    } else if (anime.release_date) {
+        parts.push(anime.release_date);
+    }
+    return escapeHtml(parts.join(' • '));
+}
+
+function buildAnimeCard(anime) {
+    const titleRaw = anime.title || 'Anime';
+    const titleHtml = escapeHtml(titleRaw);
+    const titleAttr = escapeAttribute(titleRaw);
+    const episodeInfo = buildEpisodeInfo(anime);
+    const posterSrc = escapeAttribute(getPosterSrc(anime));
+    const posterOriginal = escapeAttribute(anime.poster_original);
+    const slug = escapeAttribute(anime.slug);
+    const updateInfo = anime.release_date ? `<div class="anime-date">Update: ${escapeHtml(anime.release_date)}</div>` : '';
+    
+    return `
+        <div class="anime-card anime-list-item" data-slug="${slug}" onclick="goToDetail(this.dataset.slug)">
+            <div class="anime-thumb">
+                <img src="${posterSrc}" 
+                     data-original="${posterOriginal}"
+                     alt="${titleAttr}" 
+                     class="anime-poster"
+                     onerror="handlePosterError(event)">
+            </div>
+            <div class="anime-info">
+                <div class="anime-title" title="${titleAttr}">${titleHtml}</div>
+                <div class="anime-meta">${episodeInfo}</div>
+                ${updateInfo}
+            </div>
+        </div>
+    `;
+}
 
 let currentPage = 1;
 let paginationData = null;
@@ -27,23 +103,8 @@ function displayOngoingAnime(animeList) {
     }
     
     container.innerHTML = `
-        <div class="anime-grid">
-            ${animeList.map(anime => `
-                <div class="anime-card" onclick="goToDetail('${anime.slug}')">
-                    <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
-                         alt="${anime.title}" 
-                         class="anime-poster"
-                         onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
-                    <div class="anime-info">
-                        <div class="anime-title" title="${anime.title}">${anime.title}</div>
-                        <div class="anime-meta">
-                            Ep ${anime.current_episode || 'N/A'}
-                            ${anime.release_day ? ` • ${anime.release_day}` : ''}
-                        </div>
-                        ${anime.release_date ? `<div class="anime-date">Update: ${anime.release_date}</div>` : ''}
-                    </div>
-                </div>
-            `).join('')}
+        <div class="anime-list">
+            ${animeList.map(buildAnimeCard).join('')}
         </div>
     `;
 }

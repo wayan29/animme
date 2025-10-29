@@ -279,11 +279,11 @@
 <body>
     <div class="navbar">
         <div class="navbar-content">
-            <div class="logo" onclick="window.location.href='/v3'">Kuramanime V3</div>
+            <div class="logo" onclick="window.location.href='/v3/home'">Kuramanime V3</div>
             <div class="nav-links">
-                <a href="/v3" class="nav-link">Beranda</a>
-                <a href="/properties-v3.html" class="nav-link active">Properti</a>
-                <a href="/search-v3.html" class="nav-link">Cari</a>
+                <a href="/v3/home" class="nav-link">Beranda</a>
+                <a href="/v3/properties" class="nav-link active">Properti</a>
+                <a href="/v3/search" class="nav-link">Cari</a>
             </div>
         </div>
     </div>
@@ -299,13 +299,13 @@
                 <p>Properti:</p>
                 <select id="chooseGenreEtc" name="genre_etc">
                     <option value="" disabled selected>- pilih -</option>
-                    <option value="/genres-v3.html" title="Semua Genre">Daftar Genre</option>
-                    <option value="/seasons-v3.html" title="Musim">Daftar Musim</option>
-                    <option value="/studios-v3.html" title="Studio">Daftar Studio</option>
-                    <option value="/types-v3.html" title="Tipe">Daftar Tipe</option>
-                    <option value="/qualities-v3.html" title="Kualitas">Daftar Kualitas</option>
-                    <option value="/sources-v3.html" title="Adaptasi">Daftar Adaptasi</option>
-                    <option value="/countries-v3.html" title="Negara">Daftar Negara</option>
+                    <option value="/v3/genres" title="Semua Genre">Daftar Genre</option>
+                    <option value="/v3/seasons" title="Musim">Daftar Musim</option>
+                    <option value="/v3/studios" title="Studio">Daftar Studio</option>
+                    <option value="/v3/types" title="Tipe">Daftar Tipe</option>
+                    <option value="/v3/qualities" title="Kualitas">Daftar Kualitas</option>
+                    <option value="/v3/sources" title="Adaptasi">Daftar Adaptasi</option>
+                    <option value="/v3/countries" title="Negara">Daftar Negara</option>
                 </select>
             </form>
         </div>
@@ -341,7 +341,7 @@
                     title: 'Genre',
                     count: data.genres.total,
                     preview: data.genres.genres.slice(0, 6).map(g => g.name),
-                    url: '/genres-v3.html',
+                    url: '/v3/genres',
                     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                 },
                 {
@@ -349,7 +349,7 @@
                     title: 'Musim',
                     count: data.seasons.total,
                     preview: data.seasons.seasons.slice(0, 6).map(s => s.name),
-                    url: '/seasons-v3.html',
+                    url: '/v3/seasons',
                     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
                 },
                 {
@@ -357,7 +357,7 @@
                     title: 'Studio',
                     count: data.studios.total,
                     preview: data.studios.studios.slice(0, 6).map(s => s.name),
-                    url: '/studios-v3.html',
+                    url: '/v3/studios',
                     gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
                 },
                 {
@@ -365,7 +365,7 @@
                     title: 'Tipe',
                     count: data.types.total,
                     preview: data.types.types.slice(0, 6).map(t => t.name),
-                    url: '/types-v3.html',
+                    url: '/v3/types',
                     gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
                 },
                 {
@@ -373,7 +373,7 @@
                     title: 'Kualitas',
                     count: data.qualities ? data.qualities.total : 0,
                     preview: data.qualities ? data.qualities.qualities.slice(0, 6).map(q => q.name) : [],
-                    url: '/qualities-v3.html',
+                    url: '/v3/qualities',
                     gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
                 },
                 {
@@ -381,7 +381,7 @@
                     title: 'Adaptasi',
                     count: data.sources ? data.sources.total : 0,
                     preview: data.sources ? data.sources.sources.slice(0, 6).map(s => s.name) : [],
-                    url: '/sources-v3.html',
+                    url: '/v3/sources',
                     gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
                 },
                 {
@@ -389,7 +389,7 @@
                     title: 'Negara',
                     count: data.countries ? data.countries.total : 0,
                     preview: data.countries ? data.countries.countries.slice(0, 6).map(c => c.name) : [],
-                    url: '/countries-v3.html',
+                    url: '/v3/countries',
                     gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
                 }
             ];
@@ -424,7 +424,7 @@
             content.innerHTML = `
                 <div class="error">
                     <h2>❌ ${message}</h2>
-                    <p>Silakan coba lagi nanti atau kembali ke <a href="/v3" style="color: #60b0ff;">beranda</a>.</p>
+                    <p>Silakan coba lagi nanti atau kembali ke <a href="/v3/home" style="color: #60b0ff;">beranda</a>.</p>
                 </div>
             `;
         }

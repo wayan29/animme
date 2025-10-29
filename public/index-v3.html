@@ -19,13 +19,14 @@
                 </select>
             </div>
             <div class="nav-menu">
-                <a href="/v3" class="nav-link active">Beranda</a>
-                <a href="/ongoing-v3.html" class="nav-link">Sedang Tayang</a>
-                <a href="/finished-v3.html" class="nav-link">Selesai Tayang</a>
-                <a href="/movie-v3.html" class="nav-link">Film</a>
-                <a href="/schedule-v3.html" class="nav-link">Jadwal Rilis</a>
-                <a href="/properties-v3.html" class="nav-link">Properti</a>
-                <a href="/search-v3.html" class="nav-link">Cari Anime</a>
+                <a href="/v3/home" class="nav-link active">Beranda</a>
+                <a href="/v3/animelist" class="nav-link">Daftar Anime</a>
+                <a href="/v3/ongoing" class="nav-link">Sedang Tayang</a>
+                <a href="/v3/finished" class="nav-link">Selesai Tayang</a>
+                <a href="/v3/movie" class="nav-link">Film</a>
+                <a href="/v3/schedule" class="nav-link">Jadwal Rilis</a>
+                <a href="/v3/properties" class="nav-link">Properti</a>
+                <a href="/v3/search" class="nav-link">Cari Anime</a>
             </div>
             <div class="search-container">
                 <button class="search-icon-mobile" id="searchIconBtn" aria-label="Search">
@@ -55,7 +56,7 @@
         <section class="anime-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 class="section-title" style="margin-bottom: 0;">Sedang Tayang</h3>
-                <a href="/ongoing-v3.html" style="color: #e50914; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.3s ease;">
+                <a href="/v3/ongoing" style="color: #e50914; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.3s ease;">
                     Lihat Semua →
                 </a>
             </div>
@@ -72,14 +73,6 @@
             </div>
         </section>
 
-        <!-- Komentar Terbaru Episode -->
-        <section class="anime-section">
-            <h3 class="section-title">Komentar Terbaru Episode</h3>
-            <div class="comment-list" id="komentarEpisode">
-                <div class="loading">Memuat...</div>
-            </div>
-        </section>
-
         <!-- Selesai Tayang -->
         <section class="anime-section">
             <h3 class="section-title">Selesai Tayang</h3>
@@ -92,6 +85,14 @@
         <section class="anime-section">
             <h3 class="section-title">Film Layar Lebar</h3>
             <div class="anime-row" id="filmLayarLebar">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+
+        <!-- Komentar Terbaru Episode -->
+        <section class="anime-section">
+            <h3 class="section-title">Komentar Terbaru Episode</h3>
+            <div class="comment-list" id="komentarEpisode">
                 <div class="loading">Memuat...</div>
             </div>
         </section>

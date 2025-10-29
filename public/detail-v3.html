@@ -256,7 +256,7 @@
 <body class="server-v3">
     <nav class="navbar">
         <div class="nav-container">
-            <h1 class="logo" onclick="window.location.href='/v3'">AnimMe V3</h1>
+            <h1 class="logo" onclick="window.location.href='/v3/home'">AnimMe V3</h1>
             <div class="server-selector">
                 <select id="serverSelect" class="server-select">
                     <option value="v1">V1 - Otakudesu</option>
@@ -265,8 +265,8 @@
                 </select>
             </div>
             <div class="nav-menu">
-                <a href="/v3" class="nav-link">Beranda</a>
-                <a href="/search-v3.html" class="nav-link">Cari Anime</a>
+                <a href="/v3/home" class="nav-link">Beranda</a>
+                <a href="/v3/search" class="nav-link">Cari Anime</a>
             </div>
         </div>
     </nav>
@@ -293,13 +293,20 @@
         
         // Fallback to path-based params if query params not found
         if (!animeId || !slug) {
-            const pathParts = window.location.pathname.split('/');
-            animeId = pathParts[2];
-            slug = pathParts[3];
+            const segments = window.location.pathname.split('/').filter(Boolean);
+            const detailIndex = segments.indexOf('detail');
+            if (detailIndex !== -1 && segments.length > detailIndex + 2) {
+                animeId = segments[detailIndex + 1];
+                slug = segments.slice(detailIndex + 2).join('/');
+            }
         }
 
         // Load anime detail
         async function loadAnimeDetail() {
+            if (!animeId || !slug) {
+                showError('Parameter detail tidak valid');
+                return;
+            }
             try {
                 const response = await fetch(`/api/v3/kuramanime/anime/${animeId}/${slug}`);
                 const result = await response.json();
@@ -387,7 +394,7 @@
                             const episodeNum = episodeMatch ? episodeMatch[1] : '1';
                             
                             return `
-                                <a href="/episode-v3.html?animeId=${animeId}&slug=${slug}&episode=${episodeNum}" 
+                                <a href="/v3/episode?animeId=${animeId}&slug=${slug}&episode=${episodeNum}" 
                                    class="episode-btn" 
                                    title="${episode.title}">
                                     ${episode.title}
@@ -421,7 +428,7 @@
                     <h2>🎬 Anime Lainnya / Rekomendasi</h2>
                     <div class="recommendations-grid">
                         ${anime.anime_lainnya.map(rec => `
-                            <a href="/detail-v3.html?animeId=${rec.anime_id}&slug=${rec.slug}" class="recommendation-card">
+                            <a href="/v3/detail?animeId=${rec.anime_id}&slug=${rec.slug}" class="recommendation-card">
                                 <img src="${rec.poster}" alt="${rec.title}" class="recommendation-poster">
                                 <div class="recommendation-info">
                                     <div class="recommendation-title">${rec.title}</div>
@@ -443,7 +450,7 @@
             container.innerHTML = `
                 <div class="error">
                     <h2>❌ ${message}</h2>
-                    <p>Silakan coba lagi nanti atau kembali ke <a href="/v3">beranda</a>.</p>
+                    <p>Silakan coba lagi nanti atau kembali ke <a href="/v3/home">beranda</a>.</p>
                 </div>
             `;
         }
@@ -541,11 +548,11 @@
             const server = e.target.value;
             localStorage.setItem('selectedServer', server);
             if (server === 'v3') {
-                window.location.href = '/v3';
+                window.location.href = '/v3/home';
             } else if (server === 'v2') {
-                window.location.href = '/v2';
+                window.location.href = '/v2/home';
             } else {
-                window.location.href = '/';
+                window.location.href = '/v1/home';
             }
         });
 

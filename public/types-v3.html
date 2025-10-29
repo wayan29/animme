@@ -165,17 +165,17 @@
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="logo" onclick="window.location.href='/v3'">🎌 Kuramanime V3</div>
+            <div class="logo" onclick="window.location.href='/v3/home'">🎌 Kuramanime V3</div>
             <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Beranda</a>
-                <a href="/properties-v3.html" style="text-decoration: none; color: #43e97b; font-weight: 600; border-bottom: 2px solid #43e97b;">Properti</a>
-                <a href="/search-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Cari</a>
+                <a href="/v3/home" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Beranda</a>
+                <a href="/v3/properties" style="text-decoration: none; color: #43e97b; font-weight: 600; border-bottom: 2px solid #43e97b;">Properti</a>
+                <a href="/v3/search" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Cari</a>
             </div>
         </div>
     </nav>
 
     <div class="container">
-        <a href="/properties-v3.html" class="back-btn">← Kembali ke Properti</a>
+        <a href="/v3/properties" class="back-btn">← Kembali ke Properti</a>
 
         <div class="header">
             <h1>📺 Daftar Tipe Anime</h1>
@@ -247,7 +247,7 @@
                 const description = typeDescriptions[type.slug.toLowerCase()] || '';
                 
                 return `
-                    <a href="/type-v3.html?type=${type.slug}" class="type-card">
+                    <a href="/v3/type?type=${type.slug}" class="type-card">
                         <div class="type-icon">${icon}</div>
                         <div class="type-name">${type.name}</div>
                         ${description ? `<div class="type-description">${description}</div>` : ''}

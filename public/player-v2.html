@@ -322,7 +322,7 @@
 <body>
     <nav class="navbar scrolled">
         <div class="nav-container">
-            <h1 class="logo" onclick="location.href='/'">AnimMe</h1>
+            <h1 class="logo" onclick="location.href='/v2/home'">AnimMe</h1>
             <div class="server-selector">
                 <select id="serverSelect" class="server-select">
                     <option value="v1">V1 - Otakudesu</option>
@@ -330,7 +330,7 @@
                 </select>
             </div>
             <div class="nav-menu">
-                <a href="/" class="nav-link">Beranda</a>
+                <a href="/v2/home" class="nav-link">Beranda</a>
                 <a href="/ongoing" class="nav-link v1-only">Anime Ongoing</a>
                 <a href="/completed" class="nav-link v1-only">Anime Tamat</a>
                 <a href="/all-anime" class="nav-link">Daftar Anime</a>
@@ -342,7 +342,7 @@
     </nav>
 
     <div class="player-container">
-        <a href="/" id="backToAnime" class="back-link">⬅ Kembali</a>
+        <a href="/v2/home" id="backToAnime" class="back-link">⬅ Kembali</a>
         <div id="playerAlert" class="player-alert"></div>
         <div id="videoWrapper" class="video-wrapper">
             <div class="player-loading">
@@ -374,8 +374,15 @@
             if (serverSelect) {
                 serverSelect.value = 'v2';
                 serverSelect.addEventListener('change', (e) => {
-                    localStorage.setItem('selectedServer', e.target.value);
-                    window.location.href = '/';
+                    const targetServer = e.target.value;
+                    localStorage.setItem('selectedServer', targetServer);
+                    if (targetServer === 'v2') {
+                        window.location.href = '/v2/home';
+                    } else if (targetServer === 'v3') {
+                        window.location.href = '/v3/home';
+                    } else {
+                        window.location.href = '/v1/home';
+                    }
                 });
             }
         });

@@ -40,18 +40,44 @@ async function fetchBatchDownload(batchSlug) {
 
 async function fetchRandomRecommendations(count = 6) {
     try {
-        // Fetch completed anime from API
-        const data = await fetchAPI('/complete-anime/1');
-        
-        if (!data || !data.data || !data.data.completedAnimeData) {
+        const firstPage = await fetchAPI('/complete-anime/1');
+        if (!firstPage || !firstPage.data || !firstPage.data.completedAnimeData) {
             return [];
         }
-        
-        const allAnime = data.data.completedAnimeData;
-        
-        // Shuffle array and pick random items
-        const shuffled = [...allAnime].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, count);
+
+        const pagination = firstPage.data.paginationData || {};
+        const totalPages = Math.min(
+            pagination.last_page || pagination.total_pages || pagination.last_visible_page || 1,
+            64
+        );
+
+        const targetPage = totalPages > 1
+            ? Math.floor(Math.random() * totalPages) + 1
+            : 1;
+
+        let pageData = firstPage;
+        if (targetPage !== 1) {
+            const fetched = await fetchAPI(`/complete-anime/${targetPage}`);
+            if (fetched && fetched.data && fetched.data.completedAnimeData) {
+                pageData = fetched;
+            }
+        }
+
+        const list = (pageData.data && pageData.data.completedAnimeData) ? [...pageData.data.completedAnimeData] : [];
+        const uniqueBySlug = new Map();
+        list.forEach(item => {
+            if (item && item.slug && !uniqueBySlug.has(item.slug)) {
+                uniqueBySlug.set(item.slug, item);
+            }
+        });
+
+        const candidates = Array.from(uniqueBySlug.values());
+        for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+
+        return candidates.slice(0, count);
     } catch (error) {
         console.error('Error fetching recommendations:', error);
         return [];

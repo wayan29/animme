@@ -4,6 +4,17 @@ const crypto = require('crypto');
 
 const BASE_URL = 'https://otakudesu.best';
 
+function normalizeImageUrl(url) {
+    if (!url) return null;
+    if (url.startsWith('//')) {
+        return `https:${url}`;
+    }
+    if (url.startsWith('/')) {
+        return `${BASE_URL}${url}`;
+    }
+    return url;
+}
+
 // Helper untuk generate hash dari URL gambar
 function getImageHash(url) {
     return crypto.createHash('md5').update(url).digest('hex');
@@ -13,9 +24,10 @@ function getImageHash(url) {
 const imageUrlMap = new Map();
 
 function proxyImageUrl(url) {
-    if (!url || !url.startsWith('http')) return url;
-    const hash = getImageHash(url);
-    imageUrlMap.set(hash, url);
+    const normalizedUrl = normalizeImageUrl(url);
+    if (!normalizedUrl || !normalizedUrl.startsWith('http')) return normalizedUrl;
+    const hash = getImageHash(normalizedUrl);
+    imageUrlMap.set(hash, normalizedUrl);
     return `/img/${hash}`;
 }
 
@@ -303,6 +315,7 @@ async function scrapeOngoingAnime(page = 1) {
             const $el = $(el);
             const $thumb = $el.find('.thumb a');
             const $img = $el.find('.thumbz img');
+            const posterUrl = normalizeImageUrl($img.attr('src'));
             
             // Extract episode number - remove "Episode " text and dashicon
             let episodeText = $el.find('.epz').text().trim();
@@ -315,7 +328,8 @@ async function scrapeOngoingAnime(page = 1) {
             const anime = {
                 title: $el.find('.jdlflm').text().trim(),
                 slug: extractSlug($thumb.attr('href')),
-                poster: proxyImageUrl($img.attr('src')),
+                poster: proxyImageUrl(posterUrl),
+                poster_original: posterUrl,
                 current_episode: episodeText,
                 release_day: releaseDayText,
                 release_date: $el.find('.newnime').text().trim()

@@ -367,13 +367,13 @@
         <div class="navbar-content">
             <div class="logo">🎌 AnimMe V3</div>
             <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
-                <a href="/ongoing-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
-                <a href="/finished-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
-                <a href="/movie-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
-                <a href="/schedule-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Jadwal Rilis</a>
-                <a href="/genres-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Genre</a>
-                <a href="/seasons-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Musim</a>
+                <a href="/v3/home" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
+                <a href="/v3/ongoing" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
+                <a href="/v3/finished" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
+                <a href="/v3/movie" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
+                <a href="/v3/schedule" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Jadwal Rilis</a>
+                <a href="/v3/genres" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Genre</a>
+                <a href="/v3/seasons" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Musim</a>
                 <a href="/all-anime" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Daftar Anime</a>
             </div>
         </div>
@@ -516,12 +516,12 @@
                         ` : ''}
                         
                         <div class="buttons">
-                            <a href="/episode-v3.html?animeId=${anime.anime_id}&slug=${anime.slug}&episode=1" 
+                            <a href="/v3/episode?animeId=${anime.anime_id}&slug=${anime.slug}&episode=1" 
                                class="btn btn-watch" 
                                title="Mulai menonton">
                                 ▶ Watch
                             </a>
-                            <a href="/detail-v3.html?animeId=${anime.anime_id}&slug=${anime.slug}" 
+                            <a href="/v3/detail?animeId=${anime.anime_id}&slug=${anime.slug}" 
                                class="btn btn-info" 
                                title="Lihat detail & semua episode">
                                 ℹ Info

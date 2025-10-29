@@ -227,7 +227,7 @@ function goBack() {
     if (document.referrer && document.referrer !== window.location.href) {
         window.history.back();
     } else {
-        window.location.href = '/';
+        window.location.href = '/v2/home';
     }
 }
 

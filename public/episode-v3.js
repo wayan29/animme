@@ -351,7 +351,7 @@ function navigateToEpisode(url) {
     const match = url.match(/\/anime\/(\d+)\/([^\/]+)\/episode\/(\d+)/);
     if (match) {
         const [, animeId, slug, episode] = match;
-        window.location.href = `episode-v3.html?animeId=${animeId}&slug=${slug}&episode=${episode}`;
+        window.location.href = `/v3/episode?animeId=${animeId}&slug=${slug}&episode=${episode}`;
     }
 }
 
@@ -437,7 +437,7 @@ function convertToPlayerUrl(url) {
     const match = url.match(/\/anime\/(\d+)\/([^\/]+)\/episode\/(\d+)/);
     if (match) {
         const [, animeId, slug, episode] = match;
-        return `episode-v3.html?animeId=${animeId}&slug=${slug}&episode=${episode}`;
+        return `/v3/episode?animeId=${animeId}&slug=${slug}&episode=${episode}`;
     }
     return url;
 }

@@ -219,6 +219,57 @@
         font-size: 0.7rem;
     }
     
+    .page-ongoing .completed-header {
+        padding: 90px 0 24px;
+    }
+
+    .page-ongoing .anime-list {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 0 4px;
+    }
+
+    .page-ongoing .anime-info {
+        padding: 16px;
+    }
+    
+    .page-completed .completed-header {
+        padding: 90px 0 24px;
+    }
+
+    .page-completed .anime-list {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 0 4px;
+    }
+
+    .page-completed .anime-info {
+        padding: 16px;
+    }
+
+    .page-all-anime.server-v2 .all-anime-header {
+        padding: 90px 0 24px;
+    }
+
+    .page-all-anime.server-v2 .anime-list {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 0 4px;
+    }
+
+    .page-all-anime.server-v2 .anime-info {
+        padding: 16px;
+    }
+
+    .server-v3 .home-anime-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .server-v3 .home-anime-info {
+        padding: 14px;
+    }
+
     /* Detail Page */
     .detail-container {
         padding: 80px 15px 20px;
@@ -457,6 +508,12 @@
     input[type="text"],
     input[type="search"] {
         font-size: 16px !important; /* Prevents iOS zoom */
+    }
+}
+
+@media (max-width: 360px) {
+    .server-v3 .home-anime-grid {
+        grid-template-columns: 1fr;
     }
 }
 

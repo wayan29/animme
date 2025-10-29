@@ -344,16 +344,26 @@ async function scrapeHome() {
                     const timeAgo = timeMatch ? timeMatch[1].trim() : '';
                     
                     if (title && href) {
+                        const animeId = extractAnimeId(href);
+                        const slug = extractSlug(href);
+                        
                         const item = {
                             title: title,
                             username: username,
                             time_ago: timeAgo,
                             poster: proxyImageUrl(poster),
-                            url: href.startsWith('http') ? href : `${BASE_URL}${href}`
+                            url: href.startsWith('http') ? href : `${BASE_URL}${href}`,
+                            anime_id: animeId,
+                            slug: slug
                         };
                         
                         if (isEpisode && episodeInfo) {
                             item.episode_info = episodeInfo;
+                            // Extract episode number for internal linking
+                            const episodeNumMatch = episodeInfo.match(/Episode (\d+)/);
+                            if (episodeNumMatch) {
+                                item.episode_num = episodeNumMatch[1];
+                            }
                         }
                         
                         targetArray.push(item);
@@ -810,6 +820,114 @@ async function scrapeSearch(query, page = 1, orderBy = 'ascending') {
         };
     } catch (error) {
         console.error('Kuramanime scrapeSearch error:', error.message);
+        throw error;
+    }
+}
+
+// Scrape general anime list
+async function scrapeAnimeList(page = 1, orderBy = null) {
+    try {
+        let url = `${BASE_URL}/anime`;
+        const params = [];
+        
+        if (orderBy) {
+            params.push(`order_by=${orderBy}`);
+        }
+        if (page > 1) {
+            params.push(`page=${page}`);
+        }
+        
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+        
+        const { data } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        const $ = cheerio.load(data);
+        const animeList = [];
+        
+        $('.product__item').each((i, el) => {
+            const $el = $(el);
+            const $link = $el.find('a').first();
+            const href = $link.attr('href');
+            const title = $el.find('.product__item__text h5 a').text().trim();
+            const poster = $el.find('.product__item__pic').attr('data-setbg');
+            
+            // Extract episode info
+            const episodeText = $el.find('.ep span').text().trim();
+            const episodeMatch = episodeText.match(/Ep\s+(\d+)\s*\/\s*(.+)/);
+            const currentEpisode = episodeMatch ? episodeMatch[1] : null;
+            const totalEpisodes = episodeMatch ? episodeMatch[2] : null;
+            
+            // Check if trending (has fire icon)
+            const isTrending = $el.find('.pin .fa-fire').length > 0;
+            
+            // Extract type and quality tags
+            const tags = [];
+            $el.find('.product__item__text ul a').each((j, tag) => {
+                const tagText = $(tag).text().trim();
+                const tagHref = $(tag).attr('href');
+                if (tagText && tagHref) {
+                    tags.push({
+                        label: tagText,
+                        url: tagHref
+                    });
+                }
+            });
+            
+            if (title && href) {
+                const animeId = extractAnimeId(href);
+                const slug = extractSlug(href);
+                
+                animeList.push({
+                    anime_id: animeId,
+                    slug: slug,
+                    title: title,
+                    poster: proxyImageUrl(poster),
+                    current_episode: currentEpisode,
+                    total_episodes: totalEpisodes,
+                    episode_text: episodeText,
+                    is_trending: isTrending,
+                    tags: tags,
+                    latest_episode_url: href.startsWith('http') ? href : `${BASE_URL}${href}`,
+                    anime_url: `${BASE_URL}/anime/${animeId}/${slug}`
+                });
+            }
+        });
+        
+        // Check for pagination
+        const $pagination = $('.product__pagination');
+        
+        // Get total pages if available
+        let totalPages = null;
+        $pagination.find('a').each((i, el) => {
+            const pageNum = parseInt($(el).text());
+            if (!isNaN(pageNum) && (totalPages === null || pageNum > totalPages)) {
+                totalPages = pageNum;
+            }
+        });
+        
+        // Determine has_next and has_prev based on current page and total pages
+        const hasNext = totalPages ? page < totalPages : false;
+        const hasPrev = page > 1;
+        
+        return {
+            anime_list: animeList,
+            pagination: {
+                current_page: page,
+                has_next: hasNext,
+                has_prev: hasPrev,
+                total_pages: totalPages
+            },
+            total_anime: animeList.length,
+            order_by: orderBy || 'default'
+        };
+    } catch (error) {
+        console.error('Kuramanime scrapeAnimeList error:', error.message);
         throw error;
     }
 }
@@ -2305,6 +2423,7 @@ module.exports = {
     scrapeDetail,
     scrapeEpisode,
     scrapeSearch,
+    scrapeAnimeList,
     scrapeOngoing,
     scrapeFinished,
     scrapeMovie,

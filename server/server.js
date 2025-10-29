@@ -782,6 +782,19 @@ app.get('/api/v3/kuramanime/search', async (req, res) => {
     }
 });
 
+app.get('/api/v3/kuramanime/anime-list', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || null;
+        console.log(`[V3] Scraping kuramanime anime list (page ${page}, order: ${orderBy || 'default'})`);
+        const data = await kuramanimeScraper.scrapeAnimeList(page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /anime-list:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 app.get('/api/v3/kuramanime/ongoing', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -1067,8 +1080,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+// Route untuk V1 Otakudesu home alias
+app.get('/v1/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Route untuk V2 Samehadaku home alias
+app.get('/v2/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
 // Route untuk V3 Kuramanime home
 app.get('/v3', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index-v3.html'));
+});
+
+app.get('/v3/home', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index-v3.html'));
 });
 
@@ -1099,34 +1126,34 @@ app.get('/player-v2/:slug([a-zA-Z0-9_-]+)', (req, res) => {
 });
 
 // Route untuk V3 Kuramanime detail pages
-app.get('/detail-v3/:animeId/:slug', (req, res) => {
+app.get('/v3/detail/:animeId/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/detail-v3.html'));
 });
 
-app.get('/v3/:animeId/:slug', (req, res) => {
+app.get('/v3/:animeId(\\d+)/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/detail-v3.html'));
 });
 
 // Route untuk V3 Kuramanime search pages
-app.get('/search-v3', (req, res) => {
+app.get('/v3/search', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/search-v3.html'));
 });
 
 // Route untuk V3 Kuramanime season pages
-app.get('/seasons-v3', (req, res) => {
+app.get('/v3/seasons', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/seasons-v3.html'));
 });
 
-app.get('/season-v3/:slug', (req, res) => {
+app.get('/v3/season/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/season-v3.html'));
 });
 
 // Route untuk V3 Kuramanime genre pages
-app.get('/genres-v3', (req, res) => {
+app.get('/v3/genres', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/genres-v3.html'));
 });
 
-app.get('/genre-v3/:slug', (req, res) => {
+app.get('/v3/genre/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/genre-v3.html'));
 });
 
@@ -1159,6 +1186,31 @@ createRoutes('ongoing', 'ongoing');
 createRoutes('genres', 'genres');
 createRoutes('all-anime', 'all-anime');
 
+// V3 static pages without .html suffix
+const v3StaticRoutes = {
+    'v3/animelist': 'anime-list-v3',
+    'v3/ongoing': 'ongoing-v3',
+    'v3/finished': 'finished-v3',
+    'v3/movie': 'movie-v3',
+    'v3/schedule': 'schedule-v3',
+    'v3/properties': 'properties-v3',
+    'v3/studios': 'studios-v3',
+    'v3/studio': 'studio-v3',
+    'v3/types': 'types-v3',
+    'v3/type': 'type-v3',
+    'v3/qualities': 'qualities-v3',
+    'v3/quality': 'quality-v3',
+    'v3/sources': 'sources-v3',
+    'v3/source': 'source-v3',
+    'v3/countries': 'countries-v3',
+    'v3/country': 'country-v3',
+    'v3/genre': 'genre-v3',
+    'v3/episode': 'episode-v3',
+    'v3/detail': 'detail-v3'
+};
+
+Object.entries(v3StaticRoutes).forEach(([route, file]) => createRoutes(route, file));
+
 // Route for anime-terbaru page (V2 only)
 app.get('/anime-terbaru', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/anime-list.html'));
@@ -1169,7 +1221,7 @@ app.get('/anime-terbaru.html', (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).send('<h1>404 - Halaman tidak ditemukan</h1><a href="/">Kembali ke Beranda</a>');
+    res.status(404).send('<h1>404 - Halaman tidak ditemukan</h1><a href="/v1/home">Kembali ke Beranda</a>');
 });
 
 app.listen(PORT, '0.0.0.0', () => {

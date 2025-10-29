@@ -333,14 +333,14 @@
     <!-- Navigation Bar -->
     <nav style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); padding: 15px 0; margin-bottom: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);">
         <div style="max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
-            <a href="/v3" style="text-decoration: none; color: #ff6b9d; font-size: 1.5rem; font-weight: bold;">AnimMe V3</a>
+            <a href="/v3/home" style="text-decoration: none; color: #ff6b9d; font-size: 1.5rem; font-weight: bold;">AnimMe V3</a>
             <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
-                <a href="/ongoing-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
-                <a href="/finished-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
-                <a href="/movie-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
-                <a href="/schedule-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Jadwal Rilis</a>
-                <a href="/genres-v3.html" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Genre</a>
+                <a href="/v3/home" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
+                <a href="/v3/ongoing" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
+                <a href="/v3/finished" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
+                <a href="/v3/movie" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
+                <a href="/v3/schedule" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Jadwal Rilis</a>
+                <a href="/v3/genres" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Genre</a>
                 <a href="/all-anime" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Daftar Anime</a>
             </div>
         </div>
@@ -454,10 +454,10 @@
                             ${anime.tags.map(tag => `<span class="tag">${tag.label}</span>`).join('')}
                         </div>
                         <div class="anime-actions">
-                            <a href="/episode-v3.html?animeId=${anime.anime_id}&slug=${anime.slug}&episode=1" class="btn btn-watch" title="Mulai dari Episode 1">
+                            <a href="/v3/episode?animeId=${anime.anime_id}&slug=${anime.slug}&episode=1" class="btn btn-watch" title="Mulai dari Episode 1">
                                 ▶ Start
                             </a>
-                            <a href="/detail-v3.html?animeId=${anime.anime_id}&slug=${anime.slug}" class="btn btn-detail" title="Lihat detail & semua episode">
+                            <a href="/v3/detail?animeId=${anime.anime_id}&slug=${anime.slug}" class="btn btn-detail" title="Lihat detail & semua episode">
                                 ℹ Info
                             </a>
                         </div>

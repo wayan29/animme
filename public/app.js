@@ -1,5 +1,19 @@
 // Server configuration
 let currentServer = localStorage.getItem('selectedServer') || 'v1';
+
+const pathname = window.location.pathname;
+if (pathname.startsWith('/v3')) {
+    currentServer = 'v3';
+} else if (pathname.startsWith('/v2')) {
+    currentServer = 'v2';
+} else if (pathname.startsWith('/v1')) {
+    currentServer = 'v1';
+} else if (pathname === '/' || pathname === '') {
+    currentServer = currentServer;
+}
+
+localStorage.setItem('selectedServer', currentServer);
+
 let API_BASE = currentServer === 'v3' ? '/api/v3/kuramanime' : (currentServer === 'v2' ? '/api/v2' : '/api');
 
 let homeData = null;
@@ -35,26 +49,18 @@ function applyServerClass(server) {
 function changeServer(server) {
     currentServer = server;
     localStorage.setItem('selectedServer', server);
-    
-    // Redirect to appropriate page
-    if (server === 'v3') {
-        window.location.href = '/v3';
-    } else {
-        API_BASE = server === 'v2' ? '/api/v2' : '/api';
-        
-        // Apply server class to body for menu visibility
-        applyServerClass(server);
-        
-        // Reload page data with new server
-        if (window.location.pathname === '/' || window.location.pathname === '/v3') {
-            if (server !== 'v3') {
-                window.location.href = '/';
-            }
-        }
-        
-        // Show notification
-        showServerNotification(server);
+
+    const targetPath = server === 'v3' ? '/v3/home' : (server === 'v2' ? '/v2/home' : '/v1/home');
+
+    if (window.location.pathname !== targetPath) {
+        window.location.href = targetPath;
+        return;
     }
+
+    API_BASE = server === 'v3' ? '/api/v3/kuramanime' : (server === 'v2' ? '/api/v2' : '/api');
+    applyServerClass(server);
+    showServerNotification(server);
+    loadHomePage();
 }
 
 function showServerNotification(server) {
@@ -259,11 +265,9 @@ function displayAnimeList(containerId, animeList, type = 'ongoing') {
                     episodeInfo = `#${anime.rank} • ${episodeInfo}`;
                 }
             } else if (type === 'movie' && anime.genres) {
-                // Movie format - show genres and release date
-                episodeInfo = anime.genres.length > 0 ? anime.genres.join(', ') : 'Movie';
-                if (anime.release_date) {
-                    episodeInfo = `🎬 ${anime.release_date}`;
-                }
+                const releaseInfo = anime.release_date ? `🎬 ${anime.release_date}` : 'Movie';
+                const genresInfo = anime.genres.length > 0 ? anime.genres.slice(0, 2).join(', ') : '';
+                episodeInfo = genresInfo ? `${releaseInfo} • ${genresInfo}` : releaseInfo;
             } else {
                 // Recent anime format
                 episodeInfo = `Ep ${anime.current_episode || 'N/A'}`;

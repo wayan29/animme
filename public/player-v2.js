@@ -80,7 +80,7 @@ function getEpisodeSlugFromURL() {
         if (match) {
             const [, animeId, slug, episode] = match;
             // Redirect to V3 player
-            const v3Url = `/episode-v3.html?animeId=${animeId}&slug=${slug}&episode=${episode}`;
+            const v3Url = `/v3/episode?animeId=${animeId}&slug=${slug}&episode=${episode}`;
             window.location.href = v3Url;
             return null; // Will redirect, so return null
         }

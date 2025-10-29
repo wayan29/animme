@@ -153,19 +153,19 @@ function displayAllAnimeV2(animeData) {
     }
     
     container.innerHTML = `
-        <div class="anime-grid">
+        <div class="anime-list">
             ${animeData.map(anime => `
-                <div class="anime-card" onclick="goToDetail('${anime.slug}', 'v2')">
-                    <div class="anime-poster">
-                        <img src="${anime.poster}" alt="${anime.title}" loading="lazy">
+                <div class="anime-card anime-list-item" onclick="goToDetail('${anime.slug}', 'v2')">
+                    <div class="anime-thumb">
+                        <img src="${anime.poster}" alt="${anime.title}" loading="lazy" class="anime-poster">
                         <div class="anime-overlay">
                             <div class="anime-type">${anime.type || 'N/A'}</div>
                             ${anime.rating ? `<div class="anime-rating">⭐ ${anime.rating}</div>` : ''}
                         </div>
                     </div>
                     <div class="anime-info">
-                        <h3 class="anime-title">${anime.title}</h3>
-                        <p class="anime-status">${anime.status || 'Unknown'}</p>
+                        <div class="anime-title" title="${anime.title}">${anime.title}</div>
+                        <div class="anime-meta">${anime.status || 'Unknown'}</div>
                         ${anime.genres && anime.genres.length > 0 ? `
                             <div class="anime-genres">
                                 ${anime.genres.slice(0, 3).map(g => `<span class="genre-tag">${g.name}</span>`).join('')}

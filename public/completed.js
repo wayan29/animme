@@ -26,17 +26,19 @@ function displayCompletedAnime(animeList) {
     }
     
     container.innerHTML = `
-        <div class="anime-grid">
+        <div class="anime-list">
             ${animeList.map(anime => `
-                <div class="anime-card" onclick="goToDetail('${anime.slug}')">
-                    <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
-                         alt="${anime.title}" 
-                         class="anime-poster"
-                         onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
+                <div class="anime-card anime-list-item" onclick="goToDetail('${anime.slug}')">
+                    <div class="anime-thumb">
+                        <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
+                             alt="${anime.title}" 
+                             class="anime-poster"
+                             onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
+                    </div>
                     <div class="anime-info">
                         <div class="anime-title" title="${anime.title}">${anime.title}</div>
                         <div class="anime-meta">
-                            ${anime.episode_count || 'N/A'}
+                            ${anime.episode_count || 'N/A'} Episode
                             ${anime.rating ? ` • ⭐ ${anime.rating}` : ''}
                         </div>
                         ${anime.release_date ? `<div class="anime-date">Tamat: ${anime.release_date}</div>` : ''}
