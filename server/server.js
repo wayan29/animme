@@ -976,6 +976,21 @@ app.get('/api/v3/kuramanime/sources', async (req, res) => {
     }
 });
 
+// V3 Kuramanime Source Detail (Anime by Source/Adaptasi)
+app.get('/api/v3/kuramanime/source/:sourceSlug', async (req, res) => {
+    try {
+        const { sourceSlug } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || 'ascending';
+        console.log(`[V3] Fetching anime for source: ${sourceSlug} (page ${page})`);
+        const data = await kuramanimeScraper.scrapeSource(sourceSlug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error(`[V3] API Error /source/${req.params.sourceSlug}:`, error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // V3 Kuramanime Country List
 app.get('/api/v3/kuramanime/countries', async (req, res) => {
     try {
