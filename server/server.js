@@ -1003,6 +1003,21 @@ app.get('/api/v3/kuramanime/countries', async (req, res) => {
     }
 });
 
+// V3 Kuramanime Country Detail (Anime by Country)
+app.get('/api/v3/kuramanime/country/:countrySlug', async (req, res) => {
+    try {
+        const { countrySlug } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || 'ascending';
+        console.log(`[V3] Fetching anime for country: ${countrySlug} (page ${page})`);
+        const data = await kuramanimeScraper.scrapeCountry(countrySlug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error(`[V3] API Error /country/${req.params.countrySlug}:`, error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // V3 Kuramanime Properties Overview (All)
 app.get('/api/v3/kuramanime/properties', async (req, res) => {
     try {

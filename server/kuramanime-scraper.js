@@ -1563,6 +1563,97 @@ async function scrapeSourceList() {
     }
 }
 
+// Scrape anime by country
+async function scrapeCountry(countrySlug, page = 1, orderBy = 'ascending') {
+    try {
+        // Kuramanime requires 'name' parameter for country pages
+        const countryName = countrySlug.toUpperCase();
+        const url = `${BASE_URL}/properties/country/${countrySlug}?name=${countryName}&order_by=${orderBy}&page=${page}`;
+        const { data } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        const $ = cheerio.load(data);
+        const animeList = [];
+        
+        $('.product__item').each((i, el) => {
+            const $el = $(el);
+            const $link = $el.find('a').first();
+            const href = $link.attr('href');
+            const title = $el.find('.product__item__text h5 a').text().trim();
+            const poster = $el.find('.product__item__pic').attr('data-setbg');
+            
+            // Extract rating
+            const rating = $el.find('.ep .fa-star').next('span').text().trim();
+            
+            // Extract status
+            const status = $el.find('.d-none span').text().trim() || 'ONGOING';
+            
+            // Extract type and quality tags
+            const tags = [];
+            $el.find('.product__item__text ul a').each((j, tag) => {
+                const tagText = $(tag).text().trim();
+                const tagHref = $(tag).attr('href');
+                if (tagText && tagHref) {
+                    tags.push({
+                        label: tagText,
+                        url: tagHref
+                    });
+                }
+            });
+            
+            if (title && href) {
+                const animeId = extractAnimeId(href);
+                const slug = extractSlug(href);
+                
+                animeList.push({
+                    anime_id: animeId,
+                    slug: slug,
+                    title: title,
+                    poster: proxyImageUrl(poster),
+                    rating: rating || 'N/A',
+                    status: status,
+                    tags: tags,
+                    anime_url: `${BASE_URL}/anime/${animeId}/${slug}`
+                });
+            }
+        });
+        
+        // Check for pagination
+        const $pagination = $('.product__pagination');
+        
+        // Get total pages if available
+        let totalPages = null;
+        $pagination.find('a').each((i, el) => {
+            const pageNum = parseInt($(el).text());
+            if (!isNaN(pageNum) && (totalPages === null || pageNum > totalPages)) {
+                totalPages = pageNum;
+            }
+        });
+        
+        // Determine has_next and has_prev
+        const hasNext = totalPages ? page < totalPages : false;
+        const hasPrev = page > 1;
+        
+        return {
+            anime_list: animeList,
+            country: countrySlug,
+            pagination: {
+                current_page: page,
+                has_next: hasNext,
+                has_prev: hasPrev,
+                total_pages: totalPages
+            },
+            total: animeList.length
+        };
+    } catch (error) {
+        console.error('Kuramanime scrapeCountry error:', error.message);
+        throw error;
+    }
+}
+
 // Scrape country list
 async function scrapeCountryList() {
     try {
@@ -1586,7 +1677,7 @@ async function scrapeCountryList() {
             if (href && name) {
                 const countryMatch = href.match(/\/properties\/country\/([^?]+)/);
                 if (countryMatch) {
-                    const countrySlug = countryMatch[1];
+                    const countrySlug = countryMatch[1].toLowerCase(); // Normalize to lowercase
                     countries.push({
                         name: name,
                         slug: countrySlug,
@@ -2231,6 +2322,7 @@ module.exports = {
     scrapeSourceList,
     scrapeSource,
     scrapeCountryList,
+    scrapeCountry,
     scrapeBatch,
     getImageUrlMap
 };
