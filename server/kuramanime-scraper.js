@@ -1275,7 +1275,7 @@ async function scrapeTypeList() {
             if (href && name) {
                 const typeMatch = href.match(/\/properties\/type\/([^?]+)/);
                 if (typeMatch) {
-                    const typeSlug = typeMatch[1];
+                    const typeSlug = typeMatch[1].toLowerCase(); // Normalize to lowercase
                     types.push({
                         name: name,
                         slug: typeSlug,
