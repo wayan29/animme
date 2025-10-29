@@ -386,16 +386,28 @@
     <script>
         let currentPage = 1;
         let currentOrder = 'ascending';
-        let currentGenre = '';
+        let currentStudio = '';
         let studioName = '';
         
         // Get URL params
         const urlParams = new URLSearchParams(window.location.search);
-        currentGenre = urlParams.get('genre') || 'action';
-        studioName = urlParams.get('name') || currentGenre;
+        currentStudio = urlParams.get('studio');
+        
+        if (!currentStudio) {
+            document.getElementById('errorMessage').textContent = 'Studio tidak ditemukan dalam URL';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('loadingIndicator').style.display = 'none';
+            return;
+        }
+        
+        // Format studio name for display
+        studioName = currentStudio.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+        
         let paginationData = null;
 
-        async function loadGenre(page = 1, orderBy = 'ascending') {
+        async function loadStudio(page = 1, orderBy = 'ascending') {
             try {
                 // Show loading
                 document.getElementById('loadingIndicator').style.display = 'block';
@@ -404,9 +416,9 @@
                 document.getElementById('pagination').style.display = 'none';
 
                 // Update title
-                document.getElementById('studioTitle').textContent = `🎭 Studio: ${studioName}`;
+                document.getElementById('studioTitle').textContent = `🎬 Studio: ${studioName}`;
                 
-                const response = await fetch(`/api/v3/kuramanime/studio/${currentGenre}?page=${page}&order_by=${orderBy}`);
+                const response = await fetch(`/api/v3/kuramanime/studio/${currentStudio}?page=${page}&order_by=${orderBy}`);
                 const data = await response.json();
 
                 if (data.status === 'success') {
@@ -416,7 +428,7 @@
 
                     renderAnimeGrid(data.data.anime_list);
                     renderPagination();
-                    updateAnimeCount(data.data.total_anime);
+                    updateAnimeCount(data.data.total);
                     updateHeaderStats();
 
                     // Hide loading
@@ -427,7 +439,7 @@
                     throw new Error(data.message || 'Failed to load data');
                 }
             } catch (error) {
-                console.error('Error loading ongoing anime:', error);
+                console.error('Error loading studio anime:', error);
                 document.getElementById('loadingIndicator').style.display = 'none';
                 document.getElementById('errorMessage').textContent = 'Failed to load anime: ' + error.message;
                 document.getElementById('errorMessage').style.display = 'block';
@@ -494,23 +506,23 @@
 
         function loadPrevPage() {
             if (paginationData.has_prev) {
-                loadGenre(currentPage - 1, currentOrder);
+                loadStudio(currentPage - 1, currentOrder);
             }
         }
 
         function loadNextPage() {
             if (paginationData.has_next) {
-                loadGenre(currentPage + 1, currentOrder);
+                loadStudio(currentPage + 1, currentOrder);
             }
         }
 
         // Order by change handler
         document.getElementById('orderBy').addEventListener('change', (e) => {
-            loadGenre(1, e.target.value);
+            loadStudio(1, e.target.value);
         });
 
         // Load initial page
-        loadGenre(1, 'ascending');
+        loadStudio(1, 'ascending');
     </script>
 </body>
 </html>
