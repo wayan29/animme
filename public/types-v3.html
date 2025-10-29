@@ -247,7 +247,7 @@
                 const description = typeDescriptions[type.slug.toLowerCase()] || '';
                 
                 return `
-                    <a href="${type.url}" class="type-card">
+                    <a href="/type-v3.html?type=${type.slug}" class="type-card">
                         <div class="type-icon">${icon}</div>
                         <div class="type-name">${type.name}</div>
                         ${description ? `<div class="type-description">${description}</div>` : ''}

@@ -922,6 +922,21 @@ app.get('/api/v3/kuramanime/types', async (req, res) => {
     }
 });
 
+// V3 Kuramanime Type Detail (Anime by Type)
+app.get('/api/v3/kuramanime/type/:typeSlug', async (req, res) => {
+    try {
+        const { typeSlug } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || 'ascending';
+        console.log(`[V3] Fetching anime for type: ${typeSlug} (page ${page})`);
+        const data = await kuramanimeScraper.scrapeType(typeSlug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error(`[V3] API Error /type/${req.params.typeSlug}:`, error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // V3 Kuramanime Quality List
 app.get('/api/v3/kuramanime/qualities', async (req, res) => {
     try {
