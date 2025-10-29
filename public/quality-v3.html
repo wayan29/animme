@@ -392,7 +392,7 @@
         
         // Get URL params
         const urlParams = new URLSearchParams(window.location.search);
-        currentQuality = urlParams.get('type');
+        currentQuality = urlParams.get('quality');
         
         if (!currentQuality) {
             document.addEventListener('DOMContentLoaded', function() {
@@ -401,10 +401,8 @@
                 document.getElementById('loadingIndicator').style.display = 'none';
             });
         } else {
-            // Format studio name for display
-            qualityName = currentQuality.split('-').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
+            // Format quality name for display (uppercase)
+            qualityName = currentQuality.toUpperCase();
         }
 
         async function loadQuality(page = 1, orderBy = 'ascending') {
