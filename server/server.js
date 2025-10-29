@@ -4,11 +4,20 @@ const crypto = require('crypto');
 const fs = require('fs').promises;
 const axios = require('axios');
 const cheerio = require('cheerio');
+const cors = require('cors');
 const scraper = require('./scraper');
 const samehadakuScraper = require('./samehadaku-scraper');
+const kuramanimeScraper = require('./kuramanime-scraper');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Enable CORS for public API access
+app.use(cors({
+    origin: '*', // Allow all origins (can be restricted to specific domains)
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 const CACHE_DIR = path.join(__dirname, '../cache/images');
 
 const DEFAULT_REQUEST_HEADERS = {
@@ -246,11 +255,12 @@ app.get('/img/:hash', async (req, res) => {
         }
         
         // Not cached - need original URL to download
-        // Check both scrapers for image URL
+        // Check all scrapers for image URL
         const imageUrlMapV1 = scraper.getImageUrlMap();
         const imageUrlMapV2 = samehadakuScraper.getImageUrlMap();
+        const imageUrlMapV3 = kuramanimeScraper.getImageUrlMap();
         
-        let originalUrl = imageUrlMapV1.get(hash) || imageUrlMapV2.get(hash);
+        let originalUrl = imageUrlMapV1.get(hash) || imageUrlMapV2.get(hash) || imageUrlMapV3.get(hash);
         
         if (!originalUrl) {
             return res.status(404).send('Image not found and no URL mapping');
@@ -543,6 +553,38 @@ app.get('/api/v2/anime/:slug', async (req, res) => {
     }
 });
 
+app.get('/api/v2/player-stream', async (req, res) => {
+    try {
+        const postId = req.query.post || req.query.postId;
+        const nume = req.query.nume || '1';
+        const type = req.query.type || 'schtml';
+        
+        if (!postId) {
+            return res.status(400).json({ status: 'error', message: 'Parameter post wajib diisi' });
+        }
+        
+        console.log(`[V2] Fetching Samehadaku player iframe post=${postId}, nume=${nume}, type=${type}`);
+        const iframeSrc = await samehadakuScraper.fetchAjaxPlayerIframe({ post: postId, nume, type });
+        
+        if (!iframeSrc) {
+            return res.status(404).json({ status: 'error', message: 'Stream tidak ditemukan' });
+        }
+        
+        res.json({
+            status: 'success',
+            data: {
+                stream_url: iframeSrc,
+                post_id: postId,
+                nume,
+                type
+            }
+        });
+    } catch (error) {
+        console.error('[V2] API Error /player-stream:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 app.get('/api/v2/search/:keyword', async (req, res) => {
     try {
         const keyword = req.params.keyword;
@@ -641,6 +683,26 @@ app.get('/api/v2/terbaru/:page?', async (req, res) => {
     }
 });
 
+app.get('/api/v2/all-anime', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const filters = {
+            title: req.query.title || '',
+            status: req.query.status || '',
+            type: req.query.type || '',
+            order: req.query.order || 'title',
+            genre: req.query.genre ? (Array.isArray(req.query.genre) ? req.query.genre : [req.query.genre]) : []
+        };
+        
+        console.log(`[V2] Scraping samehadaku all anime page ${page} with filters:`, filters);
+        const data = await samehadakuScraper.scrapeAllAnime(filters, page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V2] API Error /all-anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 app.get('/api/v2/schedule', async (req, res) => {
     try {
         console.log('[V2] Scraping samehadaku schedule...');
@@ -664,9 +726,171 @@ app.get('/api/v2/episode/:slug', async (req, res) => {
     }
 });
 
+// ==================== API V3 - KURAMANIME ====================
+
+app.get('/api/v3/kuramanime/home', async (req, res) => {
+    try {
+        console.log('[V3] Scraping kuramanime homepage...');
+        const data = await kuramanimeScraper.scrapeHome();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /home:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/anime/:animeId/:slug', async (req, res) => {
+    try {
+        const { animeId, slug } = req.params;
+        console.log(`[V3] Scraping kuramanime anime detail: ${animeId}/${slug}`);
+        const data = await kuramanimeScraper.scrapeDetail(animeId, slug);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/episode/:animeId/:slug/:episodeNum', async (req, res) => {
+    try {
+        const { animeId, slug, episodeNum } = req.params;
+        console.log(`[V3] Scraping kuramanime episode: ${animeId}/${slug}/${episodeNum}`);
+        const data = await kuramanimeScraper.scrapeEpisode(animeId, slug, episodeNum);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /episode:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/search', async (req, res) => {
+    try {
+        const query = req.query.q || req.query.query || req.query.search;
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'ascending';
+        
+        if (!query) {
+            return res.status(400).json({ status: 'error', message: 'Query parameter is required' });
+        }
+        
+        console.log(`[V3] Searching kuramanime for: "${query}" (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeSearch(query, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /search:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/ongoing', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'updated';
+        console.log(`[V3] Scraping kuramanime ongoing anime (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeOngoing(page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /ongoing:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/finished', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'updated';
+        console.log(`[V3] Scraping kuramanime finished anime (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeFinished(page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /finished:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/movie', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'updated';
+        console.log(`[V3] Scraping kuramanime movie anime (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeMovie(page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /movie:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/schedule', async (req, res) => {
+    try {
+        const day = req.query.day || req.query.scheduled_day || 'all';
+        console.log(`[V3] Scraping kuramanime schedule (day: ${day})`);
+        const data = await kuramanimeScraper.scrapeSchedule(day);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /schedule:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/genres', async (req, res) => {
+    try {
+        console.log('[V3] Fetching kuramanime genre list');
+        const data = await kuramanimeScraper.scrapeGenreList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /genres:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/genre/:slug', async (req, res) => {
+    try {
+        const genreSlug = req.params.slug;
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'ascending';
+        console.log(`[V3] Scraping kuramanime genre: ${genreSlug} (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeGenre(genreSlug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /genre:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/seasons', async (req, res) => {
+    try {
+        console.log('[V3] Fetching kuramanime season list');
+        const data = await kuramanimeScraper.scrapeSeasonList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /seasons:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+app.get('/api/v3/kuramanime/season/:slug', async (req, res) => {
+    try {
+        const seasonSlug = req.params.slug;
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'ascending';
+        console.log(`[V3] Scraping kuramanime season: ${seasonSlug} (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeSeason(seasonSlug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /season:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // Route untuk halaman utama
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Route untuk V3 Kuramanime home
+app.get('/v3', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index-v3.html'));
 });
 
 // Clean URL routes with path parameters
@@ -676,8 +900,55 @@ app.get('/detail/:slug([^.]+)', (req, res) => {
 });
 
 // Route untuk V2 detail pages
-app.get('/detail-v2/:slug([^.]+)', (req, res) => {
+app.get('/detail-v2/:slug([a-zA-Z0-9_-]+)', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/detail-v2.html'));
+});
+
+// Route untuk V2 search pages
+app.get('/search-v2/:keyword([a-zA-Z0-9_-]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/search-v2.html'));
+});
+
+// Route untuk V2 genre pages
+app.get('/genre-v2/:slug([a-zA-Z0-9_-]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/genre-v2.html'));
+});
+
+// Route pour V2 player pages
+app.get('/player-v2/:slug([a-zA-Z0-9_-]+)', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/player-v2.html'));
+});
+
+// Route untuk V3 Kuramanime detail pages
+app.get('/detail-v3/:animeId/:slug', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/detail-v3.html'));
+});
+
+app.get('/v3/:animeId/:slug', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/detail-v3.html'));
+});
+
+// Route untuk V3 Kuramanime search pages
+app.get('/search-v3', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/search-v3.html'));
+});
+
+// Route untuk V3 Kuramanime season pages
+app.get('/seasons-v3', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/seasons-v3.html'));
+});
+
+app.get('/season-v3/:slug', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/season-v3.html'));
+});
+
+// Route untuk V3 Kuramanime genre pages
+app.get('/genres-v3', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/genres-v3.html'));
+});
+
+app.get('/genre-v3/:slug', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/genre-v3.html'));
 });
 
 app.get('/player/:episode([^.]+)', (req, res) => {
@@ -722,10 +993,11 @@ app.use((req, res) => {
     res.status(404).send('<h1>404 - Halaman tidak ditemukan</h1><a href="/">Kembali ke Beranda</a>');
 });
 
-app.listen(PORT, () => {
-    console.log(`\n🚀 AnimMe Server berjalan di http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n🚀 AnimMe Server berjalan di http://0.0.0.0:${PORT}`);
     console.log(`📺 Multi-Server Support:`);
     console.log(`   ├─ V1 (Otakudesu): /api/...`);
-    console.log(`   └─ V2 (Samehadaku): /api/v2/...`);
-    console.log(`🌐 Buka browser dan akses: http://localhost:${PORT}\n`);
+    console.log(`   ├─ V2 (Samehadaku): /api/v2/...`);
+    console.log(`   └─ V3 (Kuramanime): /api/v3/kuramanime/...`);
+    console.log(`🌐 Buka browser dan akses: http://167.253.159.235:${PORT}\n`);
 });

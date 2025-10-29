@@ -1,6 +1,6 @@
 // Server configuration
 let currentServer = localStorage.getItem('selectedServer') || 'v1';
-let API_BASE = currentServer === 'v2' ? '/api/v2' : '/api';
+let API_BASE = currentServer === 'v3' ? '/api/v3/kuramanime' : (currentServer === 'v2' ? '/api/v2' : '/api');
 
 let homeData = null;
 
@@ -20,10 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function applyServerClass(server) {
     // Remove all server classes
-    document.body.classList.remove('server-v1', 'server-v2');
+    document.body.classList.remove('server-v1', 'server-v2', 'server-v3');
     
     // Add current server class
-    if (server === 'v2') {
+    if (server === 'v3') {
+        document.body.classList.add('server-v3');
+    } else if (server === 'v2') {
         document.body.classList.add('server-v2');
     } else {
         document.body.classList.add('server-v1');
@@ -33,22 +35,30 @@ function applyServerClass(server) {
 function changeServer(server) {
     currentServer = server;
     localStorage.setItem('selectedServer', server);
-    API_BASE = server === 'v2' ? '/api/v2' : '/api';
     
-    // Apply server class to body for menu visibility
-    applyServerClass(server);
-    
-    // Reload page data with new server
-    if (window.location.pathname === '/') {
-        loadHomePage();
+    // Redirect to appropriate page
+    if (server === 'v3') {
+        window.location.href = '/v3';
+    } else {
+        API_BASE = server === 'v2' ? '/api/v2' : '/api';
+        
+        // Apply server class to body for menu visibility
+        applyServerClass(server);
+        
+        // Reload page data with new server
+        if (window.location.pathname === '/' || window.location.pathname === '/v3') {
+            if (server !== 'v3') {
+                window.location.href = '/';
+            }
+        }
+        
+        // Show notification
+        showServerNotification(server);
     }
-    
-    // Show notification
-    showServerNotification(server);
 }
 
 function showServerNotification(server) {
-    const serverName = server === 'v2' ? 'Samehadaku' : 'Otakudesu';
+    const serverName = server === 'v3' ? 'Kuramanime' : (server === 'v2' ? 'Samehadaku' : 'Otakudesu');
     
     // Create notification element
     const notification = document.createElement('div');
@@ -214,13 +224,13 @@ function displayFeaturedAnime(anime) {
     
     heroPlayBtn.onclick = () => {
         if (anime.slug) {
-            window.location.href = `/detail/${anime.slug}`;
+            goToDetail(anime.slug);
         }
     };
     
     heroInfoBtn.onclick = () => {
         if (anime.slug) {
-            window.location.href = `/detail/${anime.slug}`;
+            goToDetail(anime.slug);
         }
     };
 }
@@ -278,12 +288,21 @@ function displayAnimeList(containerId, animeList, type = 'ongoing') {
             }
         }
         
+        const isTop10 = type === 'top10';
+        const cardClass = isTop10 ? 'anime-card top-ten-card' : 'anime-card';
+        const rankBadge = isTop10 && anime.rank ? `<div class="rank-badge">#${anime.rank}</div>` : '';
+        const ratingBadge = isTop10 && anime.rating ? `<div class="rating-badge">⭐ ${anime.rating}</div>` : '';
+        
         return `
-            <div class="anime-card" onclick="goToDetail('${anime.slug}')">
-                <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
-                     alt="${anime.title}" 
-                     class="anime-poster"
-                     onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
+            <div class="${cardClass}" onclick="goToDetail('${anime.slug}')">
+                <div class="anime-thumb">
+                    ${rankBadge}
+                    ${ratingBadge}
+                    <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
+                         alt="${anime.title}" 
+                         class="anime-poster"
+                         onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}">
+                </div>
                 <div class="anime-info">
                     <div class="anime-title" title="${anime.title}">${anime.title}</div>
                     <div class="anime-meta">${episodeInfo}</div>
@@ -295,7 +314,8 @@ function displayAnimeList(containerId, animeList, type = 'ongoing') {
 
 function goToDetail(slug) {
     if (slug) {
-        window.location.href = `/detail/${slug}`;
+        const detailPath = currentServer === 'v2' ? '/detail-v2' : '/detail';
+        window.location.href = `${detailPath}/${slug}`;
     }
 }
 

@@ -170,7 +170,7 @@ async function loadPage(page) {
 function goToDetail(slug) {
     if (slug) {
         // Use V2 detail endpoint
-        window.location.href = `/detail/${slug}?server=v2`;
+        window.location.href = `/detail-v2/${slug}`;
     }
 }
 
@@ -216,7 +216,7 @@ function showNotification(message) {
 function searchAnime() {
     const query = document.getElementById('searchInput').value.trim();
     if (query) {
-        window.location.href = `/search/${query}?server=v2`;
+        window.location.href = `/search-v2/${query}`;
     }
 }
 

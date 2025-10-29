@@ -3,6 +3,7 @@ const cheerio = require('cheerio');
 const crypto = require('crypto');
 
 const BASE_URL = 'https://v1.samehadaku.how';
+const PLAYER_AJAX_URL = `${BASE_URL}/wp-admin/admin-ajax.php`;
 
 // Helper untuk generate hash dari URL gambar
 function getImageHash(url) {
@@ -29,6 +30,34 @@ function extractSlug(url) {
     if (!url) return '';
     const match = url.match(/\/anime\/([^\/]+)/);
     return match ? match[1] : '';
+}
+
+async function fetchAjaxPlayerIframe({ post, nume = '1', type = 'schtml' }) {
+    if (!post) return null;
+    const payload = new URLSearchParams({
+        action: 'player_ajax',
+        post,
+        nume,
+        type
+    });
+    
+    try {
+        const { data } = await axios.post(PLAYER_AJAX_URL, payload.toString(), {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': BASE_URL,
+                'Origin': BASE_URL
+            }
+        });
+        if (!data) return null;
+        const $ = cheerio.load(data);
+        const iframeSrc = $('iframe').attr('src');
+        return iframeSrc ? iframeSrc.trim() : null;
+    } catch (error) {
+        console.warn('fetchAjaxPlayerIframe error:', error.message);
+        return null;
+    }
 }
 
 // Scrape Homepage - Top 10 & Anime Terbaru
@@ -155,29 +184,66 @@ async function scrapeAnimeDetail(slug) {
         const $ = cheerio.load(data);
         
         const anime = {
-            title: $('.entry-title').text().trim(),
+            title: '',
+            japanese_title: '',
             slug: slug,
-            poster: proxyImageUrl($('.infoanime .thumb img').attr('src')),
+            poster: '',
             rating: '',
+            produser: '',
             type: '',
             status: '',
             episode_count: '',
+            duration: '',
+            release_date: '',
+            studio: '',
             genres: [],
-            synopsis: $('.entry-content-single').text().trim(),
-            episode_lists: []
+            synopsis: '',
+            episode_lists: [],
+            batch: null
         };
         
-        // Parse info dari tabel
+        // Parse title from main title
+        const mainTitle = $('.entry-title').first().text().trim();
+        anime.title = mainTitle.replace(/[Ss]ub\s+[Ii]ndo$/, '').trim();
+        
+        // Parse poster
+        anime.poster = proxyImageUrl($('.infoanime .thumb img').attr('src'));
+        
+        // Parse rating
+        const $rating = $('.archiveanime-rating span[itemprop="ratingValue"]');
+        if ($rating.length > 0) {
+            anime.rating = $rating.text().trim();
+        }
+        
+        // Parse metadata from .spe spans
         $('.infoanime .spe span').each((i, el) => {
             const $el = $(el);
-            const text = $el.text();
+            const fullText = $el.text();
             
-            if (text.includes('Status:')) {
-                anime.status = text.replace('Status:', '').trim();
-            } else if (text.includes('Type:')) {
-                anime.type = text.replace('Type:', '').trim();
-            } else if (text.includes('Total Episode:')) {
-                anime.episode_count = text.replace('Total Episode:', '').trim();
+            if (fullText.includes('Japanese')) {
+                anime.japanese_title = fullText.replace(/^.*Japanese\s+/, '').trim();
+            } else if (fullText.includes('Synonyms')) {
+                // Could parse synonyms if needed
+            } else if (fullText.includes('Status')) {
+                anime.status = fullText.replace(/^.*Status\s+/, '').trim();
+            } else if (fullText.includes('Type')) {
+                anime.type = fullText.replace(/^.*Type\s+/, '').trim();
+            } else if (fullText.includes('Total Episode')) {
+                anime.episode_count = fullText.replace(/^.*Total Episode\s+/, '').trim();
+            } else if (fullText.includes('Duration')) {
+                anime.duration = fullText.replace(/^.*Duration\s+/, '').trim();
+            } else if (fullText.includes('Season')) {
+                // If needed, could parse season
+            } else if (fullText.includes('Studio')) {
+                anime.studio = $el.find('a').text().trim();
+            } else if (fullText.includes('Producers')) {
+                const producers = [];
+                $el.find('a').each((idx, a) => {
+                    producers.push($(a).text().trim());
+                });
+                anime.produser = producers.join(', ');
+            } else if (fullText.includes('Released:')) {
+                anime.release_date = fullText.replace(/^.*Released:\s*/, '').trim();
             }
         });
         
@@ -196,26 +262,38 @@ async function scrapeAnimeDetail(slug) {
             }
         });
         
+        // Parse synopsis - get only the first paragraph (main synopsis)
+        const $synopsisDiv = $('.entry-content-single');
+        if ($synopsisDiv.length > 0) {
+            const synopsisText = $synopsisDiv.html();
+            const $temp = cheerio.load(synopsisText);
+            // Remove any unwanted elements like ads, etc.
+            $temp('a, strong, b').each((i, el) => {
+                const $el = $temp(el);
+                $el.replaceWith($el.text());
+            });
+            anime.synopsis = $temp.text().trim();
+        }
+        
         // Parse episode list
         $('.lstepsiode.listeps ul li').each((i, el) => {
             const $el = $(el);
-            const $link = $el.find('a');
-            const episodeTitle = $link.text().trim();
-            const href = $link.attr('href');
+            const $episodeLink = $el.find('.epsright .eps a');
+            const $titleLink = $el.find('.epsleft .lchx a');
+            const episodeNumber = $episodeLink.text().trim();
+            const episodeTitle = $titleLink.text().trim();
+            const href = $titleLink.attr('href');
+            const releaseDate = $el.find('.epsleft .date').text().trim();
             
             if (href) {
                 const slugMatch = href.match(/\/([^\/]+)\/$/);
                 const episodeSlug = slugMatch ? slugMatch[1] : '';
                 
-                // Extract episode number
-                const episodeMatch = episodeTitle.match(/Episode\s+(\d+)/i);
-                const episodeNumber = episodeMatch ? episodeMatch[1] : '';
-                
                 anime.episode_lists.push({
                     episode_number: episodeNumber,
                     slug: episodeSlug,
                     title: episodeTitle,
-                    release_date: $el.find('.date').text().trim()
+                    release_date: releaseDate
                 });
             }
         });
@@ -451,10 +529,30 @@ async function scrapeEpisode(episodeSlug) {
             episode_number: '',
             default_stream_url: '',
             download_links: [],
+            download_sections: [],
             prev_episode: null,
             next_episode: null,
-            poster: proxyImageUrl($('.cukder img').attr('src'))
+            poster: '',
+            release_time: '',
+            description: '',
+            anime_slug: '',
+            post_id: '',
+            stream_servers: []
         };
+        
+        const posterSrc = $('.cukder img').attr('src')
+            || $('.episodeinf .thumb img').attr('src')
+            || $('.player-area img').attr('src');
+        episode.poster = posterSrc ? proxyImageUrl(posterSrc) : '';
+        
+        // Extract post id from article id attribute
+        const articleId = $('article[id^="post-"]').attr('id');
+        if (articleId) {
+            const postMatch = articleId.match(/post-(\d+)/);
+            if (postMatch) {
+                episode.post_id = postMatch[1];
+            }
+        }
         
         // Extract episode number and anime title
         const titleMatch = episode.title.match(/^(.+?)\s+Episode\s+(\d+)/i);
@@ -463,32 +561,89 @@ async function scrapeEpisode(episodeSlug) {
             episode.episode_number = titleMatch[2];
         }
         
-        // Extract default iframe URL
+        // Extract release time / posted info
+        const releaseInfo = $('.sbdbti .time-post').text().replace(/\s+/g, ' ').trim();
+        if (releaseInfo) {
+            episode.release_time = releaseInfo;
+        }
+        
+        // Extract synopsis/description
+        const descriptionHtml = $('.entry-content.entry-content-single').first();
+        if (descriptionHtml.length > 0) {
+            episode.description = descriptionHtml.text().replace(/\s+\n/g, '\n').trim();
+        }
+        
+        // Extract anime slug from "All Episode" link
+        const animeLink = $('.naveps .nvsc a').attr('href');
+        if (animeLink) {
+            const animeSlugMatch = animeLink.match(/\/anime\/([^\/]+)/);
+            if (animeSlugMatch) {
+                episode.anime_slug = animeSlugMatch[1];
+            }
+        }
+        
+        // Extract streaming server options (labels & ajax params)
+        const playerOptions = [];
+        $('.east_player_option').each((i, el) => {
+            const $el = $(el);
+            const option = {
+                label: $el.text().trim(),
+                post_id: $el.attr('data-post') || '',
+                nume: $el.attr('data-nume') || '1',
+                type: $el.attr('data-type') || 'schtml'
+            };
+            if (!episode.post_id && option.post_id) {
+                episode.post_id = option.post_id;
+            }
+            playerOptions.push(option);
+        });
+        episode.stream_servers = playerOptions;
+        
+        // Extract default iframe URL (direct embed on page)
         const defaultIframe = $('.responsive-embed-stream iframe').attr('src');
         if (defaultIframe) {
             episode.default_stream_url = defaultIframe;
         }
         
-        // Parse download links
-        $('.download-eps ul li').each((i, el) => {
-            const $el = $(el);
-            const quality = $el.find('strong').text().trim();
-            const size = $el.find('i').text().trim();
-            const links = [];
+        // Parse download sections (grouped by format)
+        $('.download-eps').each((sectionIndex, sectionEl) => {
+            const $section = $(sectionEl);
+            const label = $section.find('p b').first().text().trim() || $section.find('p').first().text().trim();
+            const entries = [];
             
-            $el.find('a').each((j, a) => {
-                const $a = $(a);
-                links.push({
-                    host: $a.text().trim(),
-                    url: $a.attr('href')
+            $section.find('ul li').each((i, el) => {
+                const $el = $(el);
+                const quality = $el.find('strong').text().trim();
+                const size = $el.find('i').text().trim();
+                const links = [];
+                
+                $el.find('a').each((j, a) => {
+                    const $a = $(a);
+                    const hostName = $a.text().trim();
+                    const href = $a.attr('href');
+                    if (hostName && href) {
+                        links.push({
+                            host: hostName,
+                            url: href
+                        });
+                    }
                 });
+                
+                if (quality && links.length > 0) {
+                    const item = {
+                        quality: quality,
+                        size: size,
+                        links: links
+                    };
+                    entries.push(item);
+                    episode.download_links.push(item);
+                }
             });
             
-            if (quality && links.length > 0) {
-                episode.download_links.push({
-                    quality: quality,
-                    size: size,
-                    links: links
+            if (entries.length > 0) {
+                episode.download_sections.push({
+                    label: label || `Format ${sectionIndex + 1}`,
+                    items: entries
                 });
             }
         });
@@ -508,12 +663,265 @@ async function scrapeEpisode(episodeSlug) {
             }
         });
         
+        // Fallback: fetch iframe from admin-ajax when default still empty
+        if ((!episode.default_stream_url) && episode.post_id) {
+            const primaryOption = playerOptions[0] || null;
+            const ajaxParams = {
+                post: episode.post_id,
+                nume: primaryOption ? primaryOption.nume : '1',
+                type: primaryOption ? primaryOption.type : 'schtml'
+            };
+            try {
+                const iframeSrc = await fetchAjaxPlayerIframe(ajaxParams);
+                if (iframeSrc) {
+                    episode.default_stream_url = iframeSrc;
+                }
+            } catch (error) {
+                console.warn('Failed to fetch ajax player iframe:', error.message);
+            }
+        }
+        
         return {
             status: 'success',
             data: episode
         };
     } catch (error) {
         console.error('Error scraping samehadaku episode:', error.message);
+        throw error;
+    }
+}
+
+// Scrape All Anime (Daftar Anime) with filters and pagination
+async function scrapeAllAnime(filters = {}, page = 1) {
+    try {
+        // Build URL with query parameters
+        const params = new URLSearchParams();
+        
+        if (filters.title) params.append('title', filters.title);
+        if (filters.status) params.append('status', filters.status);
+        if (filters.type) params.append('type', filters.type);
+        if (filters.order) params.append('order', filters.order);
+        if (filters.genre && Array.isArray(filters.genre)) {
+            filters.genre.forEach(g => params.append('genre[]', g));
+        }
+        
+        const queryString = params.toString();
+        
+        // Build URL with page number
+        let url;
+        if (page > 1) {
+            url = queryString 
+                ? `${BASE_URL}/daftar-anime-2/page/${page}/?${queryString}`
+                : `${BASE_URL}/daftar-anime-2/page/${page}/`;
+        } else {
+            url = queryString 
+                ? `${BASE_URL}/daftar-anime-2/?${queryString}`
+                : `${BASE_URL}/daftar-anime-2/`;
+        }
+        
+        const { data } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        const $ = cheerio.load(data);
+        const results = [];
+        
+        // Parse anime list from .relat container
+        $('.relat article.animpost').each((i, el) => {
+            const $el = $(el);
+            const $link = $el.find('.animposx a');
+            const $img = $link.find('.content-thumb img');
+            const $title = $link.find('.data .title h2');
+            const $status = $link.find('.data .type');
+            const $typeLabel = $link.find('.content-thumb .type');
+            const $rating = $link.find('.content-thumb .score');
+            
+            // Get metadata from tooltip
+            const $tooltip = $el.find('.stooltip');
+            const $views = $tooltip.find('.metadata span:contains("Views")');
+            const synopsis = $tooltip.find('.ttls').text().trim();
+            
+            // Parse genres from tooltip
+            const genres = [];
+            $tooltip.find('.genres .mta a').each((j, genreEl) => {
+                const genreName = $(genreEl).text().trim();
+                const genreHref = $(genreEl).attr('href');
+                const genreSlugMatch = genreHref ? genreHref.match(/\/genre\/([^\/]+)/) : null;
+                
+                if (genreName && genreSlugMatch) {
+                    genres.push({
+                        name: genreName,
+                        slug: genreSlugMatch[1]
+                    });
+                }
+            });
+            
+            const title = $title.text().trim();
+            const href = $link.attr('href');
+            const slug = extractSlug(href);
+            
+            if (title && slug) {
+                results.push({
+                    title: title,
+                    slug: slug,
+                    poster: proxyImageUrl($img.attr('src')),
+                    type: $typeLabel.text().trim(),
+                    status: $status.text().trim(),
+                    rating: $rating.text().replace(/★/g, '').trim(),
+                    views: $views.text().replace(/\s*Views/, '').trim(),
+                    synopsis: synopsis,
+                    genres: genres
+                });
+            }
+        });
+        
+        // Parse available filters/options from the page
+        const availableFilters = {
+            statuses: [],
+            types: [],
+            sorts: [],
+            genres: []
+        };
+        
+        // Parse status options
+        $('input[name="status"]').each((i, el) => {
+            const $el = $(el);
+            const value = $el.attr('value');
+            const label = $el.parent().text().trim();
+            if (value && label) {
+                availableFilters.statuses.push({ value, label });
+            }
+        });
+        
+        // Parse type options
+        $('input[name="type"]').each((i, el) => {
+            const $el = $(el);
+            const value = $el.attr('value');
+            const label = $el.parent().text().trim();
+            if (value && label) {
+                availableFilters.types.push({ value, label });
+            }
+        });
+        
+        // Parse sort options
+        $('input[name="order"]').each((i, el) => {
+            const $el = $(el);
+            const value = $el.attr('value');
+            const label = $el.parent().text().trim();
+            if (value && label) {
+                availableFilters.sorts.push({ value, label });
+            }
+        });
+        
+        // Parse genre options
+        $('input[name="genre[]"]').each((i, el) => {
+            const $el = $(el);
+            const value = $el.attr('value');
+            const label = $el.parent().text().trim();
+            if (value && label) {
+                availableFilters.genres.push({ value, label });
+            }
+        });
+        
+        // Parse pagination info
+        const pagination = {
+            current_page: page,
+            has_next_page: false,
+            has_previous_page: page > 1,
+            next_page: page + 1,
+            previous_page: page - 1,
+            last_page: page,
+            total_pages: page
+        };
+        
+        // Try to find pagination info in the page
+        const $pagination = $('.pagination');
+        if ($pagination.length > 0) {
+            let maxPage = page;
+            
+            // First priority: Look for "Page X of Y" span (most reliable)
+            let foundPageOf = false;
+            $pagination.find('span').each((i, el) => {
+                const $el = $(el);
+                const text = $el.text().trim();
+                const pageOfMatch = text.match(/^Page\s+(\d+)\s+of\s+(\d+)$/i);
+                if (pageOfMatch) {
+                    maxPage = parseInt(pageOfMatch[2]);
+                    foundPageOf = true;
+                    // If current page is less than max page, there's a next page
+                    if (page < maxPage) {
+                        pagination.has_next_page = true;
+                    }
+                    return false; // Break loop
+                }
+            });
+            
+            if (!foundPageOf) {
+                // Fallback: Try to extract page numbers from links
+                $pagination.find('a').each((i, el) => {
+                    const $el = $(el);
+                    const href = $el.attr('href');
+                    const text = $el.text().trim();
+                    
+                    // Check href for page number
+                    if (href) {
+                        const pageMatch = href.match(/page\/(\d+)/);
+                        if (pageMatch) {
+                            const pageNum = parseInt(pageMatch[1]);
+                            if (pageNum > page) {
+                                pagination.has_next_page = true;
+                            }
+                            if (pageNum > maxPage) {
+                                maxPage = pageNum;
+                            }
+                        }
+                    }
+                    
+                    // Check text for page number (only pure numbers)
+                    const textNum = parseInt(text);
+                    if (!isNaN(textNum) && text === textNum.toString()) {
+                        if (textNum > maxPage) {
+                            maxPage = textNum;
+                        }
+                    }
+                });
+                
+                // Look for "next" arrow or button
+                $pagination.find('a').each((i, el) => {
+                    const $el = $(el);
+                    const className = $el.attr('class') || '';
+                    const id = $el.attr('id') || '';
+                    const html = $el.html();
+                    
+                    // Check for next indicators
+                    if (className.includes('arrow_pag') || 
+                        id.includes('nextpagination') || 
+                        className.includes('next') ||
+                        html.includes('fa-caret-right') ||
+                        html.includes('fa-arrow-right')) {
+                        pagination.has_next_page = true;
+                    }
+                });
+            }
+            
+            pagination.last_page = maxPage;
+            pagination.total_pages = maxPage;
+        }
+        
+        return {
+            status: 'success',
+            data: {
+                animeData: results,
+                filters: availableFilters,
+                currentFilters: filters,
+                pagination: pagination,
+                total_results: results.length
+            }
+        };
+    } catch (error) {
+        console.error('Error scraping samehadaku all anime:', error.message);
         throw error;
     }
 }
@@ -525,5 +933,7 @@ module.exports = {
     scrapeAnimeList,
     scrapeSchedule,
     scrapeEpisode,
-    getImageUrlMap
+    scrapeAllAnime,
+    getImageUrlMap,
+    fetchAjaxPlayerIframe
 };

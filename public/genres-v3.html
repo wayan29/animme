@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Genre - Kuramanime V3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #60b0ff 0%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #a0a0b0;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 1.3rem;
+            color: #60b0ff;
+        }
+
+        .genre-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .genre-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .genre-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(96, 176, 255, 0.3);
+            border-color: rgba(96, 176, 255, 0.5);
+            background: rgba(96, 176, 255, 0.1);
+        }
+
+        .genre-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .genre-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .genre-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .genre-card {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo" onclick="window.location.href='/v3'">🎌 AnimMe V3</div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
+                <a href="/ongoing-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
+                <a href="/finished-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
+                <a href="/movie-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
+                <a href="/schedule-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Jadwal Rilis</a>
+                <a href="/genres-v3.html" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Genre</a>
+                <a href="/all-anime" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Daftar Anime</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Daftar Genre</h1>
+            <p>Jelajahi anime berdasarkan genre favorit Anda</p>
+            <p id="headerStats" style="color: #60b0ff; font-size: 0.95rem; margin-top: 10px;"></p>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: block;">
+            ⏳ Memuat daftar genre...
+        </div>
+
+        <div id="genreGrid" class="genre-grid" style="display: none;"></div>
+    </div>
+
+    <script>
+        const genreIcons = {
+            'action': '⚔️',
+            'adventure': '🗺️',
+            'comedy': '😂',
+            'drama': '🎭',
+            'fantasy': '🧙',
+            'horror': '👻',
+            'isekai': '🌌',
+            'magic': '✨',
+            'mecha': '🤖',
+            'mystery': '🔍',
+            'romance': '💖',
+            'school': '🏫',
+            'sci-fi': '🚀',
+            'seinen': '👔',
+            'shoujo': '🌸',
+            'shounen': '⚡',
+            'slice-of-life': '☕',
+            'sports': '⚽',
+            'supernatural': '🌙',
+            'thriller': '🔪'
+        };
+
+        async function loadGenres() {
+            try {
+                const response = await fetch('/api/v3/kuramanime/genres');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    displayGenres(data.data);
+                } else {
+                    throw new Error(data.message || 'Failed to load genres');
+                }
+
+                document.getElementById('loadingIndicator').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading genres:', error);
+                document.getElementById('loadingIndicator').innerHTML = 
+                    '❌ Gagal memuat genre. Silakan refresh halaman.';
+            }
+        }
+
+        function displayGenres(data) {
+            const grid = document.getElementById('genreGrid');
+            const genres = data.genres || [];
+
+            if (genres.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; color:#a0a0b0;">Tidak ada genre tersedia</p>';
+                grid.style.display = 'block';
+                return;
+            }
+
+            grid.innerHTML = genres.map(genre => {
+                const icon = genreIcons[genre.slug] || '🎬';
+                return `
+                    <a href="/genre-v3.html?genre=${genre.slug}&name=${encodeURIComponent(genre.name)}" class="genre-card">
+                        <div class="genre-icon">${icon}</div>
+                        <div class="genre-name">${genre.name}</div>
+                    </a>
+                `;
+            }).join('');
+
+            grid.style.display = 'grid';
+            
+            document.getElementById('headerStats').textContent = 
+                `📊 Total: ${genres.length} genre tersedia`;
+        }
+
+        // Load genres on page load
+        loadGenres();
+    </script>
+</body>
+</html>

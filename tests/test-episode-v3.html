@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Episode V3 - Server & Quality Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1e1e2e;
+            color: #fff;
+        }
+        .test-section {
+            background: #2d2d44;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .test-section h2 {
+            color: #ff6b9d;
+            margin-top: 0;
+        }
+        .server-item {
+            background: #1e1e2e;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #60b0ff;
+        }
+        .server-name {
+            font-weight: bold;
+            color: #60b0ff;
+        }
+        .quality-list {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .quality-item {
+            padding: 5px 0;
+            color: #a0a0b0;
+        }
+        .link-section a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #ff6b9d;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px 10px 10px 0;
+        }
+        .link-section a:hover {
+            background: #ff8bb0;
+        }
+        .console-output {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .info { color: #2196f3; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Episode V3 - Server & Quality Display Test</h1>
+    
+    <div class="test-section">
+        <h2>📡 API Test</h2>
+        <button onclick="testAPI()" style="padding: 10px 20px; background: #60b0ff; border: none; color: #fff; border-radius: 8px; cursor: pointer;">
+            Test API Response
+        </button>
+        <div id="apiResult" style="margin-top: 15px;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔗 Test Links</h2>
+        <div class="link-section">
+            <a href="/episode-v3.html?animeId=4081&slug=ansatsusha-de-aru-ore-no-status-ga-yuusha-yori-mo-akiraka-ni-tsuyoi-no-da-ga&episode=1" target="_blank">
+                Open Episode 1
+            </a>
+            <a href="/episode-v3.html?animeId=4081&slug=ansatsusha-de-aru-ore-no-status-ga-yuusha-yori-mo-akiraka-ni-tsuyoi-no-da-ga&episode=2" target="_blank">
+                Open Episode 2
+            </a>
+        </div>
+        <p style="color: #a0a0b0; margin-top: 10px;">
+            <strong>Instructions:</strong> Open the link in a new tab, then open Browser Console (F12) to see debug logs.
+        </p>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Expected Results</h2>
+        <div id="expectedResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>💻 Console Output Preview</h2>
+        <p style="color: #a0a0b0;">Open browser console (F12) on the episode page to see these logs:</p>
+        <div class="console-output">
+            <div class="info">Loading server: kuramadrive</div>
+            <div class="success">Server found: Kuramadrive s1 (normal, iklan banner)</div>
+            <div class="success">Server has sources: 3</div>
+            <div class="success">Sources: 720p, 480p, 360p</div>
+            <div class="info">Loading direct video with quality selector</div>
+            <div class="info">Rendering quality selector with sources: 3</div>
+            <div class="success">  Quality 1: 720p</div>
+            <div class="success">  Quality 2: 480p</div>
+            <div class="success">  Quality 3: 360p</div>
+            <div class="success">Selected default quality: 720p</div>
+            <div class="info">Loading video with 3 sources</div>
+            <div class="success">  Source 1: 720p - https://...</div>
+            <div class="success">  Source 2: 480p - https://...</div>
+            <div class="success">  Source 3: 360p - https://...</div>
+        </div>
+    </div>
+    
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<div style="color: #a0a0b0;">Loading...</div>';
+            
+            try {
+                const response = await fetch('/api/v3/kuramanime/episode/4081/ansatsusha-de-aru-ore-no-status-ga-yuusha-yori-mo-akiraka-ni-tsuyoi-no-da-ga/1');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    let html = '<div style="color: #4caf50; font-weight: bold; margin-bottom: 15px;">✓ API Response Success!</div>';
+                    
+                    html += `<div style="margin-bottom: 20px;">
+                        <strong>Total Streaming Servers:</strong> ${data.data.streaming_servers.length}
+                    </div>`;
+                    
+                    data.data.streaming_servers.forEach((server, index) => {
+                        html += `
+                            <div class="server-item">
+                                <div class="server-name">${index + 1}. ${server.name}</div>
+                                <div style="color: #a0a0b0; margin-top: 5px;">
+                                    <strong>Value:</strong> ${server.value}<br>
+                                    <strong>Selected:</strong> ${server.selected ? 'Yes' : 'No'}<br>
+                                    <strong>Sources:</strong> ${server.sources ? server.sources.length : 0}
+                                </div>
+                                ${server.sources && server.sources.length > 0 ? `
+                                    <div class="quality-list">
+                                        ${server.sources.map(src => `
+                                            <div class="quality-item">
+                                                • ${src.quality} (${src.type})
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<div style="color: #f44336;">✗ API Error: ' + data.message + '</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div style="color: #f44336;">✗ Network Error: ' + error.message + '</div>';
+            }
+        }
+        
+        // Show expected results
+        function showExpectedResults() {
+            const expectedDiv = document.getElementById('expectedResults');
+            expectedDiv.innerHTML = `
+                <div class="server-item">
+                    <div class="server-name">✓ Server Selector Dropdown</div>
+                    <div class="quality-list">
+                        <div class="quality-item">Should show 6 servers:</div>
+                        <div class="quality-item">1. Kuramadrive s1 (normal, iklan banner) [3 quality]</div>
+                        <div class="quality-item">2. FileMoon (kencang, iklan popup) [Iframe]</div>
+                        <div class="quality-item">3. MEGA (kencang, iklan banner) [Iframe]</div>
+                        <div class="quality-item">4. RPMShare (kencang, iklan popup) [Iframe]</div>
+                        <div class="quality-item">5. StreamWish (kencang, iklan popup) [Iframe]</div>
+                        <div class="quality-item">6. VidGuard (kencang, iklan popup) [Iframe]</div>
+                    </div>
+                </div>
+                
+                <div class="server-item" style="margin-top: 15px;">
+                    <div class="server-name">✓ Quality Selector (Kuramadrive only)</div>
+                    <div class="quality-list">
+                        <div class="quality-item">Should show 3 quality options:</div>
+                        <div class="quality-item">• 720p (MP4)</div>
+                        <div class="quality-item">• 480p (MP4)</div>
+                        <div class="quality-item">• 360p (MP4)</div>
+                    </div>
+                </div>
+                
+                <div class="server-item" style="margin-top: 15px;">
+                    <div class="server-name">✓ Video Player</div>
+                    <div class="quality-list">
+                        <div class="quality-item">• Kuramadrive: HTML5 video player with 3 source elements</div>
+                        <div class="quality-item">• Other servers: Iframe embed</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        showExpectedResults();
+    </script>
+</body>
+</html>

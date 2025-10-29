@@ -520,6 +520,107 @@
     /* Already dark by default, but could add adjustments */
 }
 
+    /* All Anime Filters - Mobile */
+    .anime-filters {
+        padding: 15px;
+    }
+    
+    .filter-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .filter-group {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .genre-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .genre-checkbox {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        gap: 12px;
+        padding: 15px;
+    }
+    
+    .pagination-btn {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    .pagination-info {
+        width: 100%;
+        text-align: center;
+    }
+    
+    /* Anime Grid - Mobile */
+    .anime-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
+    }
+    
+    .anime-grid .anime-title {
+        font-size: 0.85rem;
+    }
+    
+    .anime-grid .anime-status {
+        font-size: 0.75rem;
+    }
+    
+    .anime-grid .genre-tag {
+        font-size: 0.65rem;
+        padding: 2px 4px;
+    }
+    
+    /* Detail V2 - Mobile */
+    .detail-header {
+        grid-template-columns: 1fr !important;
+        gap: 20px;
+    }
+    
+    .detail-header .anime-poster {
+        margin-bottom: 30px;
+    }
+    
+    .detail-info h1 {
+        font-size: 1.8rem;
+    }
+    
+    .tabs-header {
+        overflow-x: auto;
+    }
+    
+    .tab-btn {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+    
+    .recommendation-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 15px;
+    }
+    
+    .recommendation-poster {
+        height: 200px;
+    }
+}
+
+/* Desktop - Recommendation Grid */
+@media (min-width: 1200px) {
+    .recommendation-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
     * {

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Musim - Kuramanime V3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #60b0ff 0%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #a0a0b0;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 1.3rem;
+            color: #60b0ff;
+        }
+
+        .season-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .season-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .season-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(96, 176, 255, 0.3);
+            border-color: rgba(96, 176, 255, 0.5);
+            background: rgba(96, 176, 255, 0.1);
+        }
+
+        .season-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .season-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .filter-controls {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #a0a0b0;
+            min-width: 80px;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 150px;
+        }
+
+        .filter-select:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #60b0ff;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #ff6b9d;
+        }
+
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-filter-btn {
+            padding: 8px 16px;
+            background: rgba(96, 176, 255, 0.2);
+            border: 1px solid rgba(96, 176, 255, 0.3);
+            border-radius: 20px;
+            color: #60b0ff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quick-filter-btn:hover {
+            background: rgba(96, 176, 255, 0.3);
+            border-color: #60b0ff;
+            transform: translateY(-2px);
+        }
+
+        .quick-filter-btn.active {
+            background: linear-gradient(135deg, #60b0ff 0%, #ff6b9d 100%);
+            border-color: transparent;
+            color: #ffffff;
+        }
+
+        .reset-btn {
+            padding: 8px 16px;
+            background: rgba(255, 107, 157, 0.2);
+            border: 1px solid rgba(255, 107, 157, 0.3);
+            border-radius: 20px;
+            color: #ff6b9d;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 107, 157, 0.3);
+            border-color: #ff6b9d;
+        }
+
+        @media (max-width: 768px) {
+            .season-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .season-card {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-label {
+                min-width: auto;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+
+            .quick-filters {
+                justify-content: center;
+            }
+
+            .navbar-content > div:last-child {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo" onclick="window.location.href='/v3'">🎌 AnimMe V3</div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
+                <a href="/ongoing-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
+                <a href="/finished-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
+                <a href="/movie-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
+                <a href="/schedule-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Jadwal Rilis</a>
+                <a href="/genres-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Genre</a>
+                <a href="/seasons-v3.html" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Musim</a>
+                <a href="/all-anime" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Daftar Anime</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>📅 Daftar Musim</h1>
+            <p>Jelajahi anime berdasarkan musim tayangnya</p>
+            <p id="headerStats" style="color: #60b0ff; font-size: 0.95rem; margin-top: 10px;"></p>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: block;">
+            ⏳ Memuat daftar musim...
+        </div>
+
+        <div id="filterControls" class="filter-controls" style="display: none;">
+            <div class="filter-row">
+                <span class="filter-label">Filter Tahun:</span>
+                <select id="yearFilter" class="filter-select">
+                    <option value="all">Semua Tahun</option>
+                </select>
+                <select id="seasonTypeFilter" class="filter-select">
+                    <option value="all">Semua Musim</option>
+                    <option value="winter">❄️ Winter</option>
+                    <option value="spring">🌸 Spring</option>
+                    <option value="summer">☀️ Summer</option>
+                    <option value="fall">🍂 Fall</option>
+                </select>
+                <button class="reset-btn" onclick="resetFilters()">🔄 Reset</button>
+            </div>
+            <div class="filter-row">
+                <span class="filter-label">Quick Filter:</span>
+                <div class="quick-filters">
+                    <button class="quick-filter-btn" onclick="filterByYear(2025)">2025</button>
+                    <button class="quick-filter-btn" onclick="filterByYear(2024)">2024</button>
+                    <button class="quick-filter-btn" onclick="filterByYear(2023)">2023</button>
+                    <button class="quick-filter-btn" onclick="filterByYearRange(2020, 2025)">2020-2025</button>
+                    <button class="quick-filter-btn" onclick="filterByYearRange(2015, 2019)">2015-2019</button>
+                    <button class="quick-filter-btn" onclick="filterByYearRange(2010, 2014)">2010-2014</button>
+                </div>
+            </div>
+            <div style="color: #a0a0b0; font-size: 0.9rem; margin-top: 10px;">
+                <span id="filterStats">Menampilkan semua musim</span>
+            </div>
+        </div>
+
+        <div id="seasonGrid" class="season-grid" style="display: none;"></div>
+    </div>
+
+    <script>
+        const seasonIcons = {
+            'winter': '❄️',
+            'spring': '🌸',
+            'summer': '☀️',
+            'fall': '🍂',
+            'autumn': '🍁'
+        };
+
+        let allSeasons = [];
+        let filteredSeasons = [];
+
+        function getSeasonIcon(slug) {
+            const season = slug.toLowerCase();
+            for (const [key, icon] of Object.entries(seasonIcons)) {
+                if (season.includes(key)) {
+                    return icon;
+                }
+            }
+            return '📺';
+        }
+
+        function getYearFromSlug(slug) {
+            const match = slug.match(/(\d{4})$/);
+            return match ? parseInt(match[1]) : null;
+        }
+
+        function getSeasonTypeFromSlug(slug) {
+            const types = ['winter', 'spring', 'summer', 'fall', 'autumn'];
+            const slugLower = slug.toLowerCase();
+            for (const type of types) {
+                if (slugLower.startsWith(type)) {
+                    return type;
+                }
+            }
+            return null;
+        }
+
+        async function loadSeasons() {
+            try {
+                const response = await fetch('/api/v3/kuramanime/seasons');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    allSeasons = data.data.seasons || [];
+                    filteredSeasons = [...allSeasons];
+                    
+                    populateYearFilter();
+                    displaySeasons(filteredSeasons);
+                    
+                    document.getElementById('filterControls').style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'Failed to load seasons');
+                }
+
+                document.getElementById('loadingIndicator').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading seasons:', error);
+                document.getElementById('loadingIndicator').innerHTML = 
+                    '❌ Gagal memuat musim. Silakan refresh halaman.';
+            }
+        }
+
+        function populateYearFilter() {
+            const years = new Set();
+            allSeasons.forEach(season => {
+                const year = getYearFromSlug(season.slug);
+                if (year) years.add(year);
+            });
+
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            const yearFilter = document.getElementById('yearFilter');
+            
+            sortedYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearFilter.appendChild(option);
+            });
+        }
+
+        function displaySeasons(seasons) {
+            const grid = document.getElementById('seasonGrid');
+
+            if (seasons.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; color:#a0a0b0; grid-column: 1/-1;">Tidak ada musim yang cocok dengan filter</p>';
+                grid.style.display = 'grid';
+                return;
+            }
+
+            grid.innerHTML = seasons.map(season => {
+                const icon = getSeasonIcon(season.slug);
+                return `
+                    <a href="/season-v3/${season.slug}" class="season-card">
+                        <div class="season-icon">${icon}</div>
+                        <div class="season-name">${season.name}</div>
+                    </a>
+                `;
+            }).join('');
+
+            grid.style.display = 'grid';
+            
+            document.getElementById('headerStats').textContent = 
+                `📊 Total: ${allSeasons.length} musim tersedia`;
+            
+            updateFilterStats(seasons.length);
+        }
+
+        function updateFilterStats(count) {
+            const statsEl = document.getElementById('filterStats');
+            if (count === allSeasons.length) {
+                statsEl.textContent = 'Menampilkan semua musim';
+            } else {
+                statsEl.textContent = `Menampilkan ${count} dari ${allSeasons.length} musim`;
+            }
+        }
+
+        function applyFilters() {
+            const yearFilter = document.getElementById('yearFilter').value;
+            const seasonTypeFilter = document.getElementById('seasonTypeFilter').value;
+
+            filteredSeasons = allSeasons.filter(season => {
+                const year = getYearFromSlug(season.slug);
+                const type = getSeasonTypeFromSlug(season.slug);
+
+                const yearMatch = yearFilter === 'all' || year == yearFilter;
+                const typeMatch = seasonTypeFilter === 'all' || type === seasonTypeFilter;
+
+                return yearMatch && typeMatch;
+            });
+
+            displaySeasons(filteredSeasons);
+            
+            // Remove active class from all quick filters
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+
+        function filterByYear(year) {
+            document.getElementById('yearFilter').value = year;
+            document.getElementById('seasonTypeFilter').value = 'all';
+            applyFilters();
+            
+            // Set active class
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === year.toString()) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function filterByYearRange(startYear, endYear) {
+            document.getElementById('seasonTypeFilter').value = 'all';
+            
+            filteredSeasons = allSeasons.filter(season => {
+                const year = getYearFromSlug(season.slug);
+                return year >= startYear && year <= endYear;
+            });
+
+            displaySeasons(filteredSeasons);
+            document.getElementById('yearFilter').value = 'all';
+            
+            // Set active class
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === `${startYear}-${endYear}`) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('yearFilter').value = 'all';
+            document.getElementById('seasonTypeFilter').value = 'all';
+            filteredSeasons = [...allSeasons];
+            displaySeasons(filteredSeasons);
+            
+            // Remove active class from all quick filters
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+
+        // Event listeners for filter changes
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSeasons();
+        });
+
+        // Add event listeners when filters are available
+        setTimeout(() => {
+            const yearFilter = document.getElementById('yearFilter');
+            const seasonTypeFilter = document.getElementById('seasonTypeFilter');
+            
+            if (yearFilter) {
+                yearFilter.addEventListener('change', applyFilters);
+            }
+            if (seasonTypeFilter) {
+                seasonTypeFilter.addEventListener('change', applyFilters);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

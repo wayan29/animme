@@ -49,85 +49,146 @@ async function fetchAnimeDetail(slug) {
 }
 
 function displayAnimeDetail(anime) {
-    currentAnimeData = anime;
+    const container = document.getElementById('detailContent');
     
-    // Display poster
-    const posterContainer = document.getElementById('animePoster');
-    if (anime.poster) {
-        posterContainer.innerHTML = `
-            <img src="${anime.poster}" alt="${anime.title}" class="anime-poster"
-                 onerror="this.src='https://via.placeholder.com/300x450/0f0f0f/e50914/222222?text=${encodeURIComponent(anime.title)}'"
-                 class="anime-poster">
-        `;
-    } else {
-        posterContainer.innerHTML = `
-            <img src="https://via.placeholder.com/300x450/0f0f0f/e50914/222222?text=${encodeURIComponent(anime.title)}" 
-                 alt="${anime.title}" class="anime-poster">
-        `;
-    }
+    const genres = anime.genres ? anime.genres.map(g => {
+        const genreName = typeof g === 'object' ? g.name : g;
+        const genreSlug = typeof g === 'object' && g.slug ? g.slug : genreName.toLowerCase();
+        return `<span class="genre-tag" onclick="goToGenre('${genreSlug}')">${genreName}</span>`;
+    }).join('') : '';
     
-    // Display basic info
-    document.getElementById('animeTitle').textContent = anime.title || 'Unknown Title';
+    // Check if batch download is available
+    const hasBatch = anime.batch && anime.batch.slug;
     
-    // Display meta information
-    const metaContainer = document.getElementById('animeMeta');
-    let metaHTML = '';
+    const episodeList = anime.episode_lists && anime.episode_lists.length > 0 ? `
+        <div class="episode-section">
+            <h2 class="section-title">Daftar Episode (${anime.episode_lists.length})</h2>
+            <div class="episode-list">
+                ${anime.episode_lists.map(ep => {
+                    // Check if episode_number already contains "Episode", "OVA", "Movie", or "Special"
+                    const epNum = ep.episode_number || 'N/A';
+                    const needsPrefix = /^OVA|^Movie|^Special/i.test(epNum);
+                    const displayText = needsPrefix ? epNum : `Episode ${epNum}`;
+                    
+                    return `
+                        <button class="episode-btn" onclick="goToEpisode('${ep.slug}')">
+                            ${displayText}
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    ` : '<p class="error">Tidak ada episode tersedia</p>';
     
-    if (anime.status) {
-        metaHTML += `<div class="meta-item"><span class="meta-label">Status:</span><span class="meta-value">${anime.status}</span></div>`;
-    }
-    if (anime.type) {
-        metaHTML += `<div class="meta-item"><span class="meta-label">Tipe:</span><span class="meta-value">${anime.type}</span></div>`;
-    }
-    if (anime.episode_count) {
-        metaHTML += `<div class="meta-item"><span class="display-label">Total Episode:</span><span class="meta-value">${anime.episode_count}</span></div>`;
-    }
-    if (anime.studio) {
-        metaHTML += `<div class="meta-item"><span class="meta-label">Studio:</span><span class="meta-value">${anime.studio}</span></div>`;
-    }
-    if (anime.season) {
-        metaHTML += `<div class="meta-item"><span class="meta-label">Season:</span><span class="meta-value">${anime.season}</span></div>`;
-    }
-    if (anime.rating) {
-        metaHTML += `<div class="meta-item"><span class="meta-label">Rating:</span><span class="meta-value">${anime.rating}</span></div>`;
-    }
-    
-    if (anime aired_date) {
-        metaHTML += `<div class="meta-item"><span class="meta-label">Tayang:</span><span class="meta-value">${anime.aired_date}</span></div>`;
-    }
-    
-    metaContainer.innerHTML = metaHTML;
-    
-    // Display synopsis
-    const synopsisContainer = document.getElementById('animeSynopsis');
-    synopsisContainer.querySelector('p').textContent = anime.synopsis || 'Tidak ada sinopsis tersedia.';
-    
-    // Display episodes
-    displayEpisodeList(anime.episode_lists || []);
-    
-    // Display related anime
-    displayRelatedAnime();
+    container.innerHTML = `
+        <div class="detail-header">
+            <img src="${anime.poster || 'https://via.placeholder.com/300x400/0f0f0f/e50914?text=No+Image'}" 
+                 alt="${anime.title}" 
+                 class="detail-poster"
+                 onerror="this.src='https://via.placeholder.com/300x400/0f0f0f/e50914?text=No+Image'">
+            
+            <div class="detail-info">
+                <h1>${anime.title}</h1>
+                ${anime.japanese_title ? `<p style="color: #999; font-size: 1rem; margin-bottom: 15px;">${anime.japanese_title}</p>` : ''}
+                
+                <div class="detail-meta">
+                    ${anime.status ? `<div class="meta-item"><span class="meta-label">Status:</span>${anime.status}</div>` : ''}
+                    ${anime.rating ? `<div class="meta-item"><span class="meta-label">Rating:</span>${anime.rating}</div>` : ''}
+                    ${anime.score ? `<div class="meta-item"><span class="meta-label">Score:</span>${anime.score}</div>` : ''}
+                    ${anime.release_date ? `<div class="meta-item"><span class="meta-label">Rilis:</span>${anime.release_date}</div>` : ''}
+                    ${anime.duration ? `<div class="meta-item"><span class="meta-label">Durasi:</span>${anime.duration}</div>` : ''}
+                    ${anime.type ? `<div class="meta-item"><span class="meta-label">Tipe:</span>${anime.type}</div>` : ''}
+                    ${anime.studio ? `<div class="meta-item"><span class="meta-label">Studio:</span>${anime.studio}</div>` : ''}
+                    ${anime.episode_count ? `<div class="meta-item"><span class="meta-label">Total Episode:</span>${anime.episode_count}</div>` : ''}
+                    ${anime.produser ? `<div class="meta-item"><span class="meta-label">Produser:</span>${anime.produser}</div>` : ''}
+                </div>
+                
+                ${genres ? `<div class="genre-list">${genres}</div>` : ''}
+                
+                ${anime.synopsis ? `
+                    <div class="detail-synopsis">
+                        <h3>Sinopsis</h3>
+                        <p>${anime.synopsis}</p>
+                    </div>
+                ` : ''}
+                
+            </div>
+        </div>
+        
+        <!-- Tabs untuk Episodes dan Batch Download -->
+        <div class="tabs-container">
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('episodes')">📺 Episodes</button>
+                ${hasBatch ? `<button class="tab-btn" onclick="switchTab('batch')">📥 Download Batch</button>` : ''}
+            </div>
+            
+            <div class="tab-content active" id="episodesTab">
+                ${episodeList}
+            </div>
+            
+            ${hasBatch ? `
+                <div class="tab-content" id="batchTab" style="display: none;">
+                    <div id="batchDownloadContainer">
+                        <div class="loading">Memuat download batch...</div>
+                    </div>
+                </div>
+            ` : ''}
+        
+        ${anime.recommendations && anime.recommendations.length > 0 ? `
+            <div class="recommendation-section">
+                <h2 class="section-title">🎬 Rekomendasi Anime Lainnya</h2>
+                <div class="recommendation-grid">
+                    ${anime.recommendations.map(rec => `
+                        <div class="recommendation-card" onclick="window.location.href='/detail-v2/${rec.slug}'">
+                            <img src="${rec.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
+                                 alt="${rec.title}" 
+                                 class="recommendation-poster"
+                                 onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
+                            <div class="recommendation-info">
+                                <div class="recommendation-title" title="${rec.title}">${rec.title}</div>
+                                <div class="recommendation-meta">
+                                    ${rec.episode_count ? rec.episode_count + ' Episode' : ''}
+                                    ${rec.rating ? ' • ⭐ ' + rec.rating : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
 }
 
-function displayEpisodeList(episodes) {
-    const episodeContainer = document.getElementById('animeEpisodes');
+function goToEpisode(episodeSlug) {
+    if (episodeSlug) {
+        window.location.href = `/player-v2/${episodeSlug}`;
+    }
+}
+
+function goToGenre(genreSlug) {
+    if (genreSlug) {
+        // Redirect to all-anime with genre filter
+        window.location.href = `/all-anime?genre=${genreSlug}&server=v2`;
+    }
+}
+
+function switchTab(tabName) {
+    // Hide all tabs
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach(tab => tab.style.display = 'none');
     
-    if (!episodes || episodes.length === 0) {
-        episodeContainer.innerHTML = '<div class="loading">No episodes available.</div>';
-        return;
+    // Remove active class from all buttons
+    const allButtons = document.querySelectorAll('.tab-btn');
+    allButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected tab
+    const selectedTab = document.getElementById(`${tabName}Tab`);
+    if (selectedTab) {
+        selectedTab.style.display = 'block';
     }
     
-    const episodesHTML = episodes.map(episode => {
-        return `
-            <div class="episode-item" onclick="goToEpisode('${episode.slug}')">
-                <div class="episode-number">${episode.episode_number || episode.episode_title}</div>
-                <div class="episode-title">${episode.episode_title || 'Untitled'}</div>
-                <div class="episode-date">${episode.release_date || ''}</div>
-            </div>
-        `;
-    }).join('');
-    
-    episodeContainer.innerHTML = episodesHTML;
+    // Add active class to clicked button
+    event.target.classList.add('active');
 }
 
 async function displayRelatedAnime() {
@@ -170,9 +231,29 @@ function goBack() {
     }
 }
 
-function goToEpisode(episodeSlug) {
-    if (episodeSlug) {
-        window.location.href = `/player/${episodeSlug}`;
+async function fetchRandomRecommendations(count = 6) {
+    try {
+        // Fetch terbaru anime for recommendations from V2
+        const data = await fetch(`${API_BASE}/terbaru/1`);
+        
+        if (!data.ok) {
+            throw new Error(`HTTP error! status: ${data.status}`);
+        }
+        
+        const response = await data.json();
+        
+        if (!response || !response.data || !response.data.animeData) {
+            return [];
+        }
+        
+        const allAnime = response.data.animeData;
+        
+        // Shuffle array and pick random items (exclude current anime if exists)
+        const shuffled = [...allAnime].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+    } catch (error) {
+        console.error('Error fetching recommendations:', error);
+        return [];
     }
 }
 
@@ -188,13 +269,18 @@ async function loadAnimeDetailPage() {
     
     const data = await fetchAnimeDetail(slug);
     
-    hideLoading();
-    
     if (data && data.status === 'success' && data.data) {
+        // Fetch recommendations
+        const recommendations = await fetchRandomRecommendations(6);
+        data.data.recommendations = recommendations;
+        
         currentSlug = slug;
         displayAnimeDetail(data.data);
         document.title = `${data.data.title} - AnimMe V2`;
+        
+        hideLoading();
     } else {
+        hideLoading();
         showError('Gagal memuat detail anime');
     }
 }

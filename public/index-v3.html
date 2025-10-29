@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimMe V3 - Kuramanime</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+</head>
+<body class="server-v3">
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">AnimMe V3</h1>
+            <div class="server-selector">
+                <select id="serverSelect" class="server-select">
+                    <option value="v1">V1 - Otakudesu</option>
+                    <option value="v2">V2 - Samehadaku</option>
+                    <option value="v3" selected>V3 - Kuramanime</option>
+                </select>
+            </div>
+            <div class="nav-menu">
+                <a href="/v3" class="nav-link active">Beranda</a>
+                <a href="/ongoing-v3.html" class="nav-link">Sedang Tayang</a>
+                <a href="/finished-v3.html" class="nav-link">Selesai Tayang</a>
+                <a href="/movie-v3.html" class="nav-link">Film</a>
+                <a href="/schedule-v3.html" class="nav-link">Jadwal Rilis</a>
+                <a href="/genres-v3.html" class="nav-link">Genre</a>
+                <a href="/seasons-v3.html" class="nav-link">Musim</a>
+                <a href="/all-anime" class="nav-link">Daftar Anime</a>
+            </div>
+            <div class="search-container">
+                <button class="search-icon-mobile" id="searchIconBtn" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                </button>
+                <input type="text" id="searchInput" placeholder="Cari anime..." class="search-input">
+                <button onclick="searchAnime()" class="search-btn">Cari</button>
+                <button class="search-close-btn" id="searchCloseBtn" aria-label="Close">×</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Banner Rekomendasi Carousel -->
+    <div class="hero-carousel" id="heroCarousel">
+        <div class="carousel-container" id="carouselContainer">
+            <div class="loading">Memuat banner...</div>
+        </div>
+        <button class="carousel-btn prev" id="carouselPrev" aria-label="Previous">‹</button>
+        <button class="carousel-btn next" id="carouselNext" aria-label="Next">›</button>
+        <div class="carousel-indicators" id="carouselIndicators"></div>
+    </div>
+
+    <main class="main-content">
+        <!-- Sedang Tayang -->
+        <section class="anime-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 class="section-title" style="margin-bottom: 0;">Sedang Tayang</h3>
+                <a href="/ongoing-v3.html" style="color: #e50914; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.3s ease;">
+                    Lihat Semua →
+                </a>
+            </div>
+            <div class="anime-row" id="sedangTayang">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+
+        <!-- Dilihat Terbanyak Musim Ini -->
+        <section class="anime-section">
+            <h3 class="section-title">Dilihat Terbanyak Musim Ini</h3>
+            <div class="anime-row" id="dilihatTerbanyak">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+
+        <!-- Komentar Terbaru Episode -->
+        <section class="anime-section">
+            <h3 class="section-title">Komentar Terbaru Episode</h3>
+            <div class="comment-list" id="komentarEpisode">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+
+        <!-- Selesai Tayang -->
+        <section class="anime-section">
+            <h3 class="section-title">Selesai Tayang</h3>
+            <div class="anime-row" id="selesaiTayang">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+
+        <!-- Film Layar Lebar -->
+        <section class="anime-section">
+            <h3 class="section-title">Film Layar Lebar</h3>
+            <div class="anime-row" id="filmLayarLebar">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+
+        <!-- Komentar Terbaru Anime -->
+        <section class="anime-section">
+            <h3 class="section-title">Komentar Terbaru Anime</h3>
+            <div class="comment-list" id="komentarAnime">
+                <div class="loading">Memuat...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>AnimMe V3 - Powered by Kuramanime</p>
+    </footer>
+
+    <script src="/app-v3.js?v=20251028"></script>
+</body>
+</html>

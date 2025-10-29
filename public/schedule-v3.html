@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Rilis - Kuramanime V3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #60b0ff 0%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #a0a0b0;
+            font-size: 1.1rem;
+        }
+
+        .day-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .day-tab {
+            padding: 12px 24px;
+            border: 2px solid rgba(96, 176, 255, 0.3);
+            background: rgba(96, 176, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: #60b0ff;
+        }
+
+        .day-tab:hover {
+            background: rgba(96, 176, 255, 0.2);
+            border-color: rgba(96, 176, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .day-tab.active {
+            background: linear-gradient(135deg, #60b0ff 0%, #4a9aff 100%);
+            border-color: #60b0ff;
+            color: white;
+            box-shadow: 0 4px 15px rgba(96, 176, 255, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 1.3rem;
+            color: #60b0ff;
+        }
+
+        .anime-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .anime-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .anime-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(96, 176, 255, 0.3);
+            border-color: rgba(96, 176, 255, 0.5);
+        }
+
+        .anime-poster {
+            width: 100%;
+            height: 380px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .anime-info {
+            padding: 15px;
+        }
+
+        .anime-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #ffffff;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 50px;
+        }
+
+        .next-episode {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #ff6b9d;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .schedule-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            color: #a0a0b0;
+            font-size: 0.9rem;
+        }
+
+        .schedule-icon {
+            color: #60b0ff;
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            background: rgba(96, 176, 255, 0.15);
+            border: 1px solid rgba(96, 176, 255, 0.3);
+            border-radius: 5px;
+            font-size: 0.85rem;
+            color: #60b0ff;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .btn-watch {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff5085 100%);
+            color: white;
+        }
+
+        .btn-watch:hover {
+            background: linear-gradient(135deg, #ff5085 0%, #ff3868 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+        }
+
+        .btn-info {
+            background: rgba(96, 176, 255, 0.2);
+            color: #60b0ff;
+            border: 1px solid rgba(96, 176, 255, 0.3);
+        }
+
+        .btn-info:hover {
+            background: rgba(96, 176, 255, 0.3);
+            border-color: rgba(96, 176, 255, 0.5);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            margin: 40px 0;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.3rem;
+            color: #a0a0b0;
+        }
+
+        @media (max-width: 768px) {
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .anime-poster {
+                height: 250px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .day-tabs {
+                gap: 8px;
+                padding: 15px;
+            }
+
+            .day-tab {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo">🎌 AnimMe V3</div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
+                <a href="/ongoing-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
+                <a href="/finished-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
+                <a href="/movie-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
+                <a href="/schedule-v3.html" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Jadwal Rilis</a>
+                <a href="/genres-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Genre</a>
+                <a href="/seasons-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Musim</a>
+                <a href="/all-anime" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Daftar Anime</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>📅 Jadwal Rilis Anime</h1>
+            <p>Jadwal tayang episode terbaru dari Kuramanime</p>
+            <p id="headerStats" style="color: #60b0ff; font-size: 0.95rem; margin-top: 10px;"></p>
+        </div>
+
+        <div class="day-tabs">
+            <div class="day-tab active" data-day="all" onclick="selectDay('all')">Semua</div>
+            <div class="day-tab" data-day="monday" onclick="selectDay('monday')">Senin</div>
+            <div class="day-tab" data-day="tuesday" onclick="selectDay('tuesday')">Selasa</div>
+            <div class="day-tab" data-day="wednesday" onclick="selectDay('wednesday')">Rabu</div>
+            <div class="day-tab" data-day="thursday" onclick="selectDay('thursday')">Kamis</div>
+            <div class="day-tab" data-day="friday" onclick="selectDay('friday')">Jumat</div>
+            <div class="day-tab" data-day="saturday" onclick="selectDay('saturday')">Sabtu</div>
+            <div class="day-tab" data-day="sunday" onclick="selectDay('sunday')">Minggu</div>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: block;">
+            ⏳ Memuat jadwal rilis...
+        </div>
+
+        <div id="animeGrid" class="anime-grid" style="display: none;"></div>
+    </div>
+
+    <script>
+        let currentDay = 'all';
+
+        async function loadSchedule(day = 'all') {
+            try {
+                document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('animeGrid').style.display = 'none';
+
+                const response = await fetch(`/api/v3/kuramanime/schedule?day=${day}`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    displaySchedule(data.data);
+                    currentDay = day;
+                } else {
+                    throw new Error(data.message || 'Failed to load schedule');
+                }
+
+                document.getElementById('loadingIndicator').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                document.getElementById('loadingIndicator').innerHTML = 
+                    '❌ Gagal memuat jadwal. Silakan refresh halaman.';
+            }
+        }
+
+        function displaySchedule(data) {
+            const grid = document.getElementById('animeGrid');
+            const scheduleList = data.schedule_list || [];
+
+            if (scheduleList.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-text">Tidak ada anime dalam jadwal ini</div>
+                    </div>
+                `;
+                grid.style.display = 'block';
+                document.getElementById('headerStats').textContent = 
+                    `📊 Total: 0 anime terjadwal`;
+                return;
+            }
+
+            grid.innerHTML = scheduleList.map(anime => `
+                <div class="anime-card">
+                    <img src="${anime.poster}" alt="${anime.title}" class="anime-poster" loading="lazy">
+                    <div class="anime-info">
+                        <div class="anime-title">${anime.title}</div>
+                        
+                        ${anime.next_episode ? `
+                            <div class="next-episode">
+                                🎬 Episode ${anime.next_episode}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="schedule-info">
+                            <span class="schedule-icon">📅</span>
+                            <span>${anime.schedule_day}</span>
+                        </div>
+                        
+                        <div class="schedule-info">
+                            <span class="schedule-icon">🕐</span>
+                            <span>${anime.schedule_time}</span>
+                        </div>
+                        
+                        ${anime.tags && anime.tags.length > 0 ? `
+                            <div class="tags">
+                                ${anime.tags.map(tag => `<span class="tag">${tag.label}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="buttons">
+                            <a href="/episode-v3.html?animeId=${anime.anime_id}&slug=${anime.slug}&episode=${anime.next_episode || '1'}" 
+                               class="btn btn-watch" 
+                               title="Tonton episode terbaru">
+                                ▶ Watch
+                            </a>
+                            <a href="/detail-v3.html?animeId=${anime.anime_id}&slug=${anime.slug}" 
+                               class="btn btn-info" 
+                               title="Lihat detail & semua episode">
+                                ℹ Info
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            grid.style.display = 'grid';
+            
+            document.getElementById('headerStats').textContent = 
+                `📊 Total: ${scheduleList.length} anime terjadwal`;
+        }
+
+        function selectDay(day) {
+            // Update active tab
+            document.querySelectorAll('.day-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-day="${day}"]`).classList.add('active');
+            
+            // Load schedule
+            loadSchedule(day);
+        }
+
+        // Load initial schedule
+        loadSchedule('all');
+    </script>
+</body>
+</html>
