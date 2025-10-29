@@ -907,15 +907,54 @@ app.get('/api/v3/kuramanime/types', async (req, res) => {
     }
 });
 
+// V3 Kuramanime Quality List
+app.get('/api/v3/kuramanime/qualities', async (req, res) => {
+    try {
+        console.log('[V3] Fetching kuramanime quality list');
+        const data = await kuramanimeScraper.scrapeQualityList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /qualities:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// V3 Kuramanime Source List (Adaptasi)
+app.get('/api/v3/kuramanime/sources', async (req, res) => {
+    try {
+        console.log('[V3] Fetching kuramanime source list');
+        const data = await kuramanimeScraper.scrapeSourceList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /sources:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// V3 Kuramanime Country List
+app.get('/api/v3/kuramanime/countries', async (req, res) => {
+    try {
+        console.log('[V3] Fetching kuramanime country list');
+        const data = await kuramanimeScraper.scrapeCountryList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /countries:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // V3 Kuramanime Properties Overview (All)
 app.get('/api/v3/kuramanime/properties', async (req, res) => {
     try {
         console.log('[V3] Fetching all kuramanime properties');
-        const [genres, seasons, studios, types] = await Promise.all([
+        const [genres, seasons, studios, types, qualities, sources, countries] = await Promise.all([
             kuramanimeScraper.scrapeGenreList(),
             kuramanimeScraper.scrapeSeasonList(),
             kuramanimeScraper.scrapeStudioList(),
-            kuramanimeScraper.scrapeTypeList()
+            kuramanimeScraper.scrapeTypeList(),
+            kuramanimeScraper.scrapeQualityList(),
+            kuramanimeScraper.scrapeSourceList(),
+            kuramanimeScraper.scrapeCountryList()
         ]);
         res.json({ 
             status: 'success', 
@@ -923,7 +962,10 @@ app.get('/api/v3/kuramanime/properties', async (req, res) => {
                 genres,
                 seasons,
                 studios,
-                types
+                types,
+                qualities,
+                sources,
+                countries
             }
         });
     } catch (error) {

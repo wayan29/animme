@@ -202,6 +202,60 @@
             margin-bottom: 15px;
         }
 
+        .property-selector {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .property-selector form {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .property-selector p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin: 0;
+        }
+
+        .property-selector select {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .property-selector select:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(96, 176, 255, 0.5);
+        }
+
+        .property-selector select:focus {
+            outline: none;
+            border-color: #60b0ff;
+            box-shadow: 0 0 0 3px rgba(96, 176, 255, 0.2);
+        }
+
+        .property-selector select option {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 10px;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -239,6 +293,22 @@
         <div class="header">
             <h1>📚 Daftar Properti Anime</h1>
             <p>Temukan anime berdasarkan Genre, Musim, Studio, atau Tipe yang kamu inginkan</p>
+        </div>
+
+        <div class="property-selector">
+            <form id="chooseGenreEtcForm" onsubmit="event.preventDefault();">
+                <p>Properti:</p>
+                <select id="chooseGenreEtc" name="genre_etc">
+                    <option value="" disabled selected>- pilih -</option>
+                    <option value="/genres-v3.html" title="Semua Genre">Daftar Genre</option>
+                    <option value="/seasons-v3.html" title="Musim">Daftar Musim</option>
+                    <option value="/studios-v3.html" title="Studio">Daftar Studio</option>
+                    <option value="/types-v3.html" title="Tipe">Daftar Tipe</option>
+                    <option value="/qualities-v3.html" title="Kualitas">Daftar Kualitas</option>
+                    <option value="/sources-v3.html" title="Adaptasi">Daftar Adaptasi</option>
+                    <option value="/countries-v3.html" title="Negara">Daftar Negara</option>
+                </select>
+            </form>
         </div>
 
         <div id="content">
@@ -298,6 +368,30 @@
                     preview: data.types.types.slice(0, 6).map(t => t.name),
                     url: '/types-v3.html',
                     gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
+                },
+                {
+                    icon: '🎬',
+                    title: 'Kualitas',
+                    count: data.qualities ? data.qualities.total : 0,
+                    preview: data.qualities ? data.qualities.qualities.slice(0, 6).map(q => q.name) : [],
+                    url: '/qualities-v3.html',
+                    gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+                },
+                {
+                    icon: '📖',
+                    title: 'Adaptasi',
+                    count: data.sources ? data.sources.total : 0,
+                    preview: data.sources ? data.sources.sources.slice(0, 6).map(s => s.name) : [],
+                    url: '/sources-v3.html',
+                    gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
+                },
+                {
+                    icon: '🌏',
+                    title: 'Negara',
+                    count: data.countries ? data.countries.total : 0,
+                    preview: data.countries ? data.countries.countries.slice(0, 6).map(c => c.name) : [],
+                    url: '/countries-v3.html',
+                    gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
                 }
             ];
 
@@ -338,6 +432,14 @@
 
         // Load properties on page load
         loadProperties();
+
+        // Handle dropdown change
+        document.getElementById('chooseGenreEtc').addEventListener('change', function() {
+            const selectedUrl = this.value;
+            if (selectedUrl) {
+                window.location.href = selectedUrl;
+            }
+        });
     </script>
 </body>
 </html>
