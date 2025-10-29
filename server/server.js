@@ -883,6 +883,19 @@ app.get('/api/v3/kuramanime/season/:slug', async (req, res) => {
     }
 });
 
+// V3 Kuramanime Batch Download
+app.get('/api/v3/kuramanime/batch/:animeId/:slug/:range', async (req, res) => {
+    try {
+        const { animeId, slug, range } = req.params;
+        console.log(`[V3] Scraping kuramanime batch: ${animeId}/${slug}/${range}`);
+        const data = await kuramanimeScraper.scrapeBatch(animeId, slug, range);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /batch:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // Route untuk halaman utama
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));

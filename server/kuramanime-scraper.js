@@ -387,6 +387,7 @@ async function scrapeDetail(animeId, slug) {
             info: {},
             genres: [],
             episodes: [],
+            batch_list: [],
             anime_lainnya: []
         };
         
@@ -452,6 +453,32 @@ async function scrapeDetail(animeId, slug) {
                     });
                 }
             });
+        }
+        
+        // Batch downloads from popover (for completed anime)
+        const $batchBtn = $('#episodeBatchLists');
+        if ($batchBtn.length > 0) {
+            const batchPopoverContent = $batchBtn.attr('data-content');
+            if (batchPopoverContent) {
+                const $batchPopover = cheerio.load(batchPopoverContent);
+                $batchPopover('a[href*="/batch/"]').each((i, el) => {
+                    const $el = $batchPopover(el);
+                    const batchHref = $el.attr('href');
+                    const batchTitle = $el.text().trim().replace(/\s+/g, ' ');
+                    
+                    if (batchHref && batchTitle) {
+                        // Extract batch range from URL (e.g., "1-12" from ".../batch/1-12")
+                        const batchRangeMatch = batchHref.match(/\/batch\/([^\/]+)$/);
+                        const batchRange = batchRangeMatch ? batchRangeMatch[1] : '';
+                        
+                        result.batch_list.push({
+                            title: batchTitle,
+                            range: batchRange,
+                            url: batchHref.startsWith('http') ? batchHref : `${BASE_URL}${batchHref}`
+                        });
+                    }
+                });
+            }
         }
         
         // Anime Lainnya (Related/Recommended Anime)
@@ -1403,6 +1430,151 @@ async function scrapeSeason(seasonSlug, page = 1, orderBy = 'ascending') {
     }
 }
 
+// Scrape batch download page
+async function scrapeBatch(animeId, slug, batchRange) {
+    let browser;
+    try {
+        const url = `${BASE_URL}/anime/${animeId}/${slug}/batch/${batchRange}`;
+        
+        // Use Puppeteer to handle dynamic content
+        browser = await puppeteer.launch({
+            headless: 'new',
+            executablePath: '/snap/bin/chromium',
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+        });
+        
+        const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+        
+        await page.goto(url, { 
+            waitUntil: 'networkidle0',
+            timeout: 30000 
+        });
+        
+        // Wait for download links to load (up to 15 seconds)
+        try {
+            await page.waitForFunction(
+                () => {
+                    const downloadSection = document.querySelector('#animeDownloadLink');
+                    if (!downloadSection) return false;
+                    const links = downloadSection.querySelectorAll('a[href]');
+                    return links.length > 0;
+                },
+                { timeout: 15000 }
+            );
+        } catch (waitError) {
+            console.warn('Batch download links did not load within timeout');
+        }
+        
+        const data = await page.content();
+        await browser.close();
+        browser = null;
+        
+        const $ = cheerio.load(data);
+        const result = {
+            title: '',
+            poster: '',
+            synopsis: '',
+            info: {},
+            genres: [],
+            download_links: []
+        };
+        
+        // Get title from breadcrumb or page title
+        result.title = $('#episodeTitle').text().trim().replace('[BATCH]', '').trim();
+        if (!result.title) {
+            result.title = $('.anime__details__title h3').text().trim().replace('[BATCH]', '').trim();
+        }
+        
+        // Get poster
+        result.poster = proxyImageUrl($('.anime__details__pic').attr('data-setbg'));
+        
+        // Get synopsis
+        result.synopsis = $('.anime__details__text p').text().trim();
+        
+        // Get info (similar to detail page)
+        $('.anime__details__widget ul li').each((i, el) => {
+            const $el = $(el);
+            const label = $el.find('.col-3 span').text().trim().replace(':', '');
+            const $valueCol = $el.find('.col-9');
+            let value = $valueCol.find('a').text().trim();
+            if (!value) {
+                value = $valueCol.text().trim();
+            }
+            
+            if (label && value) {
+                result.info[label.toLowerCase().replace(/\s+/g, '_')] = value;
+            }
+        });
+        
+        // Get genres
+        $('.anime__details__widget .row .col-lg-6:last-child li').each((i, el) => {
+            const $el = $(el);
+            $el.find('a').each((j, genreEl) => {
+                result.genres.push($(genreEl).text().trim());
+            });
+        });
+        
+        // Get download links from dynamic content (similar to episode scraper)
+        let currentQuality = 'Unknown';
+        let currentSize = '';
+        
+        $('#animeDownloadLink > *').each((i, el) => {
+            const $el = $(el);
+            
+            // Check if this is a header/quality indicator
+            if ($el.is('p') || $el.is('h4') || $el.is('h5') || $el.hasClass('download-header')) {
+                const headerText = $el.text().trim();
+                
+                // Extract format (MKV, MP4, etc.) and resolution
+                const formatMatch = headerText.match(/(MKV|MP4|AVI)/i);
+                const currentFormat = formatMatch ? formatMatch[1].toUpperCase() : '';
+                
+                // Extract resolution (360p, 480p, 720p, 1080p)
+                const resolutionMatch = headerText.match(/(\d+p)/i);
+                currentQuality = resolutionMatch ? resolutionMatch[1] : currentQuality;
+                
+                // Extract subtitle type
+                const subType = headerText.match(/\((Softsub|Hardsub)\)/i);
+                const subTypeStr = subType ? subType[1] : '';
+                
+                // Extract size
+                const sizeMatch = headerText.match(/—\s*\(([^)]+)\)/);
+                currentSize = sizeMatch ? sizeMatch[1].trim() : '';
+                
+                // Build full quality string
+                currentQuality = `${currentFormat} ${currentQuality}${subTypeStr ? ' (' + subTypeStr + ')' : ''}`.trim();
+            }
+            // Check if this is a download link
+            else if ($el.is('a')) {
+                const href = $el.attr('href');
+                const linkText = $el.text().trim();
+                
+                // Filter out invalid links
+                if (href && linkText && href.startsWith('http') &&
+                    !linkText.toLowerCase().includes('loading') &&
+                    !linkText.toLowerCase().includes('sebentar')) {
+                    result.download_links.push({
+                        quality: currentQuality,
+                        size: currentSize,
+                        provider: linkText,
+                        url: href
+                    });
+                }
+            }
+        });
+        
+        return result;
+    } catch (error) {
+        console.error('Kuramanime scrapeBatch error:', error.message);
+        throw error;
+    } finally {
+        if (browser) {
+            await browser.close();
+        }
+    }
+}
+
 module.exports = {
     scrapeHome,
     scrapeDetail,
@@ -1416,5 +1588,6 @@ module.exports = {
     scrapeGenre,
     scrapeSeasonList,
     scrapeSeason,
+    scrapeBatch,
     getImageUrlMap
 };

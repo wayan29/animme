@@ -121,6 +121,38 @@
             box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
         }
         
+        .batch-section {
+            margin-top: 40px;
+        }
+        
+        .batch-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .batch-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.2);
+            padding: 15px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .batch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            border-color: rgba(255,255,255,0.5);
+        }
+        
         .recommendations-section {
             margin-top: 50px;
         }
@@ -245,6 +277,14 @@
         </div>
     </main>
 
+    <!-- Batch Download Modal -->
+    <div id="batchModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; overflow-y:auto;">
+        <div style="max-width:800px; margin:50px auto; background:#1a1a1a; border-radius:12px; padding:30px; position:relative;">
+            <button onclick="closeBatchModal()" style="position:absolute; top:15px; right:15px; background:#e50914; color:#fff; border:none; padding:10px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">✕ Tutup</button>
+            <div id="batchModalContent"></div>
+        </div>
+    </div>
+
     <script>
         // Extract animeId and slug from URL (support both path and query params)
         const urlParams = new URLSearchParams(window.location.search);
@@ -358,6 +398,23 @@
                 </div>
                 ` : ''}
                 
+                <!-- Batch Download Section -->
+                ${anime.batch_list && anime.batch_list.length > 0 ? `
+                <div class="batch-section">
+                    <h2>📦 Batch Download (${anime.batch_list.length})</h2>
+                    <div class="batch-list">
+                        ${anime.batch_list.map(batch => `
+                            <a href="#" 
+                               class="batch-btn" 
+                               onclick="openBatchModal('${animeId}', '${slug}', '${batch.range}', '${batch.title}'); return false;"
+                               title="Download ${batch.title}">
+                                ${batch.title}
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                
                 <!-- Anime Lainnya Section -->
                 ${anime.anime_lainnya && anime.anime_lainnya.length > 0 ? `
                 <div class="recommendations-section">
@@ -390,6 +447,95 @@
                 </div>
             `;
         }
+
+        // Batch download modal functions
+        async function openBatchModal(animeId, slug, range, title) {
+            const modal = document.getElementById('batchModal');
+            const content = document.getElementById('batchModalContent');
+            
+            modal.style.display = 'block';
+            content.innerHTML = '<div style="text-align:center; padding:30px; color:#fff;"><h3>Memuat download links...</h3></div>';
+            
+            try {
+                const response = await fetch(`/api/v3/kuramanime/batch/${animeId}/${slug}/${range}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    displayBatchDownloads(result.data);
+                } else {
+                    content.innerHTML = '<div style="color:#e50914; text-align:center; padding:30px;"><h3>Gagal memuat download links</h3></div>';
+                }
+            } catch (error) {
+                console.error('Error loading batch:', error);
+                content.innerHTML = '<div style="color:#e50914; text-align:center; padding:30px;"><h3>Terjadi kesalahan saat memuat data</h3></div>';
+            }
+        }
+        
+        function displayBatchDownloads(batch) {
+            const content = document.getElementById('batchModalContent');
+            
+            // Group download links by quality
+            const groupedLinks = {};
+            if (batch.download_links) {
+                batch.download_links.forEach(link => {
+                    const quality = link.quality || 'Unknown Quality';
+                    if (!groupedLinks[quality]) {
+                        groupedLinks[quality] = [];
+                    }
+                    groupedLinks[quality].push(link);
+                });
+            }
+            
+            content.innerHTML = `
+                <h2 style="color:#fff; margin-bottom:20px;">${batch.title}</h2>
+                
+                ${batch.synopsis ? `
+                <div style="color:#ddd; margin-bottom:20px; line-height:1.6;">
+                    <strong>Sinopsis:</strong> ${batch.synopsis}
+                </div>
+                ` : ''}
+                
+                ${Object.keys(groupedLinks).length > 0 ? `
+                <div style="margin-top:30px;">
+                    <h3 style="color:#fff; margin-bottom:15px;">📥 Download Links:</h3>
+                    ${Object.entries(groupedLinks).map(([quality, links]) => `
+                        <div style="background:#222; padding:20px; border-radius:8px; margin-bottom:20px;">
+                            <h4 style="color:#e50914; margin-bottom:15px;">${quality}</h4>
+                            <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                                ${links.map(link => `
+                                    <a href="${link.url}" 
+                                       target="_blank"
+                                       style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                              color:#fff; 
+                                              padding:10px 20px; 
+                                              border-radius:6px; 
+                                              text-decoration:none; 
+                                              font-weight:bold;
+                                              transition:all 0.3s;"
+                                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.5)';"
+                                       onmouseout="this.style.transform=''; this.style.boxShadow='';"
+                                       title="${link.size ? 'Size: ' + link.size : ''}">
+                                        ${link.provider}
+                                    </a>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : '<p style="color:#999; text-align:center; padding:20px;">Download links tidak tersedia</p>'}
+            `;
+        }
+        
+        function closeBatchModal() {
+            document.getElementById('batchModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('batchModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'batchModal') {
+                closeBatchModal();
+            }
+        });
 
         // Server selector
         document.getElementById('serverSelect').addEventListener('change', (e) => {
