@@ -1298,7 +1298,9 @@ async function scrapeTypeList() {
 // Scrape anime by quality
 async function scrapeQuality(qualitySlug, page = 1, orderBy = 'ascending') {
     try {
-        const url = `${BASE_URL}/properties/quality/${qualitySlug}?order_by=${orderBy}&page=${page}`;
+        // Kuramanime requires 'name' parameter for quality pages
+        const qualityName = qualitySlug.toUpperCase();
+        const url = `${BASE_URL}/properties/quality/${qualitySlug}?name=${qualityName}&order_by=${orderBy}&page=${page}`;
         const { data } = await axios.get(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
