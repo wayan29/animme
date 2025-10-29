@@ -388,24 +388,24 @@
         let currentOrder = 'ascending';
         let currentStudio = '';
         let studioName = '';
+        let paginationData = null;
         
         // Get URL params
         const urlParams = new URLSearchParams(window.location.search);
         currentStudio = urlParams.get('studio');
         
         if (!currentStudio) {
-            document.getElementById('errorMessage').textContent = 'Studio tidak ditemukan dalam URL';
-            document.getElementById('errorMessage').style.display = 'block';
-            document.getElementById('loadingIndicator').style.display = 'none';
-            return;
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('errorMessage').textContent = 'Studio tidak ditemukan dalam URL';
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('loadingIndicator').style.display = 'none';
+            });
+        } else {
+            // Format studio name for display
+            studioName = currentStudio.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
         }
-        
-        // Format studio name for display
-        studioName = currentStudio.split('-').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
-        
-        let paginationData = null;
 
         async function loadStudio(page = 1, orderBy = 'ascending') {
             try {
@@ -521,8 +521,10 @@
             loadStudio(1, e.target.value);
         });
 
-        // Load initial page
-        loadStudio(1, 'ascending');
+        // Load initial page when studio is available
+        if (currentStudio) {
+            loadStudio(1, 'ascending');
+        }
     </script>
 </body>
 </html>
