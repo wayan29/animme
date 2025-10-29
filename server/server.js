@@ -883,6 +883,55 @@ app.get('/api/v3/kuramanime/season/:slug', async (req, res) => {
     }
 });
 
+// V3 Kuramanime Studio List
+app.get('/api/v3/kuramanime/studios', async (req, res) => {
+    try {
+        console.log('[V3] Fetching kuramanime studio list');
+        const data = await kuramanimeScraper.scrapeStudioList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /studios:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// V3 Kuramanime Type List
+app.get('/api/v3/kuramanime/types', async (req, res) => {
+    try {
+        console.log('[V3] Fetching kuramanime type list');
+        const data = await kuramanimeScraper.scrapeTypeList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /types:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// V3 Kuramanime Properties Overview (All)
+app.get('/api/v3/kuramanime/properties', async (req, res) => {
+    try {
+        console.log('[V3] Fetching all kuramanime properties');
+        const [genres, seasons, studios, types] = await Promise.all([
+            kuramanimeScraper.scrapeGenreList(),
+            kuramanimeScraper.scrapeSeasonList(),
+            kuramanimeScraper.scrapeStudioList(),
+            kuramanimeScraper.scrapeTypeList()
+        ]);
+        res.json({ 
+            status: 'success', 
+            data: {
+                genres,
+                seasons,
+                studios,
+                types
+            }
+        });
+    } catch (error) {
+        console.error('[V3] API Error /properties:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // V3 Kuramanime Batch Download
 app.get('/api/v3/kuramanime/batch/:animeId/:slug/:range', async (req, res) => {
     try {

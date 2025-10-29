@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Tipe Anime - Kuramanime V3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #a0a0b0;
+            font-size: 1.1rem;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            text-decoration: none;
+            color: #43e97b;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(67, 233, 123, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 1.3rem;
+            color: #43e97b;
+        }
+
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .type-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .type-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(67, 233, 123, 0.3);
+            border-color: rgba(67, 233, 123, 0.5);
+            background: rgba(67, 233, 123, 0.1);
+        }
+
+        .type-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .type-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .type-description {
+            font-size: 0.9rem;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .type-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 10px;
+            }
+
+            .type-card {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo" onclick="window.location.href='/v3'">🎌 Kuramanime V3</div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="/v3" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Beranda</a>
+                <a href="/properties-v3.html" style="text-decoration: none; color: #43e97b; font-weight: 600; border-bottom: 2px solid #43e97b;">Properti</a>
+                <a href="/search-v3.html" style="text-decoration: none; color: #a0a0b0; font-weight: 500;">Cari</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="/properties-v3.html" class="back-btn">← Kembali ke Properti</a>
+
+        <div class="header">
+            <h1>📺 Daftar Tipe Anime</h1>
+            <p>Jelajahi anime berdasarkan tipe atau format</p>
+            <p id="headerStats" style="color: #43e97b; font-size: 0.95rem; margin-top: 10px;"></p>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: block;">
+            ⏳ Memuat daftar tipe...
+        </div>
+
+        <div id="typeGrid" class="type-grid" style="display: none;"></div>
+    </div>
+
+    <script>
+        const typeIcons = {
+            'tv': '📺',
+            'movie': '🎬',
+            'ova': '💿',
+            'ona': '🌐',
+            'special': '⭐',
+            'cm': '📹',
+            'music': '🎵',
+            'pv': '🎥'
+        };
+
+        const typeDescriptions = {
+            'tv': 'Serial TV',
+            'movie': 'Film Layar Lebar',
+            'ova': 'Original Video Animation',
+            'ona': 'Original Net Animation',
+            'special': 'Episode Spesial',
+            'cm': 'Commercial',
+            'music': 'Music Video',
+            'pv': 'Promotional Video'
+        };
+
+        async function loadTypes() {
+            try {
+                const response = await fetch('/api/v3/kuramanime/types');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    displayTypes(data.data);
+                } else {
+                    throw new Error(data.message || 'Failed to load types');
+                }
+
+                document.getElementById('loadingIndicator').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading types:', error);
+                document.getElementById('loadingIndicator').innerHTML = 
+                    '❌ Gagal memuat tipe. Silakan refresh halaman.';
+            }
+        }
+
+        function displayTypes(data) {
+            const grid = document.getElementById('typeGrid');
+            const types = data.types || [];
+
+            if (types.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; color:#a0a0b0;">Tidak ada tipe tersedia</p>';
+                grid.style.display = 'block';
+                return;
+            }
+
+            grid.innerHTML = types.map(type => {
+                const icon = typeIcons[type.slug.toLowerCase()] || '📼';
+                const description = typeDescriptions[type.slug.toLowerCase()] || '';
+                
+                return `
+                    <a href="${type.url}" class="type-card">
+                        <div class="type-icon">${icon}</div>
+                        <div class="type-name">${type.name}</div>
+                        ${description ? `<div class="type-description">${description}</div>` : ''}
+                    </a>
+                `;
+            }).join('');
+
+            grid.style.display = 'grid';
+            
+            document.getElementById('headerStats').textContent = 
+                `📊 Total: ${types.length} tipe tersedia`;
+        }
+
+        // Load types on page load
+        loadTypes();
+    </script>
+</body>
+</html>

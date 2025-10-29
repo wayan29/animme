@@ -1209,6 +1209,92 @@ async function scrapeGenreList() {
     }
 }
 
+// Scrape studio list
+async function scrapeStudioList() {
+    try {
+        const url = `${BASE_URL}/properties/studio`;
+        const { data } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        const $ = cheerio.load(data);
+        const studios = [];
+        
+        // Extract studios from kuramanime__genres section
+        $('.kuramanime__genres ul li').each((i, el) => {
+            const $el = $(el);
+            const $link = $el.find('a');
+            const href = $link.attr('href');
+            const name = $link.find('span').text().trim();
+            
+            if (href && name) {
+                const studioMatch = href.match(/\/properties\/studio\/([^?]+)/);
+                if (studioMatch) {
+                    const studioSlug = studioMatch[1];
+                    studios.push({
+                        name: name,
+                        slug: studioSlug,
+                        url: `${BASE_URL}/properties/studio/${studioSlug}`
+                    });
+                }
+            }
+        });
+        
+        return {
+            studios: studios,
+            total: studios.length
+        };
+    } catch (error) {
+        console.error('Kuramanime scrapeStudioList error:', error.message);
+        throw error;
+    }
+}
+
+// Scrape type list
+async function scrapeTypeList() {
+    try {
+        const url = `${BASE_URL}/properties/type`;
+        const { data } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        const $ = cheerio.load(data);
+        const types = [];
+        
+        // Extract types from kuramanime__genres section
+        $('.kuramanime__genres ul li').each((i, el) => {
+            const $el = $(el);
+            const $link = $el.find('a');
+            const href = $link.attr('href');
+            const name = $link.find('span').text().trim();
+            
+            if (href && name) {
+                const typeMatch = href.match(/\/properties\/type\/([^?]+)/);
+                if (typeMatch) {
+                    const typeSlug = typeMatch[1];
+                    types.push({
+                        name: name,
+                        slug: typeSlug,
+                        url: `${BASE_URL}/properties/type/${typeSlug}`
+                    });
+                }
+            }
+        });
+        
+        return {
+            types: types,
+            total: types.length
+        };
+    } catch (error) {
+        console.error('Kuramanime scrapeTypeList error:', error.message);
+        throw error;
+    }
+}
+
 // Scrape anime by genre
 async function scrapeGenre(genreSlug, page = 1, orderBy = 'ascending') {
     try {
@@ -1647,6 +1733,8 @@ module.exports = {
     scrapeGenre,
     scrapeSeasonList,
     scrapeSeason,
+    scrapeStudioList,
+    scrapeTypeList,
     scrapeBatch,
     getImageUrlMap
 };

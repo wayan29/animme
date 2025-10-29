@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Properti Anime - Kuramanime V3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #e0e0e0;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #60b0ff 0%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #a0a0b0;
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px;
+            font-size: 1.5rem;
+            color: #60b0ff;
+        }
+
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .property-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .property-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(96, 176, 255, 0.3);
+            border-color: rgba(96, 176, 255, 0.3);
+        }
+
+        .property-header {
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(96, 176, 255, 0.2) 0%, rgba(255, 107, 157, 0.2) 100%);
+            text-align: center;
+        }
+
+        .property-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .property-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .property-count {
+            font-size: 1.1rem;
+            color: #a0a0b0;
+        }
+
+        .property-body {
+            padding: 25px;
+        }
+
+        .property-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .preview-tag {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #c0c0d0;
+        }
+
+        .property-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .property-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .error {
+            text-align: center;
+            padding: 60px;
+            background: rgba(229, 9, 20, 0.1);
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .error h2 {
+            color: #ff6b9d;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .properties-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="logo" onclick="window.location.href='/v3'">Kuramanime V3</div>
+            <div class="nav-links">
+                <a href="/v3" class="nav-link">Beranda</a>
+                <a href="/search-v3.html" class="nav-link">Cari</a>
+                <a href="/genres-v3.html" class="nav-link">Genre</a>
+                <a href="/seasons-v3.html" class="nav-link">Musim</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📚 Daftar Properti Anime</h1>
+            <p>Temukan anime berdasarkan Genre, Musim, Studio, atau Tipe yang kamu inginkan</p>
+        </div>
+
+        <div id="content">
+            <div class="loading">Memuat data properti...</div>
+        </div>
+    </div>
+
+    <script>
+        async function loadProperties() {
+            try {
+                const response = await fetch('/api/v3/kuramanime/properties');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    displayProperties(result.data);
+                } else {
+                    showError('Gagal memuat data properti');
+                }
+            } catch (error) {
+                console.error('Error loading properties:', error);
+                showError('Terjadi kesalahan saat memuat data');
+            }
+        }
+
+        function displayProperties(data) {
+            const content = document.getElementById('content');
+            
+            const propertyData = [
+                {
+                    icon: '🎭',
+                    title: 'Genre',
+                    count: data.genres.total,
+                    preview: data.genres.genres.slice(0, 6).map(g => g.name),
+                    url: '/genres-v3.html',
+                    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                },
+                {
+                    icon: '📅',
+                    title: 'Musim',
+                    count: data.seasons.total,
+                    preview: data.seasons.seasons.slice(0, 6).map(s => s.name),
+                    url: '/seasons-v3.html',
+                    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+                },
+                {
+                    icon: '🏢',
+                    title: 'Studio',
+                    count: data.studios.total,
+                    preview: data.studios.studios.slice(0, 6).map(s => s.name),
+                    url: '/studios-v3.html',
+                    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+                },
+                {
+                    icon: '📺',
+                    title: 'Tipe',
+                    count: data.types.total,
+                    preview: data.types.types.slice(0, 6).map(t => t.name),
+                    url: '/types-v3.html',
+                    gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
+                }
+            ];
+
+            content.innerHTML = `
+                <div class="properties-grid">
+                    ${propertyData.map(prop => `
+                        <div class="property-card" onclick="window.location.href='${prop.url}'">
+                            <div class="property-header">
+                                <div class="property-icon">${prop.icon}</div>
+                                <div class="property-title">${prop.title}</div>
+                                <div class="property-count">${prop.count} ${prop.title}</div>
+                            </div>
+                            <div class="property-body">
+                                <div class="property-preview">
+                                    ${prop.preview.map(item => `
+                                        <span class="preview-tag">${item}</span>
+                                    `).join('')}
+                                </div>
+                                <button class="property-btn" style="background: ${prop.gradient}">
+                                    Lihat Semua ${prop.title}
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error">
+                    <h2>❌ ${message}</h2>
+                    <p>Silakan coba lagi nanti atau kembali ke <a href="/v3" style="color: #60b0ff;">beranda</a>.</p>
+                </div>
+            `;
+        }
+
+        // Load properties on page load
+        loadProperties();
+    </script>
+</body>
+</html>
