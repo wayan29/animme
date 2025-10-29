@@ -1451,26 +1451,9 @@ async function scrapeBatch(animeId, slug, batchRange) {
             timeout: 30000 
         });
         
-        // Wait for download links to load (up to 15 seconds)
-        try {
-            await page.waitForFunction(
-                () => {
-                    const downloadSection = document.querySelector('#animeDownloadLink');
-                    if (!downloadSection) return false;
-                    const links = downloadSection.querySelectorAll('a[href]');
-                    return links.length > 0;
-                },
-                { timeout: 15000 }
-            );
-        } catch (waitError) {
-            console.warn('Batch download links did not load within timeout');
-        }
+        const html = await page.content();
+        const $ = cheerio.load(html);
         
-        const data = await page.content();
-        await browser.close();
-        browser = null;
-        
-        const $ = cheerio.load(data);
         const result = {
             title: '',
             poster: '',
@@ -1515,35 +1498,108 @@ async function scrapeBatch(animeId, slug, batchRange) {
             });
         });
         
-        // Get download links from dynamic content (similar to episode scraper)
+        // Extract download links using data-kk method (same as episode)
+        // Step 1: Extract data-kk attribute
+        const dataKk = $('[data-kk]').attr('data-kk');
+        if (!dataKk) {
+            console.warn('data-kk attribute not found in batch page');
+            await browser.close();
+            return result;
+        }
+        
+        console.log(`[Batch] Found data-kk: ${dataKk}`);
+        
+        // Step 2: Fetch JS file to get environment variables
+        const jsUrl = `${BASE_URL}/assets/js/${dataKk}.js`;
+        const jsResponse = await axios.get(jsUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': url
+            }
+        });
+        
+        // Step 3: Parse environment variables from JS
+        const jsContent = jsResponse.data;
+        const envMatch = jsContent.match(/window\.process\s*=\s*{\s*env:\s*({[^}]+})/);
+        if (!envMatch) {
+            console.warn('Could not parse environment variables from JS');
+            await browser.close();
+            return result;
+        }
+        
+        // Extract env variables
+        const envVars = {};
+        const envContent = envMatch[1];
+        const varMatches = envContent.matchAll(/(\w+):\s*['"]([^'"]+)['"]/g);
+        for (const match of varMatches) {
+            envVars[match[1]] = match[2];
+        }
+        
+        console.log('[Batch] Parsed env vars:', Object.keys(envVars));
+        
+        // Step 4: Fetch auth token
+        const authTokenUrl = `${BASE_URL}/${envVars.MIX_PREFIX_AUTH_ROUTE_PARAM || 'assets/'}${envVars.MIX_AUTH_ROUTE_PARAM}`;
+        const tokenResponse = await axios.get(authTokenUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': url
+            }
+        });
+        
+        const authToken = tokenResponse.data.trim();
+        console.log('[Batch] Auth token obtained');
+        
+        // Step 5: Fetch batch download page with auth token
+        const pageTokenKey = envVars.MIX_PAGE_TOKEN_KEY;
+        const serverKey = envVars.MIX_STREAM_SERVER_KEY;
+        
+        // For batch, we typically use 'kuramadrive' as the server
+        const batchUrl = `${url}?${pageTokenKey}=${authToken}&${serverKey}=kuramadrive&page=1`;
+        
+        console.log('[Batch] Fetching download links from:', batchUrl);
+        
+        const batchResponse = await axios.get(batchUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': url
+            },
+            timeout: 15000
+        });
+        
+        const $batch = cheerio.load(batchResponse.data);
+        
+        // Extract download links with quality and size info
         let currentQuality = 'Unknown';
         let currentSize = '';
         
-        $('#animeDownloadLink > *').each((i, el) => {
-            const $el = $(el);
+        $batch('#animeDownloadLink > *').each((i, el) => {
+            const $el = $batch(el);
             
-            // Check if this is a header/quality indicator
-            if ($el.is('p') || $el.is('h4') || $el.is('h5') || $el.hasClass('download-header')) {
+            // Check if this is a header/quality indicator (h6, p, h4, h5)
+            if ($el.is('h6') || $el.is('p') || $el.is('h4') || $el.is('h5') || $el.hasClass('download-header')) {
                 const headerText = $el.text().trim();
                 
-                // Extract format (MKV, MP4, etc.) and resolution
+                // Extract format (MKV, MP4, etc.)
                 const formatMatch = headerText.match(/(MKV|MP4|AVI)/i);
                 const currentFormat = formatMatch ? formatMatch[1].toUpperCase() : '';
                 
                 // Extract resolution (360p, 480p, 720p, 1080p)
                 const resolutionMatch = headerText.match(/(\d+p)/i);
-                currentQuality = resolutionMatch ? resolutionMatch[1] : currentQuality;
+                const resolution = resolutionMatch ? resolutionMatch[1] : '';
                 
                 // Extract subtitle type
                 const subType = headerText.match(/\((Softsub|Hardsub)\)/i);
                 const subTypeStr = subType ? subType[1] : '';
                 
-                // Extract size
+                // Extract size (e.g., "204.23 MB", "1.5 GB")
                 const sizeMatch = headerText.match(/—\s*\(([^)]+)\)/);
                 currentSize = sizeMatch ? sizeMatch[1].trim() : '';
                 
                 // Build full quality string
-                currentQuality = `${currentFormat} ${currentQuality}${subTypeStr ? ' (' + subTypeStr + ')' : ''}`.trim();
+                if (currentFormat && resolution) {
+                    currentQuality = `${currentFormat} ${resolution}${subTypeStr ? ' (' + subTypeStr + ')' : ''}`.trim();
+                    console.log(`[Batch] Found quality: ${currentQuality}, size: ${currentSize}`);
+                }
             }
             // Check if this is a download link
             else if ($el.is('a')) {
@@ -1564,14 +1620,18 @@ async function scrapeBatch(animeId, slug, batchRange) {
             }
         });
         
+        console.log(`[Batch] Extracted ${result.download_links.length} download links`);
+        
+        await browser.close();
+        browser = null;
+        
         return result;
     } catch (error) {
         console.error('Kuramanime scrapeBatch error:', error.message);
-        throw error;
-    } finally {
         if (browser) {
             await browser.close();
         }
+        throw error;
     }
 }
 
