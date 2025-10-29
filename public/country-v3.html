@@ -392,7 +392,7 @@
         
         // Get URL params
         const urlParams = new URLSearchParams(window.location.search);
-        currentCountry = urlParams.get('source');
+        currentCountry = urlParams.get('country');
         
         if (!currentCountry) {
             document.addEventListener('DOMContentLoaded', function() {
@@ -401,7 +401,7 @@
                 document.getElementById('loadingIndicator').style.display = 'none';
             });
         } else {
-            // Format source name for display (uppercase)
+            // Format country name for display (uppercase)
             countryName = currentCountry.toUpperCase();
         }
 
