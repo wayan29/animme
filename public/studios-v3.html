@@ -217,7 +217,7 @@
 
             grid.innerHTML = studios.map(studio => {
                 return `
-                    <a href="${studio.url}" class="studio-card">
+                    <a href="/studio-v3.html?studio=${studio.slug}" class="studio-card">
                         <div class="studio-icon">🎬</div>
                         <div class="studio-name">${studio.name}</div>
                     </a>
