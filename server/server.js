@@ -8,10 +8,7 @@ const cors = require('cors');
 const scraper = require('./otakudesu');
 const samehadakuScraper = require('./samehadaku');
 const kuramanimeScraper = require('./kuramanime');
-const AnichinScraper = require('./anichin-scraper');
-const ImageProxy = require('./image-proxy');
-const anichinScraper = new AnichinScraper();
-const imageProxy = new ImageProxy();
+const anichinScraper = require('./anichin');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
