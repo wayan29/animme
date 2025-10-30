@@ -365,35 +365,12 @@ app.get('/api/search/:keyword', async (req, res) => {
         const data = await scraper.scrapeSearch(keyword);
         res.json(data);
     } catch (error) {
-        // Fallback ke V3 (Kuramanime) - lebih reliable karena tidak ada Cloudflare blocker
-        console.warn(`[V1] Search failed: ${error.message}, trying V3 fallback...`);
-        try {
-            const data = await kuramanimeScraper.scrapeSearch(keyword);
-            console.log(`[V1->V3] Fallback successful for: ${keyword}`);
-
-            // Transform V3 results to V1 format untuk konsistensi
-            const transformedResults = (data.data?.results || []).map(anime => ({
-                title: anime.title,
-                slug: anime.slug,
-                poster: anime.poster,
-                genres: anime.tags ? anime.tags.map(tag => ({ name: tag.label })) : [],
-                status: anime.status || 'Unknown',
-                rating: anime.rating || ''
-            }));
-
-            res.json({
-                status: 'success',
-                data: transformedResults,
-                _note: 'Results from V3 Kuramanime (V1 fallback)'
-            });
-        } catch (fallbackError) {
-            console.error('API Error /search (V1 and V3 fallback failed):', fallbackError.message);
-            res.status(500).json({
-                status: 'error',
-                message: `All search sources failed. ${error.message}`,
-                _debug: `V3 Fallback error: ${fallbackError.message}`
-            });
-        }
+        console.error('[V1] Search error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: error.message,
+            note: 'Otakudesu (V1) is protected by Cloudflare. Try /api/v2/search or /api/v3/kuramanime/search'
+        });
     }
 });
 
