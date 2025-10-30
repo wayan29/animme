@@ -16,17 +16,19 @@
                     <option value="v1">V1 - Otakudesu</option>
                     <option value="v2">V2 - Samehadaku</option>
                     <option value="v3" selected>V3 - Kuramanime</option>
+                    <option value="v4">V4 - Anichin</option>
                 </select>
             </div>
             <div class="nav-menu">
-                <a href="/v3/home" class="nav-link active">Beranda</a>
-                <a href="/v3/animelist" class="nav-link">Daftar Anime</a>
-                <a href="/v3/ongoing" class="nav-link">Sedang Tayang</a>
-                <a href="/v3/finished" class="nav-link">Selesai Tayang</a>
-                <a href="/v3/movie" class="nav-link">Film</a>
-                <a href="/v3/schedule" class="nav-link">Jadwal Rilis</a>
-                <a href="/v3/properties" class="nav-link">Properti</a>
-                <a href="/v3/search" class="nav-link">Cari Anime</a>
+                <a href="/v3/home" class="nav-link active v3-only">Beranda</a>
+                <a href="/v4/home" class="nav-link v4-only" style="display: none;">Beranda</a>
+                <a href="/v3/animelist" class="nav-link v3-only">Daftar Anime</a>
+                <a href="/v3/ongoing" class="nav-link v3-only">Sedang Tayang</a>
+                <a href="/v3/finished" class="nav-link v3-only">Selesai Tayang</a>
+                <a href="/v3/movie" class="nav-link v3-only">Film</a>
+                <a href="/v3/schedule" class="nav-link v3-only">Jadwal Rilis</a>
+                <a href="/v3/properties" class="nav-link v3-only">Properti</a>
+                <a href="/v3/search" class="nav-link v3-only">Cari Anime</a>
             </div>
             <div class="search-container">
                 <button class="search-icon-mobile" id="searchIconBtn" aria-label="Search">
@@ -110,6 +112,6 @@
         <p>AnimMe V3 - Powered by Kuramanime</p>
     </footer>
 
-    <script src="/app-v3.js?v=20251028"></script>
+    <script src="/v3/app.js?v=20251028"></script>
 </body>
 </html>

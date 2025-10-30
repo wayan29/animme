@@ -42,7 +42,14 @@ const ITAG_QUALITY_MAP = {
 fs.mkdir(CACHE_DIR, { recursive: true }).catch(console.error);
 
 // Serve static files FIRST (important for .js, .css, etc)
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve version-specific files with path prefix (important for version-specific app.js)
+app.use('/v1', express.static(path.join(__dirname, '../public/v1')));
+app.use('/v2', express.static(path.join(__dirname, '../public/v2')));
+app.use('/v3', express.static(path.join(__dirname, '../public/v3')));
+app.use('/v4', express.static(path.join(__dirname, '../public/v4')));
+
+// Serve shared assets globally (CSS, docs)
+app.use(express.static(path.join(__dirname, '../public/shared')));
 
 // Serve cached images
 app.get('/cache/img/:filename', async (req, res) => {
@@ -354,12 +361,39 @@ app.get('/api/anime/:slug', async (req, res) => {
 app.get('/api/search/:keyword', async (req, res) => {
     try {
         const keyword = req.params.keyword;
-        console.log(`Searching for: ${keyword}`);
+        console.log(`[V1] Searching for: ${keyword}`);
         const data = await scraper.scrapeSearch(keyword);
         res.json(data);
     } catch (error) {
-        console.error('API Error /search:', error.message);
-        res.status(500).json({ status: 'error', message: error.message });
+        // Fallback ke V3 (Kuramanime) - lebih reliable karena tidak ada Cloudflare blocker
+        console.warn(`[V1] Search failed: ${error.message}, trying V3 fallback...`);
+        try {
+            const data = await kuramanimeScraper.scrapeSearch(keyword);
+            console.log(`[V1->V3] Fallback successful for: ${keyword}`);
+
+            // Transform V3 results to V1 format untuk konsistensi
+            const transformedResults = (data.data?.results || []).map(anime => ({
+                title: anime.title,
+                slug: anime.slug,
+                poster: anime.poster,
+                genres: anime.tags ? anime.tags.map(tag => ({ name: tag.label })) : [],
+                status: anime.status || 'Unknown',
+                rating: anime.rating || ''
+            }));
+
+            res.json({
+                status: 'success',
+                data: transformedResults,
+                _note: 'Results from V3 Kuramanime (V1 fallback)'
+            });
+        } catch (fallbackError) {
+            console.error('API Error /search (V1 and V3 fallback failed):', fallbackError.message);
+            res.status(500).json({
+                status: 'error',
+                message: `All search sources failed. ${error.message}`,
+                _debug: `V3 Fallback error: ${fallbackError.message}`
+            });
+        }
     }
 });
 
@@ -1105,154 +1139,161 @@ app.get('/api/v3/kuramanime/batch/:animeId/:slug/:range', async (req, res) => {
 
 // Route untuk halaman utama
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/index.html'));
 });
 
 // Route untuk V1 Otakudesu home alias
 app.get('/v1/home', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/index.html'));
 });
 
 // Route untuk V2 Samehadaku home alias
 app.get('/v2/home', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/index.html'));
 });
 
 // Route untuk V3 Kuramanime home
 app.get('/v3', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/index.html'));
 });
 
 app.get('/v3/home', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/index.html'));
 });
 
 // Clean URL routes with path parameters
 // IMPORTANT: These must exclude files with extensions
 app.get('/detail/:slug([^.]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/detail.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/detail.html'));
 });
 
 // Route untuk V2 detail pages
 app.get('/detail-v2/:slug([a-zA-Z0-9_-]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/detail-v2.html'));
+    res.sendFile(path.join(__dirname, '../public/v2/detail.html'));
 });
 
 // Route untuk V2 search pages
 app.get('/search-v2/:keyword([a-zA-Z0-9_-]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/search-v2.html'));
+    res.sendFile(path.join(__dirname, '../public/v2/search.html'));
 });
 
 // Route untuk V2 genre pages
 app.get('/genre-v2/:slug([a-zA-Z0-9_-]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/genre-v2.html'));
+    res.sendFile(path.join(__dirname, '../public/v2/genre.html'));
 });
 
 // Route pour V2 player pages
 app.get('/player-v2/:slug([a-zA-Z0-9_-]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/player-v2.html'));
+    res.sendFile(path.join(__dirname, '../public/v2/player.html'));
 });
 
 // Route untuk V3 Kuramanime detail pages
 app.get('/v3/detail/:animeId/:slug', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/detail-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/detail.html'));
 });
 
 app.get('/v3/:animeId(\\d+)/:slug', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/detail-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/detail.html'));
 });
 
 // Route untuk V3 Kuramanime search pages
 app.get('/v3/search', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/search-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/search.html'));
 });
 
 // Route untuk V3 Kuramanime season pages
 app.get('/v3/seasons', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/seasons-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/seasons.html'));
 });
 
 app.get('/v3/season/:slug', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/season-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/season.html'));
 });
 
 // Route untuk V3 Kuramanime genre pages
 app.get('/v3/genres', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/genres-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/genres.html'));
 });
 
 app.get('/v3/genre/:slug', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/genre-v3.html'));
+    res.sendFile(path.join(__dirname, '../public/v3/genre.html'));
 });
 
 app.get('/player/:episode([^.]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/player.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/player.html'));
 });
 
 app.get('/batch/:slug([^.]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/batch.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/batch.html'));
 });
 
 app.get('/genre/:slug([^.]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/genre.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/genre.html'));
 });
 
 app.get('/search/:keyword([^.]+)', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/search.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/search.html'));
 });
 
 // Static routes (no parameters)
-const createRoutes = (routePath, fileName) => {
-    const filePath = path.join(__dirname, `../public/${fileName}.html`);
+const createRoutes = (routePath, fileName, version = 'v1') => {
+    const filePath = path.join(__dirname, `../public/${version}/${fileName}.html`);
     app.get(`/${routePath}`, (req, res) => res.sendFile(filePath));
     app.get(`/${routePath}.html`, (req, res) => res.sendFile(filePath));
 };
 
-createRoutes('schedule', 'schedule');
-createRoutes('completed', 'completed');
-createRoutes('ongoing', 'ongoing');
-createRoutes('genres', 'genres');
-createRoutes('all-anime', 'all-anime');
+createRoutes('schedule', 'schedule', 'v1');
+createRoutes('completed', 'completed', 'v1');
+createRoutes('ongoing', 'ongoing', 'v1');
+createRoutes('genres', 'genres', 'v1');
+createRoutes('all-anime', 'all-anime', 'v1');
 
 // V3 static pages without .html suffix
 const v3StaticRoutes = {
-    'v3/animelist': 'anime-list-v3',
-    'v3/ongoing': 'ongoing-v3',
-    'v3/finished': 'finished-v3',
-    'v3/movie': 'movie-v3',
-    'v3/schedule': 'schedule-v3',
-    'v3/properties': 'properties-v3',
-    'v3/studios': 'studios-v3',
-    'v3/studio': 'studio-v3',
-    'v3/types': 'types-v3',
-    'v3/type': 'type-v3',
-    'v3/qualities': 'qualities-v3',
-    'v3/quality': 'quality-v3',
-    'v3/sources': 'sources-v3',
-    'v3/source': 'source-v3',
-    'v3/countries': 'countries-v3',
-    'v3/country': 'country-v3',
-    'v3/genre': 'genre-v3',
-    'v3/episode': 'episode-v3',
-    'v3/detail': 'detail-v3'
+    'v3/animelist': 'anime-list',
+    'v3/ongoing': 'ongoing',
+    'v3/finished': 'finished',
+    'v3/movie': 'movie',
+    'v3/schedule': 'schedule',
+    'v3/properties': 'properties',
+    'v3/studios': 'studios',
+    'v3/studio': 'studio',
+    'v3/types': 'types',
+    'v3/type': 'type',
+    'v3/qualities': 'qualities',
+    'v3/quality': 'quality',
+    'v3/sources': 'sources',
+    'v3/source': 'source',
+    'v3/countries': 'countries',
+    'v3/country': 'country',
+    'v3/episode': 'episode',
+    'v3/detail': 'detail'
 };
 
-Object.entries(v3StaticRoutes).forEach(([route, file]) => createRoutes(route, file));
+Object.entries(v3StaticRoutes).forEach(([route, file]) => {
+    const filePath = path.join(__dirname, `../public/v3/${file}.html`);
+    app.get(`/${route}`, (req, res) => res.sendFile(filePath));
+    app.get(`/${route}.html`, (req, res) => res.sendFile(filePath));
+});
 
 // V4 static pages (Anichin)
 const v4StaticRoutes = {
-    'v4/home': 'index-v4',
-    'v4/detail': 'detail-v4'
+    'v4/home': 'index',
+    'v4/detail': 'detail'
 };
 
-Object.entries(v4StaticRoutes).forEach(([route, file]) => createRoutes(route, file));
+Object.entries(v4StaticRoutes).forEach(([route, file]) => {
+    const filePath = path.join(__dirname, `../public/v4/${file}.html`);
+    app.get(`/${route}`, (req, res) => res.sendFile(filePath));
+    app.get(`/${route}.html`, (req, res) => res.sendFile(filePath));
+});
 
 // Route for anime-terbaru page (V2 only)
 app.get('/anime-terbaru', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/anime-list.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/anime-list.html'));
 });
 app.get('/anime-terbaru.html', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/anime-list.html'));
+    res.sendFile(path.join(__dirname, '../public/v1/anime-list.html'));
 });
 
 // V4 API Routes - Anichin.cafe

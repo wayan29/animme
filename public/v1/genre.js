@@ -20,38 +20,31 @@ async function fetchAnimeByGenre(slug, page = 1) {
 
 function displayAnimeByGenre(animeList) {
     const container = document.getElementById('genreAnimeContainer');
-    
+
     if (!animeList || animeList.length === 0) {
         container.innerHTML = '<div class="error">Tidak ada anime untuk genre ini</div>';
         return;
     }
-    
-    container.innerHTML = `
-        <div class="anime-grid">
-            ${animeList.map(anime => {
-                const genresList = anime.genres && anime.genres.length > 0 
-                    ? anime.genres.map(g => g.name).slice(0, 3).join(', ')
-                    : 'N/A';
-                
-                return `
-                    <div class="anime-card" onclick="goToDetail('${anime.slug}')">
-                        <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
-                             alt="${anime.title}" 
-                             class="anime-poster"
-                             onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
-                        <div class="anime-info">
-                            <div class="anime-title" title="${anime.title}">${anime.title}</div>
-                            <div class="anime-meta">
-                                ${anime.rating ? `⭐ ${anime.rating}` : 'No rating'}
-                                ${anime.episode_count ? ` • ${anime.episode_count}` : ''}
-                            </div>
-                            ${anime.release_date ? `<div class="anime-date">${anime.release_date}</div>` : ''}
-                        </div>
+
+    container.innerHTML = animeList.map(anime => `
+        <div class="anime-card-grid" onclick="goToDetail('${anime.slug}')">
+            <div class="anime-card-grid-image">
+                <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}"
+                     alt="${anime.title}"
+                     onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
+            </div>
+            <div class="anime-card-grid-body">
+                <div>
+                    <h3 class="anime-card-grid-title">${anime.title}</h3>
+                    <div class="anime-card-grid-meta">
+                        <span>${anime.episode_count || 'N/A'} Episode</span>
+                        ${anime.rating ? `<span class="anime-card-grid-rating">⭐ ${anime.rating}</span>` : ''}
                     </div>
-                `;
-            }).join('')}
+                </div>
+                ${anime.release_date ? `<div class="anime-card-grid-footer">${anime.release_date}</div>` : ''}
+            </div>
         </div>
-    `;
+    `).join('');
 }
 
 function displayPagination(pagination) {
@@ -121,17 +114,27 @@ function displayPagination(pagination) {
 
 async function loadPage(page) {
     currentPage = page;
-    
+
     const container = document.getElementById('genreAnimeContainer');
     container.innerHTML = '<div class="loading">Memuat halaman ' + page + '...</div>';
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    const data = await fetchAnimeByGenre(currentGenreSlug, page);
-    
-    if (data && data.data) {
-        displayAnimeByGenre(data.data.genreAnimeData);
-        displayPagination(data.data.paginationData);
+
+    const response = await fetchAnimeByGenre(currentGenreSlug, page);
+
+    if (response && response.status === 'success' && response.data) {
+        // Check if data has pagination structure or is direct array
+        if (response.data.genreAnimeData) {
+            // New scraper format with pagination
+            displayAnimeByGenre(response.data.genreAnimeData);
+            displayPagination(response.data.paginationData);
+        } else if (Array.isArray(response.data)) {
+            // Fallback: direct array format
+            displayAnimeByGenre(response.data);
+            displayPagination(null);
+        } else {
+            container.innerHTML = '<div class="error">Format data tidak sesuai</div>';
+        }
     } else {
         container.innerHTML = '<div class="error">Gagal memuat data anime</div>';
     }

@@ -27,26 +27,32 @@ async function fetchAnimeList(page = 1, pagesToLoad = 1) {
 
 function displayAnimeList(animeList) {
     const container = document.getElementById('animeListContainer');
-    
+
     if (!animeList || animeList.length === 0) {
         container.innerHTML = '<div class="error">Tidak ada data anime terbaru</div>';
         return;
     }
-    
+
     container.innerHTML = `
         <div class="anime-grid">
             ${animeList.map(anime => `
                 <div class="anime-card" onclick="goToDetail('${anime.slug}')">
-                    <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}" 
-                         alt="${anime.title}" 
-                         class="anime-poster"
-                         onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
-                    <div class="anime-info">
-                        <div class="anime-title" title="${anime.title}">${anime.title}</div>
-                        <div class="anime-meta">
-                            ${anime.current_episode ? `Ep ${anime.current_episode}` : 'N/A'}
+                    <div class="anime-poster">
+                        <img src="${anime.poster || 'https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'}"
+                             alt="${anime.title}"
+                             onerror="this.src='https://via.placeholder.com/200x300/0f0f0f/e50914?text=No+Image'">
+                        <div class="anime-overlay">
+                            ${anime.current_episode ? `<span class="anime-type">Ep ${anime.current_episode}</span>` : ''}
+                            ${anime.status ? `<span class="anime-rating">${anime.status}</span>` : ''}
                         </div>
-                        ${anime.release_date ? `<div class="anime-date">${anime.release_date}</div>` : ''}
+                    </div>
+                    <div class="anime-info">
+                        <h3 class="anime-title" title="${anime.title}">${anime.title}</h3>
+                        ${anime.current_episode ? `<div class="anime-status">Episode ${anime.current_episode}</div>` : '<div class="anime-status">Ongoing</div>'}
+                        ${anime.release_date ? `<div class="anime-status">${anime.release_date}</div>` : ''}
+                        <div class="anime-genres">
+                            <span class="genre-tag">Terbaru</span>
+                        </div>
                     </div>
                 </div>
             `).join('')}

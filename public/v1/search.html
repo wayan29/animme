@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Ongoing - AnimMe</title>
+    <title>Pencarian Anime - AnimMe</title>
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/mobile.css">
 </head>
-<body class="server-v1 page-ongoing">
+<body>
     <nav class="navbar scrolled">
         <div class="nav-container">
             <h1 class="logo" onclick="window.location.href='/v1/home'">AnimMe</h1>
             <div class="nav-menu">
                 <a href="/v1/home" class="nav-link">Beranda</a>
-                <a href="/ongoing" class="nav-link active">Anime Ongoing</a>
+                <a href="/ongoing" class="nav-link">Anime Ongoing</a>
                 <a href="/completed" class="nav-link">Anime Tamat</a>
                 <a href="/all-anime" class="nav-link">Semua Anime</a>
                 <a href="/genres" class="nav-link">Genre</a>
@@ -23,16 +23,20 @@
     </nav>
 
     <main class="main-content">
-        <section class="completed-header">
-            <h2>Daftar Anime Ongoing</h2>
-            <p>Anime yang sedang tayang saat ini</p>
+        <section class="search-page-header">
+            <h2>Pencarian Anime</h2>
+            <div class="search-box-container">
+                <input type="text" id="searchKeyword" placeholder="Masukkan judul anime..." class="search-box-input">
+                <button onclick="performSearch()" class="search-box-btn">🔍 Cari</button>
+            </div>
+            <p id="searchInfo" class="search-info"></p>
         </section>
 
-        <div class="completed-container" id="ongoingContainer">
-            <div class="loading">Memuat daftar anime...</div>
-        </div>
-
-        <div class="pagination-container" id="paginationContainer" style="display: none;">
+        <div class="search-results-container" id="searchResultsContainer">
+            <div class="search-instructions">
+                <p>💡 Masukkan kata kunci untuk mencari anime</p>
+                <p class="search-examples">Contoh: "naruto", "one piece", "demon slayer"</p>
+            </div>
         </div>
     </main>
 
@@ -40,6 +44,6 @@
 
     </footer>
 
-    <script src="/ongoing.js"></script>
+    <script src="/v1/search.js"></script>
 </body>
 </html>

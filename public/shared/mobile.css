@@ -579,27 +579,44 @@
 
     /* All Anime Filters - Mobile */
     .anime-filters {
-        padding: 15px;
+        padding: 20px 15px;
+        margin: 0 0 30px 0;
     }
-    
+
     .filter-row {
-        flex-direction: column;
-        gap: 12px;
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+        margin-bottom: 16px;
     }
-    
+
+    .filter-row:last-of-type {
+        margin-bottom: 0;
+    }
+
     .filter-group {
         width: 100%;
         min-width: unset;
     }
-    
-    .genre-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-    }
-    
-    .genre-checkbox {
+
+    .filter-group label {
         font-size: 0.85rem;
-        padding: 8px 10px;
+    }
+
+    .filter-group input,
+    .filter-group select,
+    .filter-group button {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+    }
+
+    .genre-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .genre-checkbox {
+        font-size: 0.8rem;
+        padding: 10px 12px;
     }
     
     .pagination-controls {
@@ -621,22 +638,65 @@
     /* Anime Grid - Mobile */
     .anime-grid {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px;
+        gap: 14px;
+        padding: 0 10px;
     }
-    
+
+    .anime-grid .anime-poster {
+        padding-top: 130%;
+    }
+
+    .anime-grid .anime-card {
+        border-radius: 10px;
+    }
+
+    .anime-grid .anime-overlay {
+        padding: 8px;
+    }
+
+    .anime-grid .anime-type,
+    .anime-grid .anime-rating {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+
+    .anime-grid .anime-info {
+        padding: 12px;
+    }
+
     .anime-grid .anime-title {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        margin-bottom: 4px;
     }
-    
+
     .anime-grid .anime-status {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+        margin-bottom: 2px;
     }
-    
+
     .anime-grid .genre-tag {
         font-size: 0.65rem;
-        padding: 2px 4px;
+        padding: 2px 6px;
     }
-    
+
+    /* Items Per Page Control - Mobile */
+    .items-per-page-control {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .items-per-page-control label {
+        font-size: 0.85rem;
+    }
+
+    .items-select {
+        width: 100%;
+        min-width: unset;
+        padding: 12px 14px;
+    }
+
     /* Detail V2 - Mobile */
     .detail-header {
         grid-template-columns: 1fr !important;

@@ -6,7 +6,7 @@ const path = require('path');
 class ImageProxy {
     constructor() {
         this.cacheDir = path.join(__dirname, '../cache/images');
-        this.baseUrl = 'http://localhost:5000'; // Server base URL
+        this.baseUrl = ''; // Relative path only, no domain
         this.ensureCacheDir();
     }
 
@@ -37,7 +37,7 @@ class ImageProxy {
             const fileExt = this.getFileExtension(url);
             const fileName = `${imageHash}${fileExt}`;
             const localPath = path.join(this.cacheDir, fileName);
-            const localUrl = `${this.baseUrl}/cache/img/${fileName}`;
+            const localUrl = `/cache/img/${fileName}`;
 
             // Check if image already exists in cache
             try {

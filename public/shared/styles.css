@@ -109,8 +109,8 @@ body {
     background-position: center;
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
-    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://via.placeholder.com/1920x1080/0f0f0f/e50914?text=Featured+Anime');
+    margin-bottom: 40px;
+    background-image: linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(229,9,20,0.2) 100%), url('https://via.placeholder.com/1920x1080/0f0f0f/e50914?text=Featured+Anime');
 }
 
 .hero-content {
@@ -119,13 +119,15 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 4%;
+    width: 100%;
 }
 
 .hero-title {
     font-size: 3.5rem;
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 20px;
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    text-shadow: 3px 3px 12px rgba(0,0,0,0.9);
+    color: #ffffff;
 }
 
 .hero-description {
@@ -133,14 +135,15 @@ body {
     max-width: 600px;
     margin-bottom: 30px;
     line-height: 1.6;
-    text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
+    color: #e0e0e0;
 }
 
 .hero-fade {
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 15%;
+    height: 20%;
     background: linear-gradient(transparent, #141414);
 }
 
@@ -189,8 +192,12 @@ body {
 
 .section-title {
     font-size: 1.8rem;
-    margin-bottom: 20px;
-    font-weight: bold;
+    margin-bottom: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e50914;
+    display: inline-block;
 }
 
 .anime-row {
@@ -203,10 +210,12 @@ body {
 .anime-card {
     position: relative;
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    border-radius: 8px;
+    transition: all 0.3s ease;
+    border-radius: 12px;
     overflow: hidden;
-    background-color: #222;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .anime-row .anime-card {
@@ -217,70 +226,85 @@ body {
 
 .anime-thumb {
     position: relative;
+    overflow: hidden;
 }
 
 .anime-row .anime-thumb {
     flex-shrink: 0;
+    background: #101010;
 }
 
 .top-ten-card .rank-badge,
 .top-ten-card .rating-badge {
     position: absolute;
-    padding: 6px 10px;
+    padding: 8px 12px;
     border-radius: 999px;
     font-size: 0.8rem;
     font-weight: 600;
     backdrop-filter: blur(6px);
+    z-index: 5;
 }
 
 .top-ten-card .rank-badge {
     top: 12px;
     left: 12px;
-    background: rgba(229, 9, 20, 0.9);
+    background: rgba(229, 9, 20, 0.95);
+    color: #fff;
 }
 
 .top-ten-card .rating-badge {
     top: 12px;
     right: 12px;
-    background: rgba(0, 0, 0, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #ffd700;
 }
 
 .anime-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
     z-index: 10;
 }
 
 .anime-poster {
     width: 100%;
-    height: 300px;
+    height: 280px;
     object-fit: cover;
     display: block;
+    transition: transform 0.4s ease;
+}
+
+.anime-card:hover .anime-poster {
+    transform: scale(1.05);
 }
 
 .anime-info {
-    padding: 15px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .anime-row .anime-info {
     display: flex;
     flex-direction: column;
     flex: 1;
+    gap: 8px;
 }
 
 .anime-title {
-    font-size: 1rem;
-    font-weight: bold;
-    margin-bottom: 5px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0;
+    color: #ffffff;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .anime-meta {
-    font-size: 0.85rem;
-    color: #999;
+    font-size: 0.8rem;
+    color: #b0b0b0;
 }
 
 .anime-row .anime-meta {
@@ -471,23 +495,25 @@ body {
 
 .completed-header {
     text-align: center;
-    padding: 120px 0 40px 0;
+    padding: 120px 4% 40px 4%;
 }
 
 .completed-header h2 {
     font-size: 2.5rem;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
+    font-weight: 700;
+    color: #ffffff;
 }
 
 .completed-header p {
-    color: #999;
+    color: #b0b0b0;
     font-size: 1.1rem;
 }
 
 .completed-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 4%;
+    padding: 40px 4% 80px 4%;
 }
 
 .page-ongoing .completed-container {
@@ -502,19 +528,19 @@ body {
 }
 
 .page-ongoing .anime-list-item {
-    background: linear-gradient(180deg, #1c1c1c 0%, #151515 100%);
-    border-radius: 14px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .page-ongoing .anime-list-item:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 36px rgba(229, 9, 20, 0.25);
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
 }
 
 .page-ongoing .anime-thumb {
@@ -533,19 +559,26 @@ body {
 }
 
 .page-ongoing .anime-list-item:hover .anime-poster {
-    transform: scale(1.04);
+    transform: scale(1.05);
 }
 
 .page-ongoing .anime-info {
-    padding: 18px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .page-ongoing .anime-title {
     white-space: normal;
     line-height: 1.35;
+    font-weight: 600;
+    color: #ffffff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .page-ongoing .anime-meta {
@@ -571,19 +604,19 @@ body {
 }
 
 .page-completed .anime-list-item {
-    background: linear-gradient(180deg, #1b1b1b 0%, #151515 100%);
-    border-radius: 16px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .page-completed .anime-list-item:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 18px 40px rgba(229, 9, 20, 0.22);
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
 }
 
 .page-completed .anime-thumb {
@@ -602,19 +635,26 @@ body {
 }
 
 .page-completed .anime-list-item:hover .anime-poster {
-    transform: scale(1.04);
+    transform: scale(1.05);
 }
 
 .page-completed .anime-info {
-    padding: 18px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .page-completed .anime-title {
     white-space: normal;
     line-height: 1.35;
+    font-weight: 600;
+    color: #ffffff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .page-completed .anime-meta {
@@ -893,35 +933,48 @@ body {
 }
 
 .items-per-page-control {
-    margin-top: 15px;
+    margin-top: 20px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 16px;
     font-size: 14px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(26, 26, 46, 0.5) 0%, rgba(22, 33, 62, 0.5) 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(229, 9, 20, 0.2);
 }
 
 .items-per-page-control label {
-    color: #333;
-    font-weight: 500;
+    color: #e0e0e0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
 }
 
 .items-select {
-    padding: 6px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    border-radius: 8px;
+    color: #fff;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-width: 220px;
 }
 
 .items-select:hover {
     border-color: #e50914;
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
 }
 
 .items-select:focus {
     outline: none;
     border-color: #e50914;
-    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    box-shadow: 0 0 12px rgba(229, 9, 20, 0.3);
 }
 
 .pagination-buttons {
@@ -940,37 +993,40 @@ body {
 
 .pagination-btn {
     padding: 10px 16px;
-    background-color: #222;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     color: #fff;
-    border: 2px solid #333;
-    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     font-size: 0.95rem;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
     min-width: 44px;
 }
 
 .pagination-btn:hover:not(.disabled):not(.active) {
-    background-color: #333;
+    background: linear-gradient(135deg, #e50914 0%, #c40711 100%);
     border-color: #e50914;
-    color: #e50914;
-    transform: translateY(-2px);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
 }
 
 .pagination-btn.active {
-    background-color: #e50914;
+    background: linear-gradient(135deg, #e50914 0%, #c40711 100%);
     border-color: #e50914;
+    color: #ffffff;
     cursor: default;
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
 }
 
 .pagination-btn.disabled {
-    opacity: 0.3;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 
 .pagination-dots {
-    color: #666;
+    color: #999;
     padding: 0 8px;
     font-weight: bold;
 }
@@ -1430,137 +1486,168 @@ body {
 /* V2 Filters Styling */
 .anime-filters {
     max-width: 1400px;
-    margin: 0 auto 30px auto;
-    padding: 20px 4%;
-    background-color: #1a1a1a;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    margin: 0 auto 40px auto;
+    padding: 30px 4%;
+    background: linear-gradient(135deg, rgba(26, 26, 46, 0.5) 0%, rgba(22, 33, 62, 0.5) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(229, 9, 20, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
 }
 
 .filter-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
     align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-row:last-of-type {
+    margin-bottom: 0;
 }
 
 .filter-group {
-    flex: 1;
-    min-width: 150px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .filter-group label {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #ccc;
+    color: #e0e0e0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .filter-group input,
 .filter-group select {
-    padding: 10px 12px;
-    background-color: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 5px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    border-radius: 8px;
     color: #fff;
     font-size: 0.95rem;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
+    font-weight: 500;
 }
 
 .filter-group input:focus,
 .filter-group select:focus {
     outline: none;
     border-color: #e50914;
-    background-color: #333;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    box-shadow: 0 0 12px rgba(229, 9, 20, 0.3);
 }
 
 .filter-group button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .filter-group .btn-primary {
-    background-color: #e50914;
+    background: linear-gradient(135deg, #e50914 0%, #c40711 100%);
     color: white;
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
 }
 
 .filter-group .btn-primary:hover {
-    background-color: #b00711;
+    background: linear-gradient(135deg, #f40612 0%, #b00711 100%);
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.5);
+    transform: translateY(-2px);
 }
 
 .filter-group .btn-secondary {
-    background-color: #444;
-    color: white;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e0e0e0;
+    border: 1px solid rgba(229, 9, 20, 0.3);
 }
 
 .filter-group .btn-secondary:hover {
-    background-color: #555;
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    border-color: #e50914;
+    color: #e50914;
+    transform: translateY(-2px);
 }
 
 .filter-group .btn-toggle {
-    background-color: #2a2a2a;
-    color: white;
-    border: 1px solid #444;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e0e0e0;
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .filter-group .btn-toggle:hover {
-    background-color: #333;
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
     border-color: #e50914;
+    color: #e50914;
+    transform: translateY(-2px);
 }
 
 /* Genre Filter Styles */
 .genre-filter-row {
-    margin-top: 15px;
+    margin-top: 0;
 }
 
 .genre-panel {
-    margin-top: 15px;
-    padding: 20px;
-    background-color: #222;
-    border-radius: 8px;
-    border: 1px solid #444;
+    margin-top: 20px;
+    padding: 24px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(229, 9, 20, 0.3);
     animation: slideDown 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.2);
 }
 
 @keyframes slideDown {
     from {
         opacity: 0;
         max-height: 0;
+        margin-top: 0;
     }
     to {
         opacity: 1;
-        max-height: 500px;
+        max-height: 800px;
+        margin-top: 20px;
     }
 }
 
 .genre-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
 }
 
 .genre-checkbox {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background-color: #2a2a2a;
-    border-radius: 5px;
+    gap: 10px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(229, 9, 20, 0.05) 100%);
+    border: 1px solid rgba(229, 9, 20, 0.2);
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     font-size: 0.9rem;
+    color: #e0e0e0;
+    font-weight: 500;
 }
 
 .genre-checkbox:hover {
-    background-color: #333;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(229, 9, 20, 0.15) 100%);
     border-color: #e50914;
+    color: #e50914;
 }
 
 .genre-checkbox input[type="checkbox"] {
@@ -1610,18 +1697,41 @@ body {
 .anime-grid .anime-card {
     display: flex;
     flex-direction: column;
-    background-color: #1a1a1a;
-    border-radius: 10px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(229, 9, 20, 0.15);
     height: 100%;
+    position: relative;
+}
+
+.anime-grid .anime-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.5) 0%, rgba(229, 9, 20, 0.1) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .anime-grid .anime-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 16px rgba(229, 9, 20, 0.4);
+    transform: translateY(-10px);
+    box-shadow: 0 12px 40px rgba(229, 9, 20, 0.5), 0 0 30px rgba(229, 9, 20, 0.2);
+    border-color: rgba(229, 9, 20, 0.4);
+}
+
+.anime-grid .anime-card:hover::before {
+    opacity: 1;
 }
 
 .anime-grid .anime-poster {
@@ -1629,6 +1739,7 @@ body {
     width: 100%;
     padding-top: 140%; /* 2:2.8 aspect ratio */
     overflow: hidden;
+    background: #101010;
 }
 
 .anime-grid .anime-poster img {
@@ -1638,6 +1749,11 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.anime-grid .anime-card:hover .anime-poster img {
+    transform: scale(1.05);
 }
 
 .anime-grid .anime-overlay {
@@ -1645,44 +1761,89 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    padding: 10px;
+    padding: 12px;
     display: flex;
     justify-content: space-between;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+    align-items: flex-start;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 40%, transparent 100%);
+    z-index: 2;
+    gap: 8px;
 }
 
 .anime-grid .anime-type,
 .anime-grid .anime-rating {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background-color: rgba(229, 9, 20, 0.9);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #e50914 0%, #c40711 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.anime-grid .anime-type:hover,
+.anime-grid .anime-rating:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(229, 9, 20, 0.5);
+}
+
+.anime-grid .anime-rating {
+    background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+    color: #1a1a2e;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 .anime-grid .anime-info {
-    padding: 12px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     flex: 1;
+    gap: 10px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+    position: relative;
+}
+
+.anime-grid .anime-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(229, 9, 20, 0.2) 50%, transparent 100%);
 }
 
 .anime-grid .anime-title {
     font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0 0 6px 0;
-    line-height: 1.3;
+    font-weight: 700;
+    margin: 8px 0 4px 0;
+    line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    color: #fff;
+    color: #ffffff;
+    letter-spacing: 0.3px;
 }
 
 .anime-grid .anime-status {
-    font-size: 0.8rem;
-    color: #aaa;
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: 6px;
     margin: 0 0 8px 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    width: fit-content;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(229, 9, 20, 0.1) 100%);
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    color: #ff6b7a;
 }
 
 .anime-grid .anime-genres {
@@ -1693,11 +1854,23 @@ body {
 }
 
 .anime-grid .genre-tag {
-    font-size: 0.7rem;
-    padding: 3px 6px;
-    background-color: #333;
-    border-radius: 3px;
-    color: #ccc;
+    font-size: 0.65rem;
+    padding: 5px 10px;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(229, 9, 20, 0.1) 100%);
+    border: 1px solid rgba(229, 9, 20, 0.4);
+    border-radius: 5px;
+    color: #ff8a95;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.anime-grid .anime-genres > .genre-tag:hover {
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.35) 0%, rgba(229, 9, 20, 0.2) 100%);
+    border-color: rgba(229, 9, 20, 0.6);
+    transform: translateY(-2px);
 }
 
 /* Pagination Controls */

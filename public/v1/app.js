@@ -2,7 +2,9 @@
 let currentServer = localStorage.getItem('selectedServer') || 'v1';
 
 const pathname = window.location.pathname;
-if (pathname.startsWith('/v3')) {
+if (pathname.startsWith('/v4')) {
+    currentServer = 'v4';
+} else if (pathname.startsWith('/v3')) {
     currentServer = 'v3';
 } else if (pathname.startsWith('/v2')) {
     currentServer = 'v2';
@@ -34,10 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function applyServerClass(server) {
     // Remove all server classes
-    document.body.classList.remove('server-v1', 'server-v2', 'server-v3');
-    
+    document.body.classList.remove('server-v1', 'server-v2', 'server-v3', 'server-v4');
+
     // Add current server class
-    if (server === 'v3') {
+    if (server === 'v4') {
+        document.body.classList.add('server-v4');
+    } else if (server === 'v3') {
         document.body.classList.add('server-v3');
     } else if (server === 'v2') {
         document.body.classList.add('server-v2');
@@ -50,21 +54,21 @@ function changeServer(server) {
     currentServer = server;
     localStorage.setItem('selectedServer', server);
 
-    const targetPath = server === 'v3' ? '/v3/home' : (server === 'v2' ? '/v2/home' : '/v1/home');
+    const targetPath = server === 'v4' ? '/v4/home' : (server === 'v3' ? '/v3/home' : (server === 'v2' ? '/v2/home' : '/v1/home'));
 
     if (window.location.pathname !== targetPath) {
         window.location.href = targetPath;
         return;
     }
 
-    API_BASE = server === 'v3' ? '/api/v3/kuramanime' : (server === 'v2' ? '/api/v2' : '/api');
+    API_BASE = server === 'v4' ? '/api/v4/anichin' : (server === 'v3' ? '/api/v3/kuramanime' : (server === 'v2' ? '/api/v2' : '/api'));
     applyServerClass(server);
     showServerNotification(server);
     loadHomePage();
 }
 
 function showServerNotification(server) {
-    const serverName = server === 'v3' ? 'Kuramanime' : (server === 'v2' ? 'Samehadaku' : 'Otakudesu');
+    const serverName = server === 'v4' ? 'Anichin' : (server === 'v3' ? 'Kuramanime' : (server === 'v2' ? 'Samehadaku' : 'Otakudesu'));
     
     // Create notification element
     const notification = document.createElement('div');

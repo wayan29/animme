@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pencarian Anime - AnimMe</title>
+    <title>Genre Anime - AnimMe</title>
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/mobile.css">
 </head>
@@ -16,27 +16,20 @@
                 <a href="/ongoing" class="nav-link">Anime Ongoing</a>
                 <a href="/completed" class="nav-link">Anime Tamat</a>
                 <a href="/all-anime" class="nav-link">Semua Anime</a>
-                <a href="/genres" class="nav-link">Genre</a>
+                <a href="/genres" class="nav-link active">Genre</a>
                 <a href="/schedule" class="nav-link">Jadwal Rilis</a>
             </div>
         </div>
     </nav>
 
     <main class="main-content">
-        <section class="search-page-header">
-            <h2>Pencarian Anime</h2>
-            <div class="search-box-container">
-                <input type="text" id="searchKeyword" placeholder="Masukkan judul anime..." class="search-box-input">
-                <button onclick="performSearch()" class="search-box-btn">🔍 Cari</button>
-            </div>
-            <p id="searchInfo" class="search-info"></p>
+        <section class="genre-header">
+            <h2>Pilih Genre Anime</h2>
+            <p>Temukan anime berdasarkan genre favorit Anda</p>
         </section>
 
-        <div class="search-results-container" id="searchResultsContainer">
-            <div class="search-instructions">
-                <p>💡 Masukkan kata kunci untuk mencari anime</p>
-                <p class="search-examples">Contoh: "naruto", "one piece", "demon slayer"</p>
-            </div>
+        <div class="genre-container" id="genreContainer">
+            <div class="loading">Memuat daftar genre...</div>
         </div>
     </main>
 
@@ -44,6 +37,6 @@
 
     </footer>
 
-    <script src="/search.js"></script>
+    <script src="/v1/genres.js"></script>
 </body>
 </html>

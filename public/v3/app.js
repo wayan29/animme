@@ -20,9 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function changeServer(server) {
     localStorage.setItem('selectedServer', server);
-    
+
     // Navigate to appropriate page
-    if (server === 'v3') {
+    if (server === 'v4') {
+        window.location.href = '/v4/home';
+    } else if (server === 'v3') {
         window.location.href = '/v3/home';
     } else if (server === 'v2') {
         window.location.href = '/v2/home';

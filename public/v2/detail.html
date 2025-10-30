@@ -92,62 +92,48 @@
         .episode-btn {
             background-color: #222;
             color: #fff;
-            border: 2px solid #333;
+            border: 2px solid rgba(255,255,255,0.08);
             padding: 15px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
-            text-align: center;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
         }
         
         .episode-btn:hover {
             background-color: #e50914;
-            border-color: #e50914;
+            border-color: transparent;
             transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(229, 9, 20, 0.35);
         }
         
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background-color: #333;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+        .episode-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(229, 9, 20, 0.25);
         }
         
-        .back-btn:hover {
-            background-color: #444;
-        }
-        
-        /* Tabs styling */
+        /* Tab navigation styling */
         .tabs-container {
             margin-top: 40px;
         }
         
         .tabs-header {
             display: flex;
-            gap: 10px;
             border-bottom: 2px solid #333;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
         
         .tab-btn {
-            padding: 15px 30px;
-            background-color: transparent;
-            color: #999;
+            background: none;
             border: none;
-            border-bottom: 3px solid transparent;
+            color: #999;
             cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 0.95rem;
+            padding: 12px 20px;
+            border-bottom: 3px solid transparent;
             transition: all 0.3s;
-        }
-        
-        .tab-btn:hover {
-            color: #fff;
+            font-weight: 500;
         }
         
         .tab-btn.active {
@@ -170,11 +156,6 @@
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 25px;
-        }
-        
-        .batch-download-list {
-            display: grid;
-            gap: 20px;
         }
         
         .batch-quality-section {
@@ -241,12 +222,6 @@
             margin-top: 25px;
         }
         
-        @media (min-width: 1200px) {
-            .recommendation-grid {
-                grid-template-columns: repeat(6, 1fr);
-            }
-        }
-        
         .recommendation-card {
             cursor: pointer;
             transition: transform 0.3s;
@@ -284,54 +259,71 @@
             color: #999;
             margin-top: 5px;
         }
-        
-        @media (max-width: 768px) {
-            .detail-header {
-                grid-template-columns: 1fr;
-            }
-            
-            .detail-info h1 {
-                font-size: 1.8rem;
-            }
-            
-            .tabs-header {
-                overflow-x: auto;
-            }
-            
-            .tab-btn {
-                padding: 12px 20px;
-                font-size: 0.9rem;
-                white-space: nowrap;
-            }
-            
-            .recommendation-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-            
-            .recommendation-poster {
-                height: 200px;
-            }
+    </style>
+            gap: 10px;
+            flex-wrap: wrap;
         }
+        
+        .batch-link-btn {
+            padding: 10px 20px;
+            background-color: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.ime;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .batch-link-btn:hover {
+            background-color: #e50914;
+            border-color: #e50914;
+            transform: translateY(-2px);
+        }
+        
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+        
     </style>
 </head>
 <body>
     <nav class="navbar scrolled">
         <div class="nav-container">
-            <h1 class="logo" onclick="window.location.href='/v1/home'">AnimMe</h1>
+            <h1 class="logo" onclick="window.location.href='/v2/home'">AnimMe</h1>
+            <div class="server-selector">
+                <select id="serverSelect" class="server-select">
+                    <option value="v1">V1 - Otakudesu</option>
+                    <option value="v2" selected>V2 - Samehadaku</option>
+                </select>
+            </div>
             <div class="nav-menu">
-                <a href="/v1/home" class="nav-link">Beranda</a>
-                <a href="/ongoing" class="nav-link">Anime Ongoing</a>
-                <a href="/completed" class="nav-link">Anime Tamat</a>
-                <a href="/all-anime" class="nav-link">Semua Anime</a>
-                <a href="/genres" class="nav-link">Genre</a>
-                <a href="/schedule" class="nav-link">Jadwal Rilis</a>
+                <a href="/v2/home" class="nav-link">Beranda</a>
+                <a href="/ongoing" class="nav-link v1-only">Anime Ongoing</a>
+                <a href="/completed" class="nav-link v1-only">Anime Tamat</a>
+                <a href="/all-anime" class="nav-link">Daftar Anime</a>
+                <a href="/genres" class="nav-link v1-only">Genre</a>
+                <a href="/schedule" class="nav-link v1-only">Jadwal Rilis</a>
+                <a href="/anime-terbaru" class="nav-link v2-only">Anime Terbaru</a>
             </div>
         </div>
     </nav>
 
     <div class="detail-container">
-        <a href="/v1/home" class="back-btn">← Kembali</a>
+        <a href="/v2/home" class="back-btn">← Kembali</a>
         
         <div id="detailContent">
             <div class="loading">Memuat detail anime...</div>
@@ -339,9 +331,32 @@
     </div>
 
     <footer class="footer">
-
     </footer>
 
-    <script src="/detail.js"></script>
+    <script>
+        // Initialize server selection for V2 page
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentServer = 'v2';
+            localStorage.setItem('selectedServer', currentServer);
+            document.body.classList.add('server-v2');
+            
+            const serverSelect = document.getElementById('serverSelect');
+            if (serverSelect) {
+                serverSelect.value = 'v2';
+                serverSelect.addEventListener('change', (e) => {
+                    const targetServer = e.target.value;
+                    localStorage.setItem('selectedServer', targetServer);
+                    if (targetServer === 'v2') {
+                        window.location.href = '/v2/home';
+                    } else if (targetServer === 'v3') {
+                        window.location.href = '/v3/home';
+                    } else {
+                        window.location.href = '/v1/home';
+                    }
+                });
+            }
+        });
+    </script>
+    <script src="/v2/detail.js"></script>
 </body>
 </html>
