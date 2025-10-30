@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimMe V4 - Anichin</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <style>
+        .server-v4 {
+            --primary-color: #ff6b6b;
+            --secondary-color: #ee5a6f;
+            --accent-color: #ffd700;
+        }
+
+        .anichin-banner {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .banner-backdrop {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.3;
+            z-index: 1;
+        }
+
+        .banner-content {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 2rem;
+            z-index: 2;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+
+        .banner-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .banner-subtitle {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .banner-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-watch {
+            padding: 0.8rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-watch:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,107,107,0.4);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .section-badge {
+            background: var(--accent-color);
+            color: #000;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .carousel-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .carousel-container {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding-bottom: 1rem;
+        }
+
+        .carousel-container::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .carousel-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .carousel-container::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        .carousel-item {
+            flex-shrink: 0;
+            width: 200px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .carousel-item:hover {
+            transform: scale(1.05);
+        }
+
+        .carousel-image {
+            width: 100%;
+            height: 280px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .carousel-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.8));
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .carousel-title {
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9rem;
+            line-height: 1.2;
+        }
+
+        .carousel-episode {
+            color: var(--accent-color);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .anime-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .anime-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .anime-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .anime-poster {
+            width: 100%;
+            height: 200px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .anime-poster::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .anime-card:hover .anime-poster::after {
+            opacity: 1;
+        }
+
+        .anime-info {
+            padding: 0.8rem 0;
+        }
+
+        .anime-title {
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9rem;
+            line-height: 1.2;
+            margin-bottom: 0.3rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .anime-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ff4444;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .anichin-banner {
+                height: 200px;
+            }
+
+            .banner-title {
+                font-size: 1.3rem;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+
+            .carousel-item {
+                width: 150px;
+            }
+
+            .carousel-image {
+                height: 210px;
+            }
+        }
+    </style>
+</head>
+<body class="server-v4">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <h1 style="margin: 0; flex: 1; color: var(--primary-color);">AnimMe V4 - Anichin</h1>
+        <select id="serverSelect" style="padding: 0.5rem; border-radius: 4px;">
+            <option value="v1">V1 - Otakudesu</option>
+            <option value="v2">V2 - Samehadaku</option>
+            <option value="v3">V3 - Kuramanime</option>
+            <option value="v4" selected>V4 - Anichin</option>
+        </select>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Error Message -->
+        <div id="errorContainer" style="display: none;"></div>
+
+        <!-- Banner Recommendations Carousel -->
+        <section id="bannerSection" style="margin-bottom: 2rem;">
+            <div class="carousel-wrapper">
+                <div class="carousel-container" id="bannerCarousel">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Memuat banner...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Popular Today Section -->
+        <section id="popularSection" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">🔥 Popular Hari Ini</h2>
+                <span class="section-badge" id="popularCount">0</span>
+            </div>
+            <div class="anime-grid" id="popularToday">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Memuat popular today...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Latest Releases Section -->
+        <section id="latestSection" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">⭐ Rilis Terbaru</h2>
+                <span class="section-badge" id="latestCount">0</span>
+            </div>
+            <div class="anime-grid" id="latestReleases">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Memuat latest releases...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/app-v4.js?v=20251030"></script>
+</body>
+</html>

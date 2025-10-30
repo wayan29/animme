@@ -1239,6 +1239,14 @@ const v3StaticRoutes = {
 
 Object.entries(v3StaticRoutes).forEach(([route, file]) => createRoutes(route, file));
 
+// V4 static pages (Anichin)
+const v4StaticRoutes = {
+    'v4/home': 'index-v4',
+    'v4/detail': 'detail-v4'
+};
+
+Object.entries(v4StaticRoutes).forEach(([route, file]) => createRoutes(route, file));
+
 // Route for anime-terbaru page (V2 only)
 app.get('/anime-terbaru', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/anime-list.html'));
