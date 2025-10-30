@@ -7,7 +7,11 @@ const cheerio = require('cheerio');
 const cors = require('cors');
 const scraper = require('./scraper');
 const samehadakuScraper = require('./samehadaku-scraper');
-const kuramanimeScraper = require('./kuramanime-scraper');
+const kuramanimeScraper = require('./kuramanime');
+const AnichinScraper = require('./anichin-scraper');
+const ImageProxy = require('./image-proxy');
+const anichinScraper = new AnichinScraper();
+const imageProxy = new ImageProxy();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,6 +46,33 @@ fs.mkdir(CACHE_DIR, { recursive: true }).catch(console.error);
 
 // Serve static files FIRST (important for .js, .css, etc)
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve cached images
+app.get('/cache/img/:filename', async (req, res) => {
+    try {
+        const filename = req.params.filename;
+        const imagePath = path.join(__dirname, '../cache/images', filename);
+        
+        // Check if file exists
+        await fs.access(imagePath);
+        
+        // Determine content type
+        const ext = path.extname(filename).toLowerCase();
+        const contentType = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.webp': 'image/webp',
+            '.gif': 'image/gif'
+        }[ext] || 'image/jpeg';
+        
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+        res.sendFile(imagePath);
+    } catch (error) {
+        res.status(404).send('Image not found');
+    }
+});
 
 // Helper: Generate hash from URL
 function getImageHash(url) {
@@ -1219,6 +1250,102 @@ app.get('/anime-terbaru.html', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/anime-list.html'));
 });
 
+// V4 API Routes - Anichin.cafe
+app.get('/api/v4/anichin/home', async (req, res) => {
+    try {
+        console.log('[V4] Anichin API - Homepage request');
+        const data = await anichinScraper.scrapeHomepage();
+        res.json(data);
+    } catch (error) {
+        console.error('[V4] Anichin API - Homepage error:', error.message);
+        res.status(500).json({ 
+            status: 'error', 
+            message: 'Failed to fetch homepage data',
+            data: {
+                banner_recommendations: [],
+                popular_today: [],
+                latest_releases: []
+            }
+        });
+    }
+});
+
+app.get('/api/v4/anichin/banner-recommendations', async (req, res) => {
+    try {
+        console.log('[V4] Anichin API - Banner recommendations request');
+        console.log('[V4] Anichin scraper type:', typeof anichinScraper);
+        console.log('[V4] Anichin scraper is function:', typeof anichinScraper.scrapeBannerRecommendations);
+        const data = await anichinScraper.scrapeBannerRecommendations();
+        res.json({ 
+            status: 'success', 
+            data: data,
+            total: data.length 
+        });
+    } catch (error) {
+        console.error('[V4] Anichin API - Banner recommendations error:', error.message);
+        console.error('[V4] Full error stack:', error.stack);
+        res.status(500).json({ 
+            status: 'error', 
+            message: 'Failed to fetch banner recommendations',
+            data: []
+        });
+    }
+});
+
+app.get('/api/v4/anichin/popular-today', async (req, res) => {
+    try {
+        console.log('[V4] Anichin API - Popular today request');
+        const data = await anichinScraper.scrapePopularToday();
+        res.json({ 
+            status: 'success', 
+            data: data,
+            total: data.length 
+        });
+    } catch (error) {
+        console.error('[V4] Anichin API - Popular today error:', error.message);
+        res.status(500).json({ 
+            status: 'error', 
+            message: 'Failed to fetch popular today data',
+            data: []
+        });
+    }
+});
+
+app.get('/api/v4/anichin/latest-releases', async (req, res) => {
+    try {
+        console.log('[V4] Anichin API - Latest releases request');
+        const data = await anichinScraper.scrapeLatestReleases();
+        res.json({ 
+            status: 'success', 
+            data: data,
+            total: data.length 
+        });
+    } catch (error) {
+        console.error('[V4] Anichin API - Latest releases error:', error.message);
+        res.status(500).json({ 
+            status: 'error', 
+            message: 'Failed to fetch latest releases',
+            data: []
+        });
+    }
+});
+
+app.get('/api/v4/anichin/detail/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        console.log(`[V4] Anichin API - Detail request for: ${slug}`);
+        const data = await anichinScraper.scrapeAnimeDetail(slug);
+        res.json(data);
+    } catch (error) {
+        console.error(`[V4] Anichin API - Detail error for ${req.params.slug}:`, error.message);
+        res.status(500).json({ 
+            status: 'error', 
+            message: 'Failed to fetch anime detail',
+            data: null
+        });
+    }
+});
+
 // 404 handler
 app.use((req, res) => {
     res.status(404).send('<h1>404 - Halaman tidak ditemukan</h1><a href="/v1/home">Kembali ke Beranda</a>');
@@ -1229,6 +1356,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`📺 Multi-Server Support:`);
     console.log(`   ├─ V1 (Otakudesu): /api/...`);
     console.log(`   ├─ V2 (Samehadaku): /api/v2/...`);
-    console.log(`   └─ V3 (Kuramanime): /api/v3/kuramanime/...`);
+    console.log(`   ├─ V3 (Kuramanime): /api/v3/kuramanime/...`);
+    console.log(`   └─ V4 (Anichin): /api/v4/anichin/...`);
     console.log(`🌐 Buka browser dan akses: http://167.253.159.235:${PORT}\n`);
 });

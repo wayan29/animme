@@ -1,4 +1,4 @@
-const { scrapeHome } = require('./server/kuramanime-scraper');
+const { scrapeHome } = require('../server/kuramanime');
 
 async function testFix() {
     try {

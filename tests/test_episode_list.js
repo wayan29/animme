@@ -1,4 +1,4 @@
-const { scrapeEpisode } = require('./server/kuramanime-scraper');
+const { scrapeEpisode } = require('../server/kuramanime');
 
 async function testEpisodeList() {
     console.log('Testing episode list and navigation extraction...\n');
