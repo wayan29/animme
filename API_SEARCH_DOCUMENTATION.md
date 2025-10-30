@@ -48,8 +48,8 @@ curl http://localhost:5000/api/search/naruto
 ---
 
 ## API v2 (Samehadaku)
-**Base URL:** `/api/`
-**Source:** Samehadaku (https://samehadaku.website)
+**Base URL:** `/api/v2/`
+**Source:** Samehadaku (https://v1.samehadaku.how)
 **Status:** ⚠️ **Blocked by Cloudflare** (HTTP 403)
 
 ### Endpoint
