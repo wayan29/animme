@@ -1,5 +1,157 @@
 /* Mobile-First Responsive Design */
 
+/* Tablets & Smaller Desktops */
+@media (max-width: 1024px) {
+    .home-with-sidebar .home-layout {
+        flex-direction: column;
+    }
+
+    .home-with-sidebar .sidebar {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .home-with-sidebar .sidebar-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(20, 20, 20, 0.8);
+    }
+
+    .home-with-sidebar .content-area {
+        margin-left: 0;
+    }
+
+    .home-with-sidebar .topbar {
+        padding: 18px 20px;
+        gap: 16px;
+    }
+
+    .home-with-sidebar .topbar-title {
+        font-size: 1.1rem;
+    }
+
+    .home-with-sidebar .menu-toggle {
+        display: inline-flex;
+    }
+
+    .home-with-sidebar .topbar .search-container {
+        margin-left: 0;
+        flex: 1;
+    }
+
+    .home-with-sidebar .hero-carousel {
+        margin-top: 0;
+    }
+
+    .sidebar-open {
+        overflow: hidden;
+    }
+
+    .sidebar-open .sidebar {
+        transform: translateX(0);
+        box-shadow: 18px 0 35px rgba(0, 0, 0, 0.6);
+    }
+
+    .sidebar-open .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-filter-toggle {
+        display: flex;
+    }
+
+    .mobile-filter-toggle.hidden {
+        display: none !important;
+    }
+
+    .mobile-filter-toggle .label {
+        font-size: 0.85rem;
+    }
+
+    .anime-filters {
+        padding: 0 15px;
+        margin: 0 15px 20px;
+    }
+
+    .anime-filters.mobile-collapsible {
+        padding: 0 15px;
+        margin: 0 15px 0;
+        max-height: 0;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-4px);
+    }
+
+    .anime-filters.mobile-collapsible.mobile-open {
+        max-height: 1200px;
+        opacity: 1;
+        pointer-events: auto;
+        padding: 20px 15px;
+        margin-bottom: 20px;
+        transform: translateY(0);
+    }
+
+    .filter-row {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .filter-row:last-of-type {
+        margin-bottom: 0;
+    }
+
+    .filter-group {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .filter-group label {
+        font-size: 0.85rem;
+    }
+
+    .filter-group input,
+    .filter-group select,
+    .filter-group button {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+    }
+
+    .genre-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .genre-checkbox {
+        font-size: 0.8rem;
+        padding: 10px 12px;
+    }
+
+    .pagination-controls {
+        flex-direction: column;
+        gap: 12px;
+        padding: 15px;
+    }
+
+    .pagination-btn {
+        width: 100%;
+        padding: 12px;
+    }
+
+    .pagination-info {
+        width: 100%;
+        text-align: center;
+    }
+}
+
 /* Extra Small Devices (< 480px) */
 @media (max-width: 480px) {
     /* Typography */
@@ -10,6 +162,17 @@
     /* Navbar */
     .navbar {
         padding: 12px 0;
+    }
+
+    .home-with-sidebar .topbar {
+        padding: 16px 15px;
+        gap: 12px;
+    }
+
+    .home-with-sidebar .topbar-title {
+        flex: 1;
+        text-align: center;
+        font-size: 1rem;
     }
     
     .nav-container {
@@ -264,10 +427,51 @@
     .server-v3 .home-anime-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
+        padding: 0 8px;
+    }
+
+    .server-v3 .home-anime-card {
+        border-radius: 8px;
+        min-height: 240px;
+    }
+
+    .server-v3 .home-anime-poster {
+        height: 150px;
     }
 
     .server-v3 .home-anime-info {
-        padding: 14px;
+        padding: 10px;
+    }
+
+    .server-v3 .home-anime-title {
+        font-size: 0.75rem;
+    }
+
+    .server-v3 .home-anime-meta {
+        font-size: 0.65rem;
+    }
+
+    /* V3 Home specific improvements */
+    .server-v3 .main-content {
+        padding: 0 8px;
+    }
+
+    .server-v3 .anime-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 0;
+    }
+
+    .server-v3 .anime-card {
+        border-radius: 8px;
+    }
+
+    .server-v3 .anime-poster {
+        height: 180px;
+    }
+
+    .server-v3 .anime-info {
+        padding: 10px;
     }
 
     /* Detail Page */
@@ -494,16 +698,51 @@
     
     /* Touch Optimization */
     .anime-card,
+    .home-anime-card,
     .episode-btn,
     .genre-card,
     .nav-btn,
     .server-btn,
-    .pagination-btn {
+    .pagination-btn,
+    .comment-item {
         min-height: 44px; /* iOS minimum touch target */
         cursor: pointer;
         -webkit-tap-highlight-color: rgba(229, 9, 20, 0.2);
     }
-    
+
+    /* Better touch feedback for anime cards */
+    .anime-card:active,
+    .home-anime-card:active,
+    .comment-item:active {
+        opacity: 0.8;
+        transform: scale(0.98);
+        transition: all 0.1s ease;
+    }
+
+    /* Ensure links in cards don't have default link styling */
+    a.anime-card,
+    a.home-anime-card,
+    a.comment-item,
+    a.carousel-slide {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+    /* Carousel banner clickable - subtle feedback */
+    a.carousel-slide:active .carousel-content {
+        opacity: 0.9;
+        transform: scale(0.99);
+        transition: all 0.15s ease;
+    }
+
+    /* Make sure carousel buttons are tappable on mobile */
+    .carousel-btn,
+    .indicator {
+        -webkit-tap-highlight-color: rgba(229, 9, 20, 0.3);
+        touch-action: manipulation;
+    }
+
     /* Prevent zoom on input focus (iOS) */
     input[type="text"],
     input[type="search"] {
@@ -514,6 +753,37 @@
 @media (max-width: 360px) {
     .server-v3 .home-anime-grid {
         grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .server-v3 .home-anime-card {
+        min-height: 260px;
+    }
+
+    .server-v3 .home-anime-poster {
+        height: 160px;
+    }
+
+    .server-v3 .anime-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .server-v3 .anime-poster {
+        height: 200px;
+    }
+
+    .server-v3 .section-title {
+        font-size: 1.2rem;
+        margin: 18px 15px 12px;
+    }
+
+    .genre-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pagination-btn {
+        width: 100%;
     }
 }
 
@@ -577,64 +847,6 @@
     /* Already dark by default, but could add adjustments */
 }
 
-    /* All Anime Filters - Mobile */
-    .anime-filters {
-        padding: 20px 15px;
-        margin: 0 0 30px 0;
-    }
-
-    .filter-row {
-        grid-template-columns: 1fr !important;
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    .filter-row:last-of-type {
-        margin-bottom: 0;
-    }
-
-    .filter-group {
-        width: 100%;
-        min-width: unset;
-    }
-
-    .filter-group label {
-        font-size: 0.85rem;
-    }
-
-    .filter-group input,
-    .filter-group select,
-    .filter-group button {
-        padding: 12px 14px;
-        font-size: 0.9rem;
-    }
-
-    .genre-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
-
-    .genre-checkbox {
-        font-size: 0.8rem;
-        padding: 10px 12px;
-    }
-    
-    .pagination-controls {
-        flex-direction: column;
-        gap: 12px;
-        padding: 15px;
-    }
-    
-    .pagination-btn {
-        width: 100%;
-        padding: 12px;
-    }
-    
-    .pagination-info {
-        width: 100%;
-        text-align: center;
-    }
-    
     /* Anime Grid - Mobile */
     .anime-grid {
         grid-template-columns: repeat(2, 1fr) !important;

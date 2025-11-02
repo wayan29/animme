@@ -20,6 +20,13 @@ let API_BASE = currentServer === 'v3' ? '/api/v3/kuramanime' : (currentServer ==
 
 let homeData = null;
 
+function getHomePath(server) {
+    if (server === 'v4') return '/v4/home';
+    if (server === 'v3') return '/v3/home';
+    if (server === 'v2') return '/v2/home';
+    return '/v1/home';
+}
+
 // Initialize server selector on page load
 document.addEventListener('DOMContentLoaded', () => {
     const serverSelect = document.getElementById('serverSelect');
@@ -32,6 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Apply server class to body on load
     applyServerClass(currentServer);
+    initSidebarToggle();
+
+    document.querySelectorAll('[data-home-nav]').forEach((element) => {
+        element.addEventListener('click', () => {
+            const targetPath = getHomePath(currentServer);
+            if (window.location.pathname !== targetPath) {
+                window.location.href = targetPath;
+            } else {
+                document.body.classList.remove('sidebar-open');
+            }
+        });
+    });
 });
 
 function applyServerClass(server) {
@@ -54,7 +73,7 @@ function changeServer(server) {
     currentServer = server;
     localStorage.setItem('selectedServer', server);
 
-    const targetPath = server === 'v4' ? '/v4/home' : (server === 'v3' ? '/v3/home' : (server === 'v2' ? '/v2/home' : '/v1/home'));
+    const targetPath = getHomePath(server);
 
     if (window.location.pathname !== targetPath) {
         window.location.href = targetPath;
@@ -99,10 +118,15 @@ function showServerNotification(server) {
 
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 100) {
-        navbar.classList.add('scrolled');
-    } else {
-        navbar.classList.remove('scrolled');
+    const topbar = document.querySelector('.topbar');
+    const shouldAdd = window.scrollY > 100;
+
+    if (navbar) {
+        navbar.classList.toggle('scrolled', shouldAdd);
+    }
+
+    if (topbar) {
+        topbar.classList.toggle('scrolled', shouldAdd);
     }
 });
 
@@ -378,6 +402,49 @@ function initMobileSearch() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && searchContainer.classList.contains('active')) {
             searchContainer.classList.remove('active');
+        }
+    });
+}
+
+function initSidebarToggle() {
+    const menuToggle = document.getElementById('menuToggle');
+    const menuCloseBtn = document.getElementById('menuCloseBtn');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const sidebarLinks = document.querySelectorAll('.sidebar-menu .nav-link');
+    const body = document.body;
+
+    const openSidebar = () => body.classList.add('sidebar-open');
+    const closeSidebar = () => body.classList.remove('sidebar-open');
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            if (body.classList.contains('sidebar-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+
+    if (menuCloseBtn) {
+        menuCloseBtn.addEventListener('click', closeSidebar);
+    }
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', closeSidebar);
+    }
+
+    sidebarLinks.forEach((link) => link.addEventListener('click', closeSidebar));
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) {
+            closeSidebar();
+        }
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeSidebar();
         }
     });
 }

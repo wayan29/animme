@@ -9,6 +9,8 @@ const scraper = require('./otakudesu');
 const samehadakuScraper = require('./samehadaku');
 const kuramanimeScraper = require('./kuramanime');
 const anichinScraper = require('./anichin');
+const anoboyScraper = require('./anoboy');
+const animeIndoScraper = require('./animeindo');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,6 +49,8 @@ app.use('/v1', express.static(path.join(__dirname, '../public/v1')));
 app.use('/v2', express.static(path.join(__dirname, '../public/v2')));
 app.use('/v3', express.static(path.join(__dirname, '../public/v3')));
 app.use('/v4', express.static(path.join(__dirname, '../public/v4')));
+app.use('/v5', express.static(path.join(__dirname, '../public/v5')));
+app.use('/v6', express.static(path.join(__dirname, '../public/v6')));
 
 // Serve shared assets globally (CSS, docs)
 app.use(express.static(path.join(__dirname, '../public/shared')));
@@ -294,11 +298,21 @@ app.get('/img/:hash', async (req, res) => {
         const imageUrlMapV1 = scraper.getImageUrlMap();
         const imageUrlMapV2 = samehadakuScraper.getImageUrlMap();
         const imageUrlMapV3 = kuramanimeScraper.getImageUrlMap();
-        
-        let originalUrl = imageUrlMapV1.get(hash) || imageUrlMapV2.get(hash) || imageUrlMapV3.get(hash);
+        const imageUrlMapV5 = anoboyScraper.getImageUrlMap();
+        const imageUrlMapV6 = animeIndoScraper.getImageUrlMap();
+
+        let originalUrl = imageUrlMapV1.get(hash) || imageUrlMapV2.get(hash) || imageUrlMapV3.get(hash) || imageUrlMapV5.get(hash) || imageUrlMapV6.get(hash);
         
         if (!originalUrl) {
             return res.status(404).send('Image not found and no URL mapping');
+        }
+
+        let refererHeader = 'https://otakudesu.best/';
+        try {
+            const parsedUrl = new URL(originalUrl);
+            refererHeader = `${parsedUrl.origin}/`;
+        } catch (error) {
+            // Keep default referer
         }
         
         // Download and cache
@@ -306,7 +320,7 @@ app.get('/img/:hash', async (req, res) => {
         const response = await fetch(originalUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Referer': 'https://otakudesu.best/'
+                'Referer': refererHeader
             },
             timeout: 10000
         });
@@ -1116,7 +1130,7 @@ app.get('/api/v3/kuramanime/batch/:animeId/:slug/:range', async (req, res) => {
 
 // Route untuk halaman utama
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/v1/index.html'));
+    res.redirect('/v6/home');
 });
 
 // Route untuk V1 Otakudesu home alias
@@ -1192,6 +1206,10 @@ app.get('/v3/genres', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/v3/genres.html'));
 });
 
+app.get('/v3/genre', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v3/genre.html'));
+});
+
 app.get('/v3/genre/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/v3/genre.html'));
 });
@@ -1256,11 +1274,49 @@ Object.entries(v3StaticRoutes).forEach(([route, file]) => {
 // V4 static pages (Anichin)
 const v4StaticRoutes = {
     'v4/home': 'index',
-    'v4/detail': 'detail'
+    'v4/detail': 'detail',
+    'v4/episode': 'episode',
+    'v4/completed': 'completed'
 };
 
 Object.entries(v4StaticRoutes).forEach(([route, file]) => {
     const filePath = path.join(__dirname, `../public/v4/${file}.html`);
+    app.get(`/${route}`, (req, res) => res.sendFile(filePath));
+    app.get(`/${route}.html`, (req, res) => res.sendFile(filePath));
+});
+
+// V5 static pages (Anoboy)
+const v5StaticRoutes = {
+    'v5/home': 'index',
+    'v5/detail': 'detail',
+    'v5/episode': 'episode',
+    'v5/search': 'search',
+    'v5/azlist': 'azlist',
+    'v5/anime-list': 'azlist',
+    'v5/latest': 'latest',
+    'v5/latest-release': 'latest'
+};
+
+Object.entries(v5StaticRoutes).forEach(([route, file]) => {
+    const filePath = path.join(__dirname, `../public/v5/${file}.html`);
+    app.get(`/${route}`, (req, res) => res.sendFile(filePath));
+    app.get(`/${route}.html`, (req, res) => res.sendFile(filePath));
+});
+
+// V6 static pages (AnimeIndo)
+const v6StaticRoutes = {
+    'v6/home': 'index',
+    'v6/anime-list': 'anime-list',
+    'v6/detail': 'detail',
+    'v6/episode': 'episode',
+    'v6/genres': 'genres',
+    'v6/movies': 'movies',
+    'v6/genre': 'genre',
+    'v6/search': 'search'
+};
+
+Object.entries(v6StaticRoutes).forEach(([route, file]) => {
+    const filePath = path.join(__dirname, `../public/v6/${file}.html`);
     app.get(`/${route}`, (req, res) => res.sendFile(filePath));
     app.get(`/${route}.html`, (req, res) => res.sendFile(filePath));
 });
@@ -1353,6 +1409,26 @@ app.get('/api/v4/anichin/latest-releases', async (req, res) => {
     }
 });
 
+app.get('/api/v4/anichin/completed', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        console.log(`[V4] Anichin API - Completed request (page ${page})`);
+        const data = await anichinScraper.scrapeCompleted(page);
+        res.json({
+            status: 'success',
+            data: data,
+            total: Array.isArray(data?.list) ? data.list.length : 0
+        });
+    } catch (error) {
+        console.error('[V4] Anichin API - Completed error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch completed list',
+            data: []
+        });
+    }
+});
+
 app.get('/api/v4/anichin/detail/:slug', async (req, res) => {
     try {
         const { slug } = req.params;
@@ -1361,10 +1437,367 @@ app.get('/api/v4/anichin/detail/:slug', async (req, res) => {
         res.json(data);
     } catch (error) {
         console.error(`[V4] Anichin API - Detail error for ${req.params.slug}:`, error.message);
-        res.status(500).json({ 
-            status: 'error', 
+        res.status(500).json({
+            status: 'error',
             message: 'Failed to fetch anime detail',
             data: null
+        });
+    }
+});
+
+app.get('/api/v4/anichin/episode', async (req, res) => {
+    try {
+        const slug = req.query.slug;
+        if (!slug) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Parameter slug wajib diisi',
+                data: null
+            });
+        }
+        console.log(`[V4] Anichin API - Episode request for: ${slug}`);
+        const data = await anichinScraper.scrapeEpisode(slug);
+        res.json(data);
+    } catch (error) {
+        console.error(`[V4] Anichin API - Episode error for ${req.query.slug}:`, error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch episode data',
+            data: null
+        });
+    }
+});
+
+// ==================== API V5 - ANOBOY ====================
+
+app.get('/api/v5/anoboy/home', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        console.log(`[V5] Anoboy API - Homepage request (page ${page})`);
+        const data = await anoboyScraper.scrapeHomepage(page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V5] Anoboy API - Homepage error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch homepage data',
+            data: {
+                latest_releases: [],
+                recommendations: [],
+                pagination: {}
+            }
+        });
+    }
+});
+
+app.get('/api/v5/anoboy/latest', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        console.log(`[V5] Anoboy API - Latest Release request for page: ${page}`);
+        const data = await anoboyScraper.scrapeLatestRelease(page);
+        res.json(data);
+    } catch (error) {
+        console.error(`[V5] Anoboy API - Latest Release error:`, error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch latest release',
+            data: { current_page: 1, anime_list: [], total: 0, has_next_page: false, next_page: null }
+        });
+    }
+});
+
+app.get('/api/v5/anoboy/ongoing', async (req, res) => {
+    try {
+        console.log('[V5] Anoboy API - Ongoing anime request');
+        const data = await anoboyScraper.scrapeOngoing();
+        res.json({
+            status: 'success',
+            data: data,
+            total: data.length
+        });
+    } catch (error) {
+        console.error('[V5] Anoboy API - Ongoing error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch ongoing anime',
+            data: []
+        });
+    }
+});
+
+app.get('/api/v5/anoboy/detail/:slug(*)', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        console.log(`[V5] Anoboy API - Detail request for: ${slug}`);
+        const data = await anoboyScraper.scrapeAnimeDetail(slug);
+        res.json(data);
+    } catch (error) {
+        console.error(`[V5] Anoboy API - Detail error for ${req.params.slug}:`, error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch anime detail',
+            data: null
+        });
+    }
+});
+
+app.get('/api/v5/anoboy/episode/:slug(*)', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        console.log(`[V5] Anoboy API - Episode request for: ${slug}`);
+        const data = await anoboyScraper.scrapeEpisode(slug);
+        res.json(data);
+    } catch (error) {
+        console.error(`[V5] Anoboy API - Episode error for ${req.params.slug}:`, error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch episode data',
+            data: null
+        });
+    }
+});
+
+app.get('/api/v5/anoboy/search', async (req, res) => {
+    try {
+        const keyword = req.query.q || req.query.keyword || req.query.search;
+        if (!keyword) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Parameter q/keyword wajib diisi',
+                data: null
+            });
+        }
+        console.log(`[V5] Anoboy API - Search request for: ${keyword}`);
+        const data = await anoboyScraper.scrapeSearch(keyword);
+        res.json(data);
+    } catch (error) {
+        console.error(`[V5] Anoboy API - Search error:`, error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to search anime',
+            data: { keyword: '', results: [], total: 0 }
+        });
+    }
+});
+
+app.get('/api/v5/anoboy/azlist', async (req, res) => {
+    try {
+        const letter = (req.query.letter || req.query.show || 'A').toUpperCase();
+        console.log(`[V5] Anoboy API - A-Z List request for letter: ${letter}`);
+        const data = await anoboyScraper.scrapeAZList(letter);
+        res.json(data);
+    } catch (error) {
+        console.error(`[V5] Anoboy API - A-Z List error:`, error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch A-Z list',
+            data: { current_letter: 'A', anime_list: [], alphabet_nav: [], total: 0 }
+        });
+    }
+});
+
+// ==================== API V6 - ANIMEINDO ====================
+
+app.get('/api/v6/animeindo/home', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        console.log(`[V6] AnimeIndo API - Home request (page ${page})`);
+        const data = await animeIndoScraper.scrapeHomepage(page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Home error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch homepage data',
+            data: {
+                update_terbaru: [],
+                popular: [],
+                pagination: {}
+            }
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/update-terbaru', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        console.log(`[V6] AnimeIndo API - Update Terbaru request (page ${page})`);
+        const data = await animeIndoScraper.scrapeUpdateTerbaru(page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Update Terbaru error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch latest updates',
+            data: {
+                current_page: 1,
+                updates: [],
+                pagination: {}
+            }
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/popular', async (req, res) => {
+    try {
+        console.log('[V6] AnimeIndo API - Popular request');
+        const data = await animeIndoScraper.scrapePopular();
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Popular error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch popular anime',
+            data: {
+                popular: [],
+                total: 0
+            }
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/anime-list', async (req, res) => {
+    try {
+        const letter = (req.query.letter || req.query.l || 'ALL').toString();
+        console.log(`[V6] AnimeIndo API - Anime List request (letter: ${letter})`);
+        const data = await animeIndoScraper.scrapeAnimeList(letter);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Anime List error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch anime list',
+            data: {
+                letter: 'ALL',
+                total: 0,
+                sections: [],
+                anime_list: [],
+                available_letters: []
+            }
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/detail/:slug(*)', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`[V6] AnimeIndo API - Detail request for: ${slug}`);
+        const data = await animeIndoScraper.scrapeAnimeDetail(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Detail error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch anime detail',
+            data: null
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/episode/:slug(*)', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`[V6] AnimeIndo API - Episode request for: ${slug}`);
+        const data = await animeIndoScraper.scrapeEpisode(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Episode error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch episode data',
+            data: null
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/genres', async (req, res) => {
+    try {
+        console.log('[V6] AnimeIndo API - Genres request');
+        const data = await animeIndoScraper.scrapeGenreList();
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Genres error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch genre list',
+            data: {
+                total: 0,
+                genres: []
+            }
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/genres/:slug(*)', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        const page = parseInt(req.query.page, 10) || 1;
+        console.log(`[V6] AnimeIndo API - Genre detail request (${slug}, page ${page})`);
+        const data = await animeIndoScraper.scrapeGenreDetail(slug, page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Genre detail error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch genre detail',
+            data: {
+                genre: '',
+                slug: '',
+                current_page: 1,
+                anime_list: [],
+                pagination: {}
+            }
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/movies', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        console.log(`[V6] AnimeIndo API - Movie list request (page ${page})`);
+        const data = await animeIndoScraper.scrapeMovieList(page);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Movie list error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch movie list',
+            data: {
+                current_page: 1,
+                movies: [],
+                pagination: {}
+            }
+        });
+    }
+});
+
+app.get('/api/v6/animeindo/search', async (req, res) => {
+    try {
+        const query = req.query.q || req.query.keyword || req.query.search;
+        if (!query) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Parameter q keyword wajib diisi',
+                data: {
+                    keyword: '',
+                    total: 0,
+                    results: []
+                }
+            });
+        }
+        console.log(`[V6] AnimeIndo API - Search request for: ${query}`);
+        const data = await animeIndoScraper.scrapeSearch(query);
+        res.json(data);
+    } catch (error) {
+        console.error('[V6] AnimeIndo API - Search error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to search anime',
+            data: {
+                keyword: '',
+                total: 0,
+                results: []
+            }
         });
     }
 });
@@ -1380,6 +1813,8 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`   ├─ V1 (Otakudesu): /api/...`);
     console.log(`   ├─ V2 (Samehadaku): /api/v2/...`);
     console.log(`   ├─ V3 (Kuramanime): /api/v3/kuramanime/...`);
-    console.log(`   └─ V4 (Anichin): /api/v4/anichin/...`);
+    console.log(`   ├─ V4 (Anichin): /api/v4/anichin/...`);
+    console.log(`   ├─ V5 (Anoboy): /api/v5/anoboy/...`);
+    console.log(`   └─ V6 (AnimeIndo): /api/v6/animeindo/...`);
     console.log(`🌐 Buka browser dan akses: http://167.253.159.235:${PORT}\n`);
 });

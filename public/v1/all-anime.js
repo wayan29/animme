@@ -3,6 +3,91 @@ let currentServer = localStorage.getItem('selectedServer') || 'v1';
 let API_BASE = currentServer === 'v2' ? '/api/v2' : '/api';
 let currentPage = 1;
 let paginationData = null;
+const SUPPORTED_SERVERS = new Set(['v1', 'v2']);
+let mobileFiltersInitialized = false;
+
+function redirectToVersionPage(server) {
+    const targetPath = server === 'v3' ? '/v3/animelist'
+        : server === 'v4' ? '/v4/home'
+        : '/v1/home';
+    window.location.href = targetPath;
+}
+
+function updateMobileFilterVisibility() {
+    const filters = document.getElementById('animeFilters');
+    const toggle = document.getElementById('mobileFilterToggle');
+
+    if (!filters || !toggle) {
+        return;
+    }
+
+    const shouldShowToggle = window.innerWidth <= 768 &&
+        !filters.classList.contains('hidden') &&
+        currentServer === 'v2';
+
+    if (shouldShowToggle) {
+        toggle.classList.remove('hidden');
+        const isOpen = filters.classList.contains('mobile-open');
+        toggle.classList.toggle('active', isOpen);
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    } else {
+        toggle.classList.add('hidden');
+        toggle.classList.remove('active');
+        toggle.setAttribute('aria-expanded', 'false');
+        filters.classList.remove('mobile-open');
+    }
+}
+
+function initMobileFilters() {
+    if (mobileFiltersInitialized) {
+        return;
+    }
+
+    const filters = document.getElementById('animeFilters');
+    const toggle = document.getElementById('mobileFilterToggle');
+
+    if (!filters || !toggle) {
+        return;
+    }
+
+    const applyLayout = () => {
+        const shouldCollapse = window.innerWidth <= 768;
+        if (shouldCollapse) {
+            filters.classList.add('mobile-collapsible');
+            if (!filters.classList.contains('mobile-open')) {
+                filters.classList.remove('mobile-open');
+            }
+        } else {
+            filters.classList.remove('mobile-collapsible');
+            filters.classList.remove('mobile-open');
+            toggle.classList.remove('active');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    };
+
+    toggle.addEventListener('click', () => {
+        if (filters.classList.contains('hidden')) {
+            return;
+        }
+
+        const isOpen = filters.classList.toggle('mobile-open');
+        toggle.classList.toggle('active', isOpen);
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+        if (isOpen) {
+            filters.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        applyLayout();
+        updateMobileFilterVisibility();
+    });
+
+    applyLayout();
+    updateMobileFilterVisibility();
+    mobileFiltersInitialized = true;
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -26,7 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    if (!SUPPORTED_SERVERS.has(currentServer)) {
+        redirectToVersionPage(currentServer);
+        return;
+    }
+
     applyServerClass(currentServer);
+    initMobileFilters();
+    updateMobileFilterVisibility();
     
     // Pre-fill genre filter if specified in URL
     if (genreParam && currentServer === 'v2') {
@@ -43,16 +135,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function applyServerClass(server) {
-    document.body.classList.remove('server-v1', 'server-v2');
-    document.body.classList.add(server === 'v2' ? 'server-v2' : 'server-v1');
+    document.body.classList.remove('server-v1', 'server-v2', 'server-v3', 'server-v4');
+    const className = server === 'v2' ? 'server-v2' : (server === 'v3' ? 'server-v3' : (server === 'v4' ? 'server-v4' : 'server-v1'));
+    document.body.classList.add(className);
 }
 
 function changeServer(server) {
     currentServer = server;
     localStorage.setItem('selectedServer', server);
+    
+    if (!SUPPORTED_SERVERS.has(server)) {
+        redirectToVersionPage(server);
+        return;
+    }
+
     API_BASE = server === 'v2' ? '/api/v2' : '/api';
     
     applyServerClass(server);
+    updateMobileFilterVisibility();
     loadAllAnimePage();
 }
 
@@ -186,6 +286,10 @@ function goToDetail(slug, version) {
 }
 
 async function loadAllAnimePage(page = 1) {
+    if (!SUPPORTED_SERVERS.has(currentServer)) {
+        return;
+    }
+
     currentPage = page;
     
     const container = document.getElementById('allAnimeContainer');
@@ -194,14 +298,27 @@ async function loadAllAnimePage(page = 1) {
     // Update page title and description
     const pageTitle = document.getElementById('pageTitle');
     const pageDescription = document.getElementById('pageDescription');
+    const filters = document.getElementById('animeFilters');
+    const mobileToggle = document.getElementById('mobileFilterToggle');
     
     if (currentServer === 'v2') {
         pageTitle.textContent = 'Daftar Anime (Samehadaku)';
         pageDescription.textContent = 'Semua anime dengan filter';
         
         // Show filters for V2
-        const filters = document.getElementById('animeFilters');
-        if (filters) filters.style.display = 'block';
+        if (filters) {
+            filters.classList.remove('hidden');
+            filters.classList.remove('mobile-open');
+        }
+        if (mobileToggle) {
+            mobileToggle.classList.remove('active');
+            mobileToggle.setAttribute('aria-expanded', 'false');
+        }
+        const alphabetNav = document.getElementById('alphabetNav');
+        if (alphabetNav) {
+            alphabetNav.innerHTML = '';
+        }
+        updateMobileFilterVisibility();
         
         // Get current filters including genres
         const selectedGenres = getSelectedGenres();
@@ -234,8 +351,15 @@ async function loadAllAnimePage(page = 1) {
         pageDescription.textContent = 'Semua anime A-Z';
         
         // Hide filters for V1
-        const filters = document.getElementById('animeFilters');
-        if (filters) filters.style.display = 'none';
+        if (filters) {
+            filters.classList.add('hidden');
+            filters.classList.remove('mobile-open');
+        }
+        if (mobileToggle) {
+            mobileToggle.classList.remove('active');
+            mobileToggle.setAttribute('aria-expanded', 'false');
+        }
+        updateMobileFilterVisibility();
         
         const data = await fetchAllAnimeV1();
         
@@ -249,6 +373,8 @@ async function loadAllAnimePage(page = 1) {
             if (alphabetNav) alphabetNav.innerHTML = '';
         }
     }
+
+    updateMobileFilterVisibility();
 }
 
 // Pagination functions

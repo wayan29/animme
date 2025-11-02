@@ -11,22 +11,40 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-main: #141414;
+            --bg-panel: #1a1a1a;
+            --bg-card: #1f1f1f;
+            --border-soft: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+            --text-primary: #ffffff;
+            --text-muted: #9ea0a8;
+            --accent: #e50914;
+            --accent-soft: rgba(229, 9, 20, 0.16);
+            --accent-strong: rgba(229, 9, 20, 0.45);
+            --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.45);
+            --shadow-accent: 0 12px 32px rgba(229, 9, 20, 0.35);
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #e0e0e0;
+            background:
+                radial-gradient(circle at 12% 20%, rgba(229, 9, 20, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 88% 12%, rgba(229, 9, 20, 0.12) 0%, transparent 50%),
+                var(--bg-main);
+            color: var(--text-primary);
             min-height: 100vh;
             padding: 20px;
         }
 
         .navbar {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            background: rgba(18, 18, 18, 0.85);
+            backdrop-filter: blur(14px);
+            border-radius: 16px;
             padding: 15px 30px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-soft);
         }
 
         .navbar-content {
@@ -40,10 +58,33 @@
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--accent);
+            text-shadow: 0 0 18px rgba(229, 9, 20, 0.35);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a.active {
+            color: var(--accent);
+            border-color: var(--accent);
+            font-weight: 600;
         }
 
         .container {
@@ -54,62 +95,67 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
             padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-soft);
         }
 
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, #60b0ff 0%, #ff6b9d 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
+            text-shadow: 0 0 18px rgba(0, 0, 0, 0.45);
+        }
+
+        #headerStats {
+            color: var(--accent);
+            font-size: 0.95rem;
+            margin-top: 15px;
         }
 
         .search-box {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             max-width: 600px;
             margin: 20px auto;
+            width: 100%;
         }
 
         .search-input {
             flex: 1;
             padding: 12px 20px;
-            border: 2px solid rgba(96, 176, 255, 0.3);
-            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-soft);
+            background: var(--bg-card);
             border-radius: 10px;
-            color: #e0e0e0;
+            color: var(--text-primary);
             font-size: 1rem;
             outline: none;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
         }
 
         .search-input:focus {
-            border-color: rgba(96, 176, 255, 0.6);
-            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.2);
         }
 
         .search-btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #60b0ff 0%, #4a9aff 100%);
+            padding: 12px 28px;
+            background: var(--accent);
             border: none;
             border-radius: 10px;
-            color: white;
+            color: var(--text-primary);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-accent);
         }
 
         .search-btn:hover {
-            background: linear-gradient(135deg, #4a9aff 0%, #3a8aef 100%);
+            background: #f6121d;
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(96, 176, 255, 0.4);
         }
 
         .controls {
@@ -119,57 +165,66 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
             gap: 15px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            padding: 18px 24px;
+            box-shadow: var(--shadow-soft);
         }
 
         .sort-control {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .sort-control label {
-            color: #a0a0b0;
+            color: var(--text-muted);
             font-weight: 500;
         }
 
         .sort-control select {
-            padding: 8px 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(96, 176, 255, 0.3);
+            padding: 10px 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-soft);
             border-radius: 8px;
-            color: #e0e0e0;
+            color: var(--text-primary);
             cursor: pointer;
             outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .sort-control select:focus {
+            border-color: var(--accent);
         }
 
         .loading {
             text-align: center;
             padding: 60px;
             font-size: 1.3rem;
-            color: #60b0ff;
+            color: var(--accent);
         }
 
         .anime-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 24px;
             margin-bottom: 40px;
         }
 
         .anime-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            background: var(--bg-card);
             border-radius: 15px;
             overflow: hidden;
-            transition: all 0.3s;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-soft);
         }
 
         .anime-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(96, 176, 255, 0.3);
-            border-color: rgba(96, 176, 255, 0.5);
+            box-shadow: var(--shadow-accent);
+            border-color: var(--accent-strong);
         }
 
         .anime-poster {
@@ -187,7 +242,7 @@
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 10px;
-            color: #ffffff;
+            color: var(--text-primary);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -218,15 +273,15 @@
         }
 
         .status.SELESAI {
-            background: rgba(76, 175, 80, 0.2);
-            color: #81c784;
-            border: 1px solid rgba(76, 175, 80, 0.3);
+            background: rgba(46, 204, 113, 0.15);
+            color: #7deaa8;
+            border: 1px solid rgba(46, 204, 113, 0.3);
         }
 
         .status.ONGOING {
-            background: rgba(255, 152, 0, 0.2);
-            color: #ffb74d;
-            border: 1px solid rgba(255, 152, 0, 0.3);
+            background: rgba(255, 152, 0, 0.18);
+            color: #ffc46b;
+            border: 1px solid rgba(255, 152, 0, 0.35);
         }
 
         .tags {
@@ -238,11 +293,11 @@
 
         .tag {
             padding: 4px 10px;
-            background: rgba(96, 176, 255, 0.15);
-            border: 1px solid rgba(96, 176, 255, 0.3);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-strong);
             border-radius: 5px;
             font-size: 0.85rem;
-            color: #60b0ff;
+            color: var(--accent);
         }
 
         .buttons {
@@ -266,25 +321,25 @@
         }
 
         .btn-watch {
-            background: linear-gradient(135deg, #ff6b9d 0%, #ff5085 100%);
-            color: white;
+            background: var(--accent);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-accent);
         }
 
         .btn-watch:hover {
-            background: linear-gradient(135deg, #ff5085 0%, #ff3868 100%);
+            background: #f6121d;
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+            box-shadow: 0 6px 18px rgba(229, 9, 20, 0.45);
         }
 
         .btn-info {
-            background: rgba(96, 176, 255, 0.2);
-            color: #60b0ff;
-            border: 1px solid rgba(96, 176, 255, 0.3);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-soft);
         }
 
         .btn-info:hover {
-            background: rgba(96, 176, 255, 0.3);
-            border-color: rgba(96, 176, 255, 0.5);
+            border-color: var(--accent);
         }
 
         .pagination {
@@ -297,37 +352,43 @@
 
         .pagination-btn {
             padding: 12px 24px;
-            background: rgba(96, 176, 255, 0.2);
-            border: 1px solid rgba(96, 176, 255, 0.3);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-strong);
             border-radius: 10px;
-            color: #60b0ff;
+            color: var(--text-primary);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
         }
 
         .pagination-btn:hover:not(:disabled) {
-            background: rgba(96, 176, 255, 0.3);
-            border-color: rgba(96, 176, 255, 0.5);
+            background: var(--accent);
             transform: translateY(-2px);
         }
 
         .pagination-btn:disabled {
-            opacity: 0.3;
+            opacity: 0.35;
             cursor: not-allowed;
         }
 
         .page-info {
-            color: #a0a0b0;
+            color: var(--text-muted);
             font-weight: 500;
+        }
+
+        .result-info {
+            color: var(--text-muted);
+            font-size: 0.95rem;
         }
 
         .empty-state {
             text-align: center;
             padding: 80px 20px;
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--bg-panel);
             border-radius: 15px;
             margin: 40px 0;
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-soft);
         }
 
         .empty-state-icon {
@@ -338,26 +399,83 @@
 
         .empty-state-text {
             font-size: 1.3rem;
-            color: #a0a0b0;
+            color: var(--text-muted);
             margin-bottom: 10px;
         }
 
-        @media (max-width: 768px) {
-            .anime-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 15px;
+        @media (max-width: 1024px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 20px;
             }
+        }
 
-            .anime-poster {
-                height: 250px;
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
             }
 
             .header h1 {
-                font-size: 1.8rem;
+                font-size: 1.9rem;
             }
 
             .search-box {
                 flex-direction: column;
+                max-width: none;
+            }
+
+            .search-btn {
+                width: 100%;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 18px;
+            }
+
+            .anime-poster {
+                height: 260px;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+
+            .navbar-content {
+                gap: 12px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .controls {
+                padding: 16px;
+            }
+
+            .anime-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .anime-card {
+                max-width: 360px;
+                margin: 0 auto;
+            }
+
+            .anime-poster {
+                height: 220px;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
             }
         }
     </style>
@@ -365,16 +483,17 @@
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="logo">🎌 AnimMe V3</div>
-            <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/v3/home" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
-                <a href="/v3/ongoing" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Sedang Tayang</a>
-                <a href="/v3/finished" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Selesai Tayang</a>
-                <a href="/v3/movie" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Film</a>
-                <a href="/v3/schedule" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Jadwal Rilis</a>
-                <a href="/v3/genres" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Genre</a>
-                <a href="/v3/seasons" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Musim</a>
-                <a href="/all-anime" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Daftar Anime</a>
+            <div class="logo" onclick="window.location.href='/v3/home'">🎌 AnimMe V3</div>
+            <div class="nav-links">
+                <a href="/v3/home">Beranda</a>
+                <a href="/v3/ongoing">Sedang Tayang</a>
+                <a href="/v3/finished">Selesai Tayang</a>
+                <a href="/v3/movie">Film</a>
+                <a href="/v3/schedule">Jadwal Rilis</a>
+                <a href="/v3/genres">Genre</a>
+                <a href="/v3/seasons">Musim</a>
+                <a href="/v3/animelist">Daftar Anime</a>
+                <a href="/v3/search" class="active">Cari</a>
             </div>
         </div>
     </nav>
@@ -389,7 +508,7 @@
                 <button class="search-btn" onclick="performSearch()">Cari</button>
             </div>
             
-            <p id="headerStats" style="color: #60b0ff; font-size: 0.95rem; margin-top: 15px;"></p>
+            <p id="headerStats"></p>
         </div>
 
         <div class="controls" id="controls" style="display: none;">
@@ -402,7 +521,7 @@
                     <option value="popular">Populer (Popular)</option>
                 </select>
             </div>
-            <div style="color: #a0a0b0; font-size: 0.95rem;">
+            <div class="result-info">
                 <span id="resultCount">0 hasil ditemukan</span>
             </div>
         </div>

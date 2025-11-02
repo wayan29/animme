@@ -14,6 +14,8 @@ let appState = {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('[V4] Initializing Anichin application...');
     initializeApp();
+    initSidebarToggle();
+    initMobileSearch();
 });
 
 // Initialize application
@@ -165,27 +167,28 @@ function renderLatestReleases() {
 
 // Create anime card element
 function createAnimeCard(anime) {
-    const div = document.createElement('div');
-    div.className = 'anime-card';
+    const link = document.createElement('a');
+    link.className = 'anime-card';
+    link.href = anime.slug ? `/v4/detail?slug=${encodeURIComponent(anime.slug)}` : '#';
+    link.style.textDecoration = 'none';
+    link.style.color = 'inherit';
 
     const poster = anime.poster || '/images/placeholder.jpg';
-    const episode = anime.episode ? `<div class="anime-meta"><span>${anime.episode}</span></div>` : '';
+    const episode = anime.episode ? `<span class="anime-episode">${anime.episode}</span>` : '';
+    const type = anime.type ? `<span class="anime-type">${anime.type}</span>` : '';
 
-    div.innerHTML = `
+    link.innerHTML = `
         <div class="anime-poster" style="background-image: url('${poster}');"></div>
         <div class="anime-info">
             <div class="anime-title">${escapeHtml(anime.title)}</div>
-            ${episode}
+            <div class="anime-meta">
+                ${episode}
+                ${type}
+            </div>
         </div>
     `;
 
-    div.addEventListener('click', () => {
-        if (anime.slug) {
-            window.location.href = `/v4/detail?slug=${encodeURIComponent(anime.slug)}`;
-        }
-    });
-
-    return div;
+    return link;
 }
 
 // Show error message
@@ -222,6 +225,9 @@ function setupServerSelector() {
             case 'v4':
                 window.location.href = '/v4/home';
                 break;
+            case 'v5':
+                window.location.href = '/v5/home';
+                break;
         }
     });
 }
@@ -236,6 +242,86 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Initialize sidebar toggle
+function initSidebarToggle() {
+    const menuToggle = document.getElementById('menuToggle');
+    const menuCloseBtn = document.getElementById('menuCloseBtn');
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    if (!menuToggle || !sidebar) return;
+
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.add('active');
+        if (backdrop) backdrop.classList.add('active');
+        document.body.classList.add('sidebar-open');
+    });
+
+    const closeSidebar = () => {
+        sidebar.classList.remove('active');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.classList.remove('sidebar-open');
+        document.body.style.overflow = '';
+    };
+
+    if (menuCloseBtn) {
+        menuCloseBtn.addEventListener('click', closeSidebar);
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener('click', closeSidebar);
+    }
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    });
+}
+
+// Initialize mobile search
+function initMobileSearch() {
+    const searchIconBtn = document.getElementById('searchIconBtn');
+    const searchCloseBtn = document.getElementById('searchCloseBtn');
+    const searchInput = document.getElementById('searchInput');
+    const searchContainer = document.querySelector('.search-container');
+
+    if (!searchIconBtn || !searchContainer) return;
+
+    searchIconBtn.addEventListener('click', () => {
+        searchContainer.classList.add('active');
+        if (searchInput) searchInput.focus();
+    });
+
+    if (searchCloseBtn) {
+        searchCloseBtn.addEventListener('click', () => {
+            searchContainer.classList.remove('active');
+            if (searchInput) searchInput.value = '';
+        });
+    }
+
+    // Search on enter key
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchAnime();
+            }
+        });
+    }
+}
+
+// Search anime functionality
+function searchAnime() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+
+    const query = searchInput.value.trim();
+    if (query) {
+        window.location.href = `/v4/search?q=${encodeURIComponent(query)}`;
+    }
 }
 
 // Log app initialization

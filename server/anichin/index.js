@@ -23,6 +23,15 @@ const {
     scrapeAnimeDetail
 } = require('./detail');
 
+// Import episode scraping functions
+const {
+    scrapeEpisode
+} = require('./episode');
+
+const {
+    scrapeCompleted
+} = require('./completed');
+
 // Export all functions organized by category
 module.exports = {
     // Helper functions
@@ -39,5 +48,11 @@ module.exports = {
     scrapeHomepage,
 
     // Detail scraping
-    scrapeAnimeDetail
+    scrapeAnimeDetail,
+
+    // Episode scraping
+    scrapeEpisode,
+
+    // Completed list
+    scrapeCompleted
 };

@@ -236,24 +236,106 @@ async function scrapeDetail(animeId, slug) {
             });
         });
 
-        // Episodes dari popover
+        // Episodes dari popover dengan pagination support
         const $episodeBtn = $('#episodeLists');
         if ($episodeBtn.length > 0) {
             const popoverContent = $episodeBtn.attr('data-content');
             if (popoverContent) {
+                // Scrape episodes from first page popover
                 const $popover = cheerio.load(popoverContent);
+
+                // Track episode numbers to avoid duplicates
+                const episodeNumbers = new Set();
+
                 $popover('a[href*="/episode/"]').each((i, el) => {
                     const $el = $popover(el);
                     const episodeHref = $el.attr('href');
                     const episodeTitle = $el.text().trim();
 
                     if (episodeHref && episodeTitle) {
-                        result.episodes.push({
-                            title: episodeTitle,
-                            url: episodeHref.startsWith('http') ? episodeHref : `${BASE_URL}${episodeHref}`
-                        });
+                        // Extract episode number for deduplication
+                        const epMatch = episodeHref.match(/\/episode\/(\d+)/);
+                        const epNum = epMatch ? epMatch[1] : null;
+
+                        if (epNum && !episodeNumbers.has(epNum)) {
+                            episodeNumbers.add(epNum);
+                            result.episodes.push({
+                                title: episodeTitle,
+                                url: episodeHref.startsWith('http') ? episodeHref : `${BASE_URL}${episodeHref}`
+                            });
+                        }
                     }
                 });
+
+                // Check for pagination in popover
+                const nextPageLink = $popover('.page__link__episode').attr('href');
+                if (nextPageLink) {
+                    console.log(`[Detail] Found episode pagination, fetching additional pages...`);
+
+                    let currentPage = 2;
+                    let hasMorePages = true;
+                    let currentUrl = nextPageLink.startsWith('http') ? nextPageLink : `${BASE_URL}${nextPageLink}`;
+
+                    while (hasMorePages && currentPage <= 10) { // Max 10 pages to prevent infinite loops
+                        try {
+                            console.log(`[Detail] Fetching page ${currentPage}: ${currentUrl}`);
+                            const { data: pageData } = await axios.get(currentUrl, {
+                                headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                                }
+                            });
+
+                            const $page = cheerio.load(pageData);
+                            const $pageEpisodeBtn = $page('#episodeLists');
+
+                            if ($pageEpisodeBtn.length > 0) {
+                                const pagePopoverContent = $pageEpisodeBtn.attr('data-content');
+                                if (pagePopoverContent) {
+                                    const $pagePopover = cheerio.load(pagePopoverContent);
+                                    let episodesOnPage = 0;
+
+                                    $pagePopover('a[href*="/episode/"]').each((i, el) => {
+                                        const $el = $pagePopover(el);
+                                        const episodeHref = $el.attr('href');
+                                        const episodeTitle = $el.text().trim();
+
+                                        if (episodeHref && episodeTitle) {
+                                            const epMatch = episodeHref.match(/\/episode\/(\d+)/);
+                                            const epNum = epMatch ? epMatch[1] : null;
+
+                                            if (epNum && !episodeNumbers.has(epNum)) {
+                                                episodeNumbers.add(epNum);
+                                                result.episodes.push({
+                                                    title: episodeTitle,
+                                                    url: episodeHref.startsWith('http') ? episodeHref : `${BASE_URL}${episodeHref}`
+                                                });
+                                                episodesOnPage++;
+                                            }
+                                        }
+                                    });
+
+                                    console.log(`[Detail] Found ${episodesOnPage} episodes on page ${currentPage}, total: ${result.episodes.length}`);
+
+                                    // Check for next page
+                                    const nextLink = $pagePopover('.page__link__episode').attr('href');
+                                    if (nextLink && episodesOnPage > 0) {
+                                        currentUrl = nextLink.startsWith('http') ? nextLink : `${BASE_URL}${nextLink}`;
+                                        currentPage++;
+                                    } else {
+                                        hasMorePages = false;
+                                    }
+                                } else {
+                                    hasMorePages = false;
+                                }
+                            } else {
+                                hasMorePages = false;
+                            }
+                        } catch (pageError) {
+                            console.warn(`[Detail] Error fetching page ${currentPage}:`, pageError.message);
+                            hasMorePages = false;
+                        }
+                    }
+                }
             }
         }
 

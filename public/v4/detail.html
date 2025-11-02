@@ -101,16 +101,27 @@
 
         .episode-card {
             padding: 1rem;
-            background: #1a1a1a;
-            border-radius: 4px;
-            border: 1px solid #333;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 8px;
+            border: 2px solid rgba(255, 107, 107, 0.2);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .episode-card:hover {
             border-color: var(--primary-color);
-            background: #252525;
+            background: linear-gradient(135deg, #252535 0%, #1e2640 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .episode-card:active {
+            transform: translateY(-1px);
+        }
+
+        a.episode-card {
+            -webkit-tap-highlight-color: rgba(255, 107, 107, 0.2);
         }
 
         .episode-title {
@@ -192,13 +203,17 @@
 <body class="server-v4">
     <!-- Navigation -->
     <nav class="navbar">
-        <a href="/v4/home" style="color: var(--primary-color); text-decoration: none; font-weight: bold;">← Kembali</a>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="/v4/home" style="color: var(--primary-color); text-decoration: none; font-weight: bold;">← Beranda</a>
+            <a href="/v4/completed" style="color: var(--accent-color); text-decoration: none; font-weight: 600;">Completed</a>
+        </div>
         <h1 style="margin: 0; flex: 1; color: var(--primary-color);">AnimMe V4 - Detail Anime</h1>
         <select id="serverSelect" style="padding: 0.5rem; border-radius: 4px;">
             <option value="v1">V1 - Otakudesu</option>
             <option value="v2">V2 - Samehadaku</option>
             <option value="v3">V3 - Kuramanime</option>
             <option value="v4" selected>V4 - Anichin</option>
+            <option value="v5">V5 - Anoboy</option>
         </select>
     </nav>
 
@@ -280,12 +295,18 @@
                     <div class="episodes-section">
                         <div class="episodes-title">Episode (${anime.episodes.length})</div>
                         <div class="episodes-list">
-                            ${anime.episodes.map(ep => `
-                                <div class="episode-card">
-                                    <div class="episode-title">${escapeHtml(ep.title)}</div>
-                                    ${ep.date ? `<div class="episode-date">${escapeHtml(ep.date)}</div>` : ''}
-                                </div>
-                            `).join('')}
+                            ${anime.episodes.map(ep => {
+                                // Extract slug from episode URL or slug field
+                                const episodeSlug = ep.slug || extractSlugFromUrl(ep.url || ep.href || '');
+                                const episodeUrl = episodeSlug ? `/v4/episode?slug=${encodeURIComponent(episodeSlug)}` : '#';
+
+                                return `
+                                    <a href="${episodeUrl}" class="episode-card" style="text-decoration: none; color: inherit; display: block;">
+                                        <div class="episode-title">${escapeHtml(ep.title)}</div>
+                                        ${ep.date ? `<div class="episode-date">${escapeHtml(ep.date)}</div>` : ''}
+                                    </a>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
@@ -322,6 +343,7 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',
@@ -329,7 +351,24 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return text.replace(/[&<>"']/g, m => map[m]);
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function extractSlugFromUrl(url) {
+            if (!url) return '';
+
+            try {
+                // Remove domain if present
+                const path = url.startsWith('http') ? new URL(url).pathname : url;
+
+                // Remove leading/trailing slashes
+                const slug = path.replace(/^\/+|\/+$/g, '');
+
+                return slug;
+            } catch (e) {
+                console.error('[V4 Detail] Error extracting slug:', e);
+                return url;
+            }
         }
     </script>
 </body>

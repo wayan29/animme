@@ -11,22 +11,40 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-main: #141414;
+            --bg-panel: #1a1a1a;
+            --bg-card: #1f1f1f;
+            --border-soft: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+            --text-primary: #ffffff;
+            --text-muted: #9ea0a8;
+            --accent: #e50914;
+            --accent-soft: rgba(229, 9, 20, 0.16);
+            --accent-strong: rgba(229, 9, 20, 0.45);
+            --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.45);
+            --shadow-accent: 0 12px 32px rgba(229, 9, 20, 0.35);
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #e0e0e0;
+            background:
+                radial-gradient(circle at 12% 20%, rgba(229, 9, 20, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 88% 12%, rgba(229, 9, 20, 0.12) 0%, transparent 50%),
+                var(--bg-main);
+            color: var(--text-primary);
             min-height: 100vh;
             padding: 20px;
         }
 
         .navbar {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            background: rgba(18, 18, 18, 0.85);
+            backdrop-filter: blur(14px);
+            border-radius: 16px;
             padding: 15px 30px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-soft);
         }
 
         .navbar-content {
@@ -37,14 +55,37 @@
             gap: 20px;
         }
 
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a.active {
+            color: var(--accent);
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--accent);
             cursor: pointer;
+            text-shadow: 0 0 18px rgba(229, 9, 20, 0.35);
         }
 
         .container {
@@ -55,26 +96,30 @@
         .header {
             text-align: center;
             margin-bottom: 40px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
             padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-soft);
         }
 
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, #60b0ff 0%, #ff6b9d 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
+            text-shadow: 0 0 18px rgba(0, 0, 0, 0.45);
         }
 
         .header p {
-            color: #a0a0b0;
-            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        #headerStats {
+            color: var(--accent);
+            font-size: 0.95rem;
+            margin-top: 10px;
         }
 
         .sort-menu {
@@ -85,56 +130,56 @@
         }
 
         .sort-button {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-card);
+            border: 1px solid var(--border-soft);
             border-radius: 12px;
             padding: 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             text-decoration: none;
             color: inherit;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow-soft);
         }
 
         .sort-button:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(96, 176, 255, 0.3);
-            border-color: rgba(96, 176, 255, 0.5);
-            background: rgba(96, 176, 255, 0.1);
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-accent);
+            border-color: var(--accent-strong);
+            background: var(--accent-soft);
         }
 
         .sort-button.active {
-            border-color: rgba(255, 107, 157, 0.8);
-            background: rgba(255, 107, 157, 0.15);
-            box-shadow: 0 8px 24px rgba(255, 107, 157, 0.4);
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            box-shadow: var(--shadow-accent);
         }
 
         .sort-icon {
             font-size: 2.5rem;
+            color: var(--accent);
         }
 
         .sort-name {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #ffffff;
+            color: var(--text-primary);
         }
 
         .sort-desc {
             font-size: 0.85rem;
-            color: #a0a0b0;
+            color: var(--text-muted);
         }
 
         .loading {
             text-align: center;
             padding: 60px;
             font-size: 1.3rem;
-            color: #60b0ff;
+            color: var(--accent);
         }
 
         .anime-grid {
@@ -145,21 +190,20 @@
         }
 
         .anime-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            background: var(--bg-card);
             border-radius: 15px;
             overflow: hidden;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-soft);
             position: relative;
         }
 
         .anime-card:hover {
             transform: translateY(-10px);
-            box-shadow: 0 12px 32px rgba(96, 176, 255, 0.3);
-            border-color: rgba(96, 176, 255, 0.5);
+            box-shadow: var(--shadow-accent);
+            border-color: var(--accent-strong);
         }
 
         .anime-poster {
@@ -176,7 +220,7 @@
         .anime-title {
             font-size: 0.95rem;
             font-weight: 600;
-            color: #ffffff;
+            color: var(--text-primary);
             margin-bottom: 8px;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -189,7 +233,7 @@
 
         .anime-episode {
             font-size: 0.85rem;
-            color: #60b0ff;
+            color: var(--accent);
             margin-bottom: 8px;
         }
 
@@ -203,23 +247,23 @@
         .anime-tag {
             font-size: 0.7rem;
             padding: 3px 8px;
-            background: rgba(96, 176, 255, 0.2);
-            border: 1px solid rgba(96, 176, 255, 0.4);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-strong);
             border-radius: 6px;
-            color: #60b0ff;
+            color: var(--accent);
         }
 
         .trending-badge {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(255, 107, 157, 0.9);
-            color: white;
+            background: var(--accent);
+            color: var(--text-primary);
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+            box-shadow: var(--shadow-accent);
         }
 
         .pagination {
@@ -232,17 +276,17 @@
 
         .pagination button {
             padding: 12px 24px;
-            background: rgba(96, 176, 255, 0.2);
-            border: 1px solid rgba(96, 176, 255, 0.4);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-strong);
             border-radius: 10px;
-            color: #ffffff;
+            color: var(--text-primary);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             font-weight: 600;
         }
 
         .pagination button:hover:not(:disabled) {
-            background: rgba(96, 176, 255, 0.4);
+            background: var(--accent);
             transform: translateY(-2px);
         }
 
@@ -253,7 +297,7 @@
 
         .pagination span {
             padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg-card);
             border-radius: 10px;
             font-weight: 600;
         }
@@ -291,10 +335,10 @@
     <nav class="navbar">
         <div class="navbar-content">
             <div class="logo" onclick="window.location.href='/v3/home'">🎌 AnimMe V3</div>
-            <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/v3/home" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Beranda</a>
-                <a href="/v3/animelist" style="text-decoration: none; color: #ff6b9d; font-weight: 600; border-bottom: 2px solid #ff6b9d;">Daftar Anime</a>
-                <a href="/v3/search" style="text-decoration: none; color: #a0a0b0; font-weight: 500; transition: color 0.3s;">Cari</a>
+            <div class="nav-links">
+                <a href="/v3/home">Beranda</a>
+                <a href="/v3/animelist" class="active">Daftar Anime</a>
+                <a href="/v3/search">Cari</a>
             </div>
         </div>
     </nav>
@@ -303,7 +347,7 @@
         <div class="header">
             <h1>📺 Daftar Anime</h1>
             <p>Jelajahi semua anime dengan berbagai pilihan urutan sorting</p>
-            <p id="headerStats" style="color: #60b0ff; font-size: 0.95rem; margin-top: 10px;"></p>
+            <p id="headerStats"></p>
         </div>
 
         <div class="sort-menu">

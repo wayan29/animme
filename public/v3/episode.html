@@ -54,14 +54,19 @@
         /* Main Grid */
         .main-grid {
             display: grid;
-            grid-template-columns: 1fr 350px;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            grid-template-areas:
+                "player sidebar"
+                "download sidebar";
             gap: 20px;
+            align-items: start;
         }
 
-        @media (max-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
+        .player-column {
+            grid-area: player;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         /* Player Section */
@@ -116,6 +121,14 @@
             background: #1e1e2e;
             color: #ffffff;
             padding: 8px;
+        }
+
+        .player-controls select {
+            min-width: 180px;
+        }
+
+        #qualitySelect {
+            min-width: 140px;
         }
 
         select:hover, button:hover {
@@ -176,6 +189,7 @@
         /* Navigation Buttons */
         .episode-nav {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             padding: 15px 20px;
             background: rgba(0, 0, 0, 0.2);
@@ -220,6 +234,7 @@
 
         /* Sidebar */
         .sidebar {
+            grid-area: sidebar;
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -285,11 +300,11 @@
 
         /* Download Section */
         .download-section {
+            grid-area: download;
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 20px;
-            margin-top: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
@@ -372,6 +387,20 @@
         }
 
         /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "player"
+                    "sidebar"
+                    "download";
+            }
+
+            .sidebar {
+                max-width: 100%;
+            }
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -384,6 +413,7 @@
             .player-controls {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 12px;
             }
 
             .control-group {
@@ -393,6 +423,95 @@
 
             .episode-grid {
                 grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 0;
+            }
+
+            .player-controls {
+                padding: 12px 14px;
+            }
+
+            .control-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .control-group label {
+                font-size: 0.85rem;
+                color: rgba(255, 255, 255, 0.75);
+            }
+
+            select, button {
+                width: 100%;
+                min-width: 0;
+                font-size: 1rem;
+            }
+
+            .episode-nav {
+                flex-direction: column;
+                padding: 12px 14px;
+            }
+
+            .nav-btn {
+                width: 100%;
+                min-height: 44px;
+                font-size: 1rem;
+            }
+
+            .download-section,
+            .sidebar-section {
+                padding: 16px;
+            }
+
+            .download-links {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .download-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .episode-grid {
+                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+                max-height: none;
+            }
+
+            .episode-btn {
+                padding: 12px 8px;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+
+            .header .anime-title {
+                font-size: 0.95rem;
+            }
+
+            .player-controls {
+                padding: 10px 12px;
+            }
+
+            select, button {
+                font-size: 0.95rem;
+            }
+
+            .nav-btn {
+                font-size: 0.95rem;
             }
         }
     </style>
@@ -408,19 +527,19 @@
 
         <div class="main-grid">
             <!-- Player Section -->
-            <div>
+            <div class="player-column">
                 <div class="player-section">
                     <!-- Player Controls -->
                     <div class="player-controls">
                         <div class="control-group">
                             <label for="serverSelect">🖥️ Server:</label>
-                            <select id="serverSelect" style="min-width: 200px;">
+                            <select id="serverSelect">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
                         <div class="control-group" id="qualityControl" style="display: none;">
                             <label for="qualitySelect">🎬 Quality:</label>
-                            <select id="qualitySelect" style="min-width: 150px;">
+                            <select id="qualitySelect">
                                 <option value="">Select Quality</option>
                             </select>
                         </div>
@@ -446,14 +565,6 @@
                         </a>
                     </div>
                 </div>
-
-                <!-- Download Section -->
-                <div class="download-section">
-                    <h2>⬇️ Download Links</h2>
-                    <div id="downloadContainer">
-                        <div class="loading-message">Loading download links...</div>
-                    </div>
-                </div>
             </div>
 
             <!-- Sidebar -->
@@ -464,6 +575,14 @@
                     <div class="episode-grid" id="episodeList">
                         <div class="loading-message">Loading episodes...</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section">
+                <h2>⬇️ Download Links</h2>
+                <div id="downloadContainer">
+                    <div class="loading-message">Loading download links...</div>
                 </div>
             </div>
         </div>

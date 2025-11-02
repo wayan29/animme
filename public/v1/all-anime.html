@@ -15,6 +15,9 @@
                 <select id="serverSelect" class="server-select">
                     <option value="v1">V1 - Otakudesu</option>
                     <option value="v2">V2 - Samehadaku</option>
+                    <option value="v3">V3 - Kuramanime</option>
+                    <option value="v4">V4 - Anichin</option>
+                    <option value="v5">V5 - Anoboy</option>
                 </select>
             </div>
             <div class="nav-menu">
@@ -35,8 +38,13 @@
             <p id="pageDescription">Semua anime A-Z</p>
         </section>
 
+        <button class="mobile-filter-toggle v2-only hidden" id="mobileFilterToggle" type="button" aria-expanded="false">
+            <span class="label">Filter &amp; Urutkan</span>
+            <span class="chevron"></span>
+        </button>
+
         <!-- V2 Filters (Samehadaku) -->
-        <div class="anime-filters v2-only" id="animeFilters" style="display: none;">
+        <div class="anime-filters v2-only hidden" id="animeFilters">
             <div class="filter-row">
                 <div class="filter-group">
                     <label>Cari Judul:</label>

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     loadHomePage();
     initMobileSearch();
+    initSidebarToggle();
 });
 
 function changeServer(server) {
@@ -36,6 +37,8 @@ function changeServer(server) {
 // Navbar scroll effect
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
     if (window.scrollY > 100) {
         navbar.classList.add('scrolled');
     } else {
@@ -145,34 +148,50 @@ function displayCarousel(banners) {
         const posterUrl = anime.poster || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1920" height="600"%3E%3Crect fill="%230f0f0f" width="1920" height="600"/%3E%3Ctext fill="%23e50914" font-size="48" font-family="Arial" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Banner%3C/text%3E%3C/svg%3E';
         const genres = anime.genres && anime.genres.length > 0 ? anime.genres.join(', ') : '';
         
+        const detailUrl = anime.slug && anime.anime_id
+            ? `/v3/detail/${anime.anime_id}/${anime.slug}`
+            : `/v3/detail?slug=${anime.slug}`;
+
         return `
-            <div class="carousel-slide ${index === 0 ? 'active' : ''}" style="background-image: linear-gradient(to right, rgba(0,0,0,0.8) 30%, transparent), url(${posterUrl})">
+            <a href="${detailUrl}" class="carousel-slide ${index === 0 ? 'active' : ''}" style="background-image: linear-gradient(to right, rgba(0,0,0,0.8) 30%, transparent), url(${posterUrl}); text-decoration: none; color: inherit; display: block;">
                 <div class="carousel-content">
                     <h2 class="carousel-title">${anime.title}</h2>
                     <div class="carousel-genres">${genres}</div>
                     <p class="carousel-description">${anime.description || ''}</p>
                     <div class="carousel-buttons">
-                        <button class="btn btn-primary" onclick="goToDetail('${anime.slug}', '${anime.anime_id}')">
+                        <span class="btn btn-primary" style="display: inline-block;">
                             ▶ Tonton Sekarang
-                        </button>
-                        <button class="btn btn-secondary" onclick="goToDetail('${anime.slug}', '${anime.anime_id}')">
+                        </span>
+                        <span class="btn btn-secondary" style="display: inline-block;">
                             ℹ Info Lebih
-                        </button>
+                        </span>
                     </div>
                 </div>
-            </div>
+            </a>
         `;
     }).join('');
     
     // Create indicators
-    indicators.innerHTML = banners.map((_, index) => 
-        `<button class="indicator ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></button>`
+    indicators.innerHTML = banners.map((_, index) =>
+        `<button class="indicator ${index === 0 ? 'active' : ''}" onclick="event.stopPropagation(); goToSlide(${index})"></button>`
     ).join('');
-    
-    // Setup carousel controls
-    document.getElementById('carouselPrev').onclick = () => navigateCarousel(-1);
-    document.getElementById('carouselNext').onclick = () => navigateCarousel(1);
-    
+
+    // Setup carousel controls - prevent propagation to parent link
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+
+    prevBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        navigateCarousel(-1);
+    };
+
+    nextBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        navigateCarousel(1);
+    };
+
     // Auto-play carousel
     startCarouselAutoPlay(banners.length);
 }
@@ -264,19 +283,19 @@ async function loadSectionFromEndpoint(containerId, endpoint, type, fallbackList
 
 function displayAnimeGrid(containerId, animeList, type = 'ongoing') {
     const container = document.getElementById(containerId);
-    
+
     if (!animeList || animeList.length === 0) {
         container.innerHTML = '<div class="error">Tidak ada data anime</div>';
         return;
     }
-    
+
     container.innerHTML = animeList.map(anime => {
         const posterUrl = anime.poster || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="300"%3E%3Crect fill="%230f0f0f" width="200" height="300"/%3E%3Ctext fill="%23e50914" font-size="20" font-family="Arial" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Image%3C/text%3E%3C/svg%3E';
-        
+
         let episodeInfo = '';
         let cardClass = 'anime-card';
         let extraBadge = '';
-        
+
         if (type === 'ongoing') {
             episodeInfo = anime.episode || 'Episode N/A';
             if (anime.type) {
@@ -290,13 +309,18 @@ function displayAnimeGrid(containerId, animeList, type = 'ongoing') {
                 episodeInfo = anime.type;
             }
         }
-        
+
+        // Use <a> tag for better mobile support and accessibility
+        const detailUrl = anime.slug && anime.anime_id
+            ? `/v3/detail/${anime.anime_id}/${anime.slug}`
+            : `/v3/detail?slug=${anime.slug}`;
+
         return `
-            <div class="${cardClass}" onclick="goToDetail('${anime.slug}', '${anime.anime_id || ''}')">
+            <a href="${detailUrl}" class="${cardClass}" style="text-decoration: none; color: inherit; display: block;">
                 <div class="anime-thumb">
                     ${extraBadge}
-                    <img src="${posterUrl}" 
-                         alt="${anime.title}" 
+                    <img src="${posterUrl}"
+                         alt="${anime.title}"
                          class="anime-poster"
                          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22%3E%3Crect fill=%22%230f0f0f%22 width=%22200%22 height=%22300%22/%3E%3Ctext fill=%22%23e50914%22 font-size=%2220%22 font-family=%22Arial%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
                 </div>
@@ -304,7 +328,7 @@ function displayAnimeGrid(containerId, animeList, type = 'ongoing') {
                     <div class="anime-title" title="${anime.title}">${anime.title}</div>
                     <div class="anime-meta">${episodeInfo}</div>
                 </div>
-            </div>
+            </a>
         `;
     }).join('');
 }
@@ -348,8 +372,11 @@ function displayHomeAnimeGrid(containerId, animeList, type = 'ongoing', limit = 
             meta = anime.episode_text || anime.type || 'Movie';
         }
 
+        // Use <a> tag for better mobile support and accessibility
+        const detailUrl = buildDestinationUrl(anime, type);
+
         return `
-            <div class="home-anime-card" data-slug="${slug}" data-anime-id="${animeId}" onclick="goToDetail('${slug}', '${animeId}')">
+            <a href="${detailUrl}" class="home-anime-card" style="text-decoration: none; color: inherit; display: block;" data-slug="${slug}" data-anime-id="${animeId}">
                 <div class="home-anime-thumb">
                     <img src="${posterUrl}" alt="${title}" class="home-anime-poster"
                          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22%3E%3Crect fill=%22%230f0f0f%22 width=%22200%22 height=%22300%22/%3E%3Ctext fill=%22%23e50914%22 font-size=%2220%22 font-family=%22Arial%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
@@ -358,7 +385,7 @@ function displayHomeAnimeGrid(containerId, animeList, type = 'ongoing', limit = 
                     <div class="home-anime-title" title="${title}">${title}</div>
                     <div class="home-anime-meta">${meta}</div>
                 </div>
-            </div>
+            </a>
         `;
     }).join('');
 }
@@ -388,10 +415,10 @@ function displayComments(containerId, comments) {
         }
         
         return `
-            <div class="comment-item" onclick="window.location.href='${internalUrl}'">
+            <a href="${internalUrl}" class="comment-item" style="text-decoration: none; color: inherit; display: block;">
                 <div class="comment-poster">
-                    <img src="${posterUrl}" 
-                         alt="${comment.title}" 
+                    <img src="${posterUrl}"
+                         alt="${comment.title}"
                          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%230f0f0f%22 width=%22100%22 height=%22150%22/%3E%3Ctext fill=%22%23e50914%22 font-size=%2212%22 font-family=%22Arial%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
                 </div>
                 <div class="comment-info">
@@ -402,9 +429,87 @@ function displayComments(containerId, comments) {
                         ${comment.time_ago ? `<span class="comment-time">🕐 ${comment.time_ago}</span>` : ''}
                     </div>
                 </div>
-            </div>
+            </a>
         `;
     }).join('');
+}
+
+function buildDestinationUrl(anime, type) {
+    const slug = anime.slug || '';
+    const animeId = anime.anime_id || anime.id || '';
+
+    if (type === 'ongoing') {
+        const episodeInfo = extractEpisodeInfo(anime);
+        if (episodeInfo) {
+            const params = new URLSearchParams();
+            if (episodeInfo.animeId || animeId) {
+                params.set('animeId', episodeInfo.animeId || animeId);
+            }
+            if (episodeInfo.slug || slug) {
+                params.set('slug', episodeInfo.slug || slug);
+            }
+            if (episodeInfo.episode) {
+                params.set('episode', episodeInfo.episode);
+            }
+            if (episodeInfo.episodeSlug) {
+                params.set('episodeSlug', episodeInfo.episodeSlug);
+            }
+            return `/v3/episode?${params.toString()}`;
+        }
+    }
+
+    if (slug) {
+        if (animeId) {
+            return `/v3/detail/${animeId}/${slug}`;
+        }
+        return `/v3/detail?slug=${slug}`;
+    }
+
+    return anime.anime_url || '#';
+}
+
+function extractEpisodeInfo(anime) {
+    try {
+        if (anime.latest_episode_url) {
+            const url = new URL(anime.latest_episode_url);
+            const segments = url.pathname.split('/').filter(Boolean);
+            const animeIndex = segments.indexOf('anime');
+            if (animeIndex !== -1 && segments.length > animeIndex + 2) {
+                const animeId = segments[animeIndex + 1];
+                const slug = segments[animeIndex + 2];
+                let episode = null;
+                let episodeSlug = null;
+
+                const episodeIndex = segments.indexOf('episode');
+                if (episodeIndex !== -1 && segments.length > episodeIndex + 1) {
+                    episode = segments[episodeIndex + 1];
+                    episodeSlug = episode;
+                }
+
+                return {
+                    animeId,
+                    slug,
+                    episode,
+                    episodeSlug
+                };
+            }
+        }
+    } catch (error) {
+        console.warn('[V3] Failed to parse latest_episode_url:', error.message);
+    }
+
+    if ((anime.anime_id || anime.id) && anime.slug && (anime.current_episode || anime.episode || anime.episode_text)) {
+        const episodeNumber = anime.current_episode || anime.episode || (anime.episode_text ? anime.episode_text.replace(/\D+/g, '') : '');
+        if (episodeNumber) {
+            return {
+                animeId: anime.anime_id || anime.id,
+                slug: anime.slug,
+                episode: episodeNumber
+            };
+        }
+    }
+
+    return null;
 }
 
 function goToDetail(slug, animeId) {
@@ -465,6 +570,51 @@ function initMobileSearch() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && searchContainer.classList.contains('active')) {
             searchContainer.classList.remove('active');
+        }
+    });
+}
+
+function initSidebarToggle() {
+    const menuToggle = document.getElementById('menuToggle');
+    const menuCloseBtn = document.getElementById('menuCloseBtn');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const sidebarLinks = document.querySelectorAll('.sidebar-menu .nav-link');
+    const body = document.body;
+
+    const openSidebar = () => body.classList.add('sidebar-open');
+    const closeSidebar = () => body.classList.remove('sidebar-open');
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            if (body.classList.contains('sidebar-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+
+    if (menuCloseBtn) {
+        menuCloseBtn.addEventListener('click', closeSidebar);
+    }
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', closeSidebar);
+    }
+
+    sidebarLinks.forEach((link) => {
+        link.addEventListener('click', closeSidebar);
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) {
+            closeSidebar();
+        }
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeSidebar();
         }
     });
 }
