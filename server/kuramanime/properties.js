@@ -15,6 +15,34 @@ function parseAnimeListWithPagination($, BASE_URL) {
 
         const rating = $el.find('.ep .fa-star').next('span').text().trim();
         const status = $el.find('.d-none span').text().trim() || 'ONGOING';
+        
+        // Extract episode information from the HTML structure
+        let episode = '';
+        // Look for episode info in different locations based on the actual HTML
+        const $episodeEl = $el.find('.episode-info, .ep-info, .eps');
+        if ($episodeEl.length > 0) {
+            episode = $episodeEl.text().trim();
+        }
+        
+        // Fallback: Look for episode count patterns in the text
+        if (!episode) {
+            const itemText = $el.text();
+            const episodeMatch = itemText.match(/(\d+)(?:\s*(?:episode|ep))?/i);
+            if (episodeMatch) {
+                episode = episodeMatch[1] + ' Episode';
+            }
+        }
+        
+        // For movie types, use different logic
+        if (!episode) {
+            const $ep = $el.find('.ep');
+            if ($ep.length > 0) {
+                const epText = $ep.text().trim();
+                // Clean up rating to get episode count if present
+                const cleanText = epText.replace(/^[\d.]+\s*/, '').trim();
+                episode = cleanText || '1 Episode';
+            }
+        }
 
         const tags = [];
         $el.find('.product__item__text ul a').each((j, tag) => {
@@ -39,6 +67,7 @@ function parseAnimeListWithPagination($, BASE_URL) {
                 poster: proxyImageUrl(poster),
                 rating: rating || 'N/A',
                 status: status,
+                episode: episode,
                 tags: tags,
                 anime_url: `${BASE_URL}/anime/${animeId}/${slug}`
             });
@@ -341,7 +370,25 @@ async function scrapeTypeList() {
 
 async function scrapeType(typeSlug, page = 1, orderBy = 'ascending') {
     try {
-        const url = `${BASE_URL}/properties/type/${typeSlug}?order_by=${orderBy}&page=${page}`;
+        // Map English orderBy to Indonesian terms that the website expects
+        const orderByMapping = {
+            'updated': 'terupdate',
+            'updated_at': 'terupdate', 
+            'latest': 'terbaru',
+            'newest': 'terbaru',
+            'oldest': 'terlama',
+            'ascending': 'ascending',
+            'title': 'ascending',
+            'name': 'ascending',
+            'rating': 'teratas',
+            'top': 'teratas',
+            'views': 'terpopuler',
+            'popular': 'terpopuler'
+        };
+        
+        const mappedOrderBy = orderByMapping[orderBy] || orderBy;
+        const url = `${BASE_URL}/properties/type/${typeSlug}?order_by=${mappedOrderBy}&page=${page}`;
+        console.log(`[Kuramanime] scrapeType URL: ${url} (original orderBy: ${orderBy} -> mapped: ${mappedOrderBy})`);
         const { data } = await axios.get(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -350,6 +397,25 @@ async function scrapeType(typeSlug, page = 1, orderBy = 'ascending') {
 
         const $ = cheerio.load(data);
         const animeList = parseAnimeListWithPagination($, BASE_URL);
+
+        // If no anime found with the requested order, try fallback to ascending
+        let finalAnimeList = animeList;
+        if (animeList.length === 0 && mappedOrderBy !== 'ascending') {
+            console.log(`[Kuramanime] No anime found with ${mappedOrderBy}, trying fallback to ascending`);
+            const fallbackUrl = `${BASE_URL}/properties/type/${typeSlug}?order_by=ascending&page=${page}`;
+            const { data: fallbackData } = await axios.get(fallbackUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+            const $fallback = cheerio.load(fallbackData);
+            const fallbackList = parseAnimeListWithPagination($fallback, BASE_URL);
+            
+            if (fallbackList.length > 0) {
+                console.log(`[Kuramanime] Fallback successful: found ${fallbackList.length} anime with ascending order`);
+                finalAnimeList = fallbackList;
+            }
+        }
 
         const $pagination = $('.product__pagination');
         let totalPages = null;
@@ -364,7 +430,7 @@ async function scrapeType(typeSlug, page = 1, orderBy = 'ascending') {
         const hasPrev = page > 1;
 
         return {
-            anime_list: animeList,
+            anime_list: finalAnimeList,
             type: typeSlug,
             pagination: {
                 current_page: page,

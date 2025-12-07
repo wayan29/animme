@@ -93,9 +93,17 @@ async function scrapeHome() {
             const href = $link.attr('href');
 
             if (title && href) {
+                // Extract base slug from href
+                let slug = extractSlug(href);
+
+                // If slug doesn't contain "episode" but we have episode number, add it
+                if (episodeText && !slug.includes('episode')) {
+                    slug = `${slug}-episode-${episodeText}`;
+                }
+
                 result.recent_anime.push({
                     title: title,
-                    slug: extractSlug(href),
+                    slug: slug,
                     poster: proxyImageUrl($img.attr('src')),
                     current_episode: episodeText,
                     release_date: releaseText

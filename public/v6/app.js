@@ -289,6 +289,9 @@ function setupServerSelector() {
             case 'v6':
                 window.location.href = '/v6/home';
                 break;
+            case 'v7':
+                window.location.href = '/v7/home';
+                break;
             default:
                 window.location.href = '/';
         }

@@ -23,12 +23,37 @@ async function scrapeHome() {
             const $thumb = $el.find('.thumb a');
             const $img = $el.find('.thumbz img');
 
+            // Extract episode information from the display elements
+            const episodeText = $el.find('.epz').text().trim();
+            const currentEpisode = episodeText.replace('Episode ', '').trim();
+            
+            // Create episode slug based on anime slug and current episode
+            const animeSlug = extractSlug($thumb.attr('href'));
+            let episodeSlug = null;
+            
+            if (animeSlug && currentEpisode && !isNaN(currentEpisode)) {
+                // Generate episode slug in format: anime-slug-episode-num
+                episodeSlug = `${animeSlug}-episode-${currentEpisode}`;
+            }
+
+            // Debug logging for first item only
+            if (i === 0) {
+                console.log('Debug ongoing anime scraping:');
+                console.log('  HTML structure preview:', $el.html().substring(0, 300));
+                console.log('  Episode text:', episodeText);
+                console.log('  Current episode:', currentEpisode);
+                console.log('  Anime slug:', animeSlug);
+                console.log('  Generated episode slug:', episodeSlug);
+            }
+
             const anime = {
                 title: $el.find('.jdlflm').text().trim(),
-                slug: extractSlug($thumb.attr('href')),
+                slug: animeSlug,
                 poster: proxyImageUrl($img.attr('src')),
-                current_episode: $el.find('.epz').text().replace('Episode ', '').trim(),
-                release_day: $el.find('.epztipe').text().trim()
+                current_episode: currentEpisode,
+                release_day: $el.find('.epztipe').text().replace(/^\s*★\s*/, '').trim(),
+                release_date: $el.find('.newnime').text().trim(),
+                episode_slug: episodeSlug
             };
 
             result.ongoing_anime.push(anime);

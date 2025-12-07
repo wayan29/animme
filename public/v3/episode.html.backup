@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Episode Player - Kuramanime V3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #ff6b9d;
+        }
+
+        .header .anime-title {
+            font-size: 1.1rem;
+            color: #a0a0b0;
+            margin-bottom: 5px;
+        }
+
+        .header .episode-num {
+            font-size: 0.9rem;
+            color: #60b0ff;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            grid-template-areas:
+                "player sidebar"
+                "download sidebar";
+            gap: 20px;
+            align-items: start;
+        }
+
+        .player-column {
+            grid-area: player;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Player Section */
+        .player-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .player-controls {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            color: #a0a0b0;
+        }
+
+        select, button {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        select {
+            min-height: 38px;
+            appearance: auto;
+            -webkit-appearance: menulist;
+            -moz-appearance: menulist;
+        }
+        
+        select option {
+            background: #1e1e2e;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        .player-controls select {
+            min-width: 180px;
+        }
+
+        #qualitySelect {
+            min-width: 140px;
+        }
+
+        select:hover, button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ff6b9d;
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: #ff6b9d;
+        }
+
+        /* Video Player */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background: #000;
+        }
+
+        .video-container video,
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #ff6b9d;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Navigation Buttons */
+        .episode-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(96, 176, 255, 0.2);
+            border: 1px solid rgba(96, 176, 255, 0.3);
+            border-radius: 8px;
+            color: #60b0ff;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover:not(.disabled) {
+            background: rgba(96, 176, 255, 0.3);
+            border-color: #60b0ff;
+        }
+
+        .nav-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-btn.detail {
+            background: rgba(255, 107, 157, 0.2);
+            border-color: rgba(255, 107, 157, 0.3);
+            color: #ff6b9d;
+        }
+
+        .nav-btn.detail:hover {
+            background: rgba(255, 107, 157, 0.3);
+            border-color: #ff6b9d;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            grid-area: sidebar;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-section h2 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #ff6b9d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Episode List */
+        .episode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .episode-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .episode-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .episode-btn.active {
+            background: #ff6b9d;
+            border-color: #ff6b9d;
+            font-weight: bold;
+        }
+
+        .episode-btn.new::after {
+            content: "🔥";
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.8rem;
+        }
+
+        /* Download Section */
+        .download-section {
+            grid-area: download;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .download-section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #ff6b9d;
+        }
+
+        .quality-group {
+            margin-bottom: 20px;
+        }
+
+        .quality-group h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #60b0ff;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(96, 176, 255, 0.3);
+        }
+
+        .download-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .download-btn {
+            padding: 10px 20px;
+            background: rgba(96, 176, 255, 0.2);
+            border: 1px solid rgba(96, 176, 255, 0.3);
+            border-radius: 8px;
+            color: #60b0ff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            background: rgba(96, 176, 255, 0.3);
+            border-color: #60b0ff;
+            transform: translateY(-2px);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 157, 0.5);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 157, 0.7);
+        }
+
+        /* Loading State */
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: #a0a0b0;
+        }
+
+        /* Error State */
+        .error-message {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+            color: #ff6b9d;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "player"
+                    "sidebar"
+                    "download";
+            }
+
+            .sidebar {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            .player-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .control-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .episode-grid {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 0;
+            }
+
+            .player-controls {
+                padding: 12px 14px;
+            }
+
+            .control-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .control-group label {
+                font-size: 0.85rem;
+                color: rgba(255, 255, 255, 0.75);
+            }
+
+            select, button {
+                width: 100%;
+                min-width: 0;
+                font-size: 1rem;
+            }
+
+            .episode-nav {
+                flex-direction: column;
+                padding: 12px 14px;
+            }
+
+            .nav-btn {
+                width: 100%;
+                min-height: 44px;
+                font-size: 1rem;
+            }
+
+            .download-section,
+            .sidebar-section {
+                padding: 16px;
+            }
+
+            .download-links {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .download-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .episode-grid {
+                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+                max-height: none;
+            }
+
+            .episode-btn {
+                padding: 12px 8px;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+
+            .header .anime-title {
+                font-size: 0.95rem;
+            }
+
+            .player-controls {
+                padding: 10px 12px;
+            }
+
+            select, button {
+                font-size: 0.95rem;
+            }
+
+            .nav-btn {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 id="episodeTitle">Loading...</h1>
+            <div class="anime-title" id="animeTitle"></div>
+            <div class="episode-num">Episode <span id="episodeNum"></span></div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Player Section -->
+            <div class="player-column">
+                <div class="player-section">
+                    <!-- Player Controls -->
+                    <div class="player-controls">
+                        <div class="control-group">
+                            <label for="serverSelect">🖥️ Server:</label>
+                            <select id="serverSelect">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="control-group" id="qualityControl" style="display: none;">
+                            <label for="qualitySelect">🎬 Quality:</label>
+                            <select id="qualitySelect">
+                                <option value="">Select Quality</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Video Player -->
+                    <div class="video-container" id="videoContainer">
+                        <div class="loading-overlay" id="loadingOverlay">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="episode-nav">
+                        <a href="#" class="nav-btn disabled" id="prevBtn">
+                            ← Previous
+                        </a>
+                        <a href="#" class="nav-btn detail" id="detailBtn">
+                            📖 Detail
+                        </a>
+                        <a href="#" class="nav-btn" id="nextBtn">
+                            Next →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Episode List -->
+                <div class="sidebar-section">
+                    <h2>📺 Episodes</h2>
+                    <div class="episode-grid" id="episodeList">
+                        <div class="loading-message">Loading episodes...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section">
+                <h2>⬇️ Download Links</h2>
+                <div id="downloadContainer">
+                    <div class="loading-message">Loading download links...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/v3/episode.js"></script>
+</body>
+</html>

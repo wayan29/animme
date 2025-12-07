@@ -6,211 +6,6 @@
     <title>AnimMe V4 - Anichin</title>
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/mobile.css">
-    <style>
-        .server-v4 {
-            --primary-color: #ff6b6b;
-            --secondary-color: #ee5a6f;
-            --accent-color: #ffd700;
-        }
-
-        .server-v4 .sidebar {
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-        }
-
-        .server-v4 .nav-link.active,
-        .server-v4 .nav-link:hover {
-            background: rgba(255, 107, 107, 0.12);
-            border-left-color: var(--primary-color);
-        }
-
-        .server-v4 .topbar {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border-bottom: 1px solid rgba(255, 107, 107, 0.25);
-        }
-
-        .hero-carousel {
-            position: relative;
-            border-radius: 18px;
-            overflow: hidden;
-            margin-bottom: 32px;
-            background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9));
-        }
-
-        .hero-carousel .carousel-container {
-            display: flex;
-            gap: 18px;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            padding: 22px;
-        }
-
-        .hero-carousel .carousel-container::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        .hero-carousel .carousel-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 107, 107, 0.5);
-            border-radius: 8px;
-        }
-
-        .hero-carousel .carousel-item {
-            flex: 0 0 260px;
-            border-radius: 14px;
-            overflow: hidden;
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-
-        .hero-carousel .carousel-item:hover {
-            transform: translateY(-6px);
-        }
-
-        .hero-carousel .carousel-image {
-            width: 100%;
-            height: 360px;
-            background-size: cover;
-            background-position: center;
-            border-radius: 14px;
-        }
-
-        .hero-carousel .carousel-overlay {
-            position: absolute;
-            inset: 0;
-            border-radius: 14px;
-            background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0.3));
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding: 18px;
-            gap: 8px;
-        }
-
-        .hero-carousel .carousel-title {
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 1rem;
-            line-height: 1.35;
-        }
-
-        .hero-carousel .carousel-episode {
-            font-size: 0.85rem;
-            color: var(--accent-color);
-            font-weight: 600;
-        }
-
-        .hero-carousel .carousel-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255, 107, 107, 0.2);
-            color: #fff;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s ease;
-        }
-
-        .hero-carousel .carousel-btn:hover {
-            background: rgba(255, 107, 107, 0.4);
-        }
-
-        .hero-carousel .carousel-btn.prev {
-            left: 18px;
-        }
-
-        .hero-carousel .carousel-btn.next {
-            right: 18px;
-        }
-
-        .hero-carousel .carousel-indicators {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-        }
-
-        .hero-carousel .carousel-indicators span {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.25);
-        }
-
-        .section-title-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-        }
-
-        .anime-grid {
-            display: grid;
-            gap: 18px;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        }
-
-        .anime-card {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 107, 107, 0.15);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .anime-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 28px rgba(12, 18, 34, 0.55);
-            border-color: rgba(255, 107, 107, 0.45);
-        }
-
-        .section-badge {
-            background: rgba(255, 215, 0, 0.15);
-            color: var(--accent-color);
-            font-weight: 600;
-            padding: 6px 14px;
-            border-radius: 999px;
-            font-size: 0.78rem;
-        }
-
-        @media (max-width: 960px) {
-            .hero-carousel .carousel-container {
-                padding: 18px 16px;
-            }
-
-            .hero-carousel .carousel-item {
-                flex-basis: 220px;
-            }
-
-            .hero-carousel .carousel-image {
-                height: 320px;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .hero-carousel .carousel-container {
-                padding: 16px 14px;
-            }
-
-            .hero-carousel .carousel-item {
-                flex-basis: 200px;
-            }
-
-            .hero-carousel .carousel-image {
-                height: 280px;
-            }
-
-            .anime-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 14px;
-            }
-        }
-    </style>
 </head>
 <body class="server-v4 home-with-sidebar">
     <div class="home-layout">
@@ -228,28 +23,25 @@
                         <option value="v3">V3 - Kuramanime</option>
                         <option value="v4" selected>V4 - Anichin</option>
                         <option value="v5">V5 - Anoboy</option>
+                        <option value="v6">V6 - AnimeIndo</option>
                     </select>
                 </div>
             </div>
             <nav class="sidebar-menu">
                 <a href="/v4/home" class="nav-link active">🏠 Beranda</a>
-                <a href="/v4/anime-list" class="nav-link">📚 Daftar Anime</a>
-                <a href="/v4/episode" class="nav-link">▶️ Episode Terbaru</a>
-                <a href="/v4/detail" class="nav-link">ℹ️ Detail Anime</a>
-                <a href="/v3/home" class="nav-link">⬅️ Kembali V3</a>
+                <a href="/v4/completed" class="nav-link">✅ Selesai Tayang</a>
             </nav>
         </aside>
 
         <div class="content-area">
             <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
             <header class="topbar">
                 <button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
-                <div class="topbar-title" onclick="window.location.href='/v4/home'">AnimMe V4 - Anichin</div>
+                <div class="topbar-title" onclick="window.location.href='/v4/home'">AnimMe V4</div>
                 <div class="search-container">
                     <button class="search-icon-mobile" id="searchIconBtn" aria-label="Search">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -262,9 +54,10 @@
                 </div>
             </header>
 
+            <!-- Banner Rekomendasi Carousel -->
             <div class="hero-carousel" id="heroCarousel">
-                <div class="carousel-container" id="bannerCarousel">
-                    <div class="loading" style="width:100%; text-align:center;">Memuat banner...</div>
+                <div class="carousel-container" id="carouselContainer">
+                    <div class="loading">Memuat banner...</div>
                 </div>
                 <button class="carousel-btn prev" id="carouselPrev" aria-label="Previous">‹</button>
                 <button class="carousel-btn next" id="carouselNext" aria-label="Next">›</button>
@@ -274,22 +67,24 @@
             <main class="main-content">
                 <div id="errorContainer" style="display:none;"></div>
 
-                <section class="anime-section" id="popularSection">
-                    <div class="section-title-wrapper">
-                        <h3 class="section-title">Sedang Populer Hari Ini</h3>
+                <!-- Sedang Populer Hari Ini -->
+                <section class="anime-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 class="section-title" style="margin-bottom: 0;">🔥 Sedang Populer Hari Ini</h3>
                         <span class="section-badge" id="popularCount">0</span>
                     </div>
-                    <div class="anime-grid" id="popularToday">
+                    <div class="anime-row" id="popularToday">
                         <div class="loading">Memuat anime populer...</div>
                     </div>
                 </section>
 
-                <section class="anime-section" id="latestSection">
-                    <div class="section-title-wrapper">
-                        <h3 class="section-title">Update Terbaru</h3>
+                <!-- Update Terbaru -->
+                <section class="anime-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 class="section-title" style="margin-bottom: 0;">⚡ Update Terbaru</h3>
                         <span class="section-badge" id="latestCount">0</span>
                     </div>
-                    <div class="anime-grid" id="latestReleases">
+                    <div class="anime-row" id="latestReleases">
                         <div class="loading">Memuat anime terbaru...</div>
                     </div>
                 </section>

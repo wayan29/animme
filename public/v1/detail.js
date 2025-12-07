@@ -38,7 +38,7 @@ async function fetchBatchDownload(batchSlug) {
     }
 }
 
-async function fetchRandomRecommendations(count = 6) {
+async function fetchRandomRecommendations(count = 18) {
     try {
         const firstPage = await fetchAPI('/complete-anime/1');
         if (!firstPage || !firstPage.data || !firstPage.data.completedAnimeData) {
@@ -113,8 +113,8 @@ async function loadAnimeDetail() {
         window.currentBatchData = batchData ? batchData.data : null;
     }
     
-    // Fetch recommendations
-    const recommendations = await fetchRandomRecommendations(6);
+    // Fetch recommendations - 18 anime for desktop (6 per row x 3 rows)
+    const recommendations = await fetchRandomRecommendations(18);
     data.data.recommendations = recommendations;
     
     displayAnimeDetail(data.data, slug);

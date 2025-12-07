@@ -96,7 +96,7 @@ class ImageProxy {
     }
 
     // Clean old cache files (optional - for maintenance)
-    async cleanOldCache(maxAge = 7 * 24 * 60 * 60 * 1000) { // 7 days default
+    async cleanOldCache(maxAge = 60 * 60 * 1000) { // 1 hour default
         try {
             const files = await fs.readdir(this.cacheDir);
             const now = Date.now();

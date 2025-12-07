@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kusonime - AnimMe V8</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span>AnimMe</span>
+                <span class="version-tag">V8 - Kusonime</span>
+            </a>
+
+            <div class="nav-search">
+                <input type="text" id="searchInput" placeholder="Cari anime..." onkeypress="if(event.key==='Enter') searchAnime()">
+                <button onclick="searchAnime()">🔍</button>
+            </div>
+
+            <div class="nav-links">
+                <a href="/v8/index.html" class="active">Home</a>
+                <a href="/">Ver. Lain</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="anime-section">
+            <h2 class="section-title">📥 Anime Terbaru - Batch Download</h2>
+            <div id="latestAnime" class="anime-grid loading">
+                <div class="loading">Memuat anime...</div>
+            </div>
+        </section>
+    </div>
+
+    <footer style="text-align: center; padding: 30px; background: rgba(0,0,0,0.3); margin-top: 50px;">
+        <p><strong>Kusonime - Batch Download</strong></p>
+        <p>Download anime batch dengan subtitle Indonesia</p>
+        <p style="margin-top: 10px; opacity: 0.7;">Powered by AnimMe API</p>
+    </footer>
+
+    <script src="/v8/app.js"></script>
+</body>
+</html>

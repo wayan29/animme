@@ -11,9 +11,16 @@ const kuramanimeScraper = require('./kuramanime');
 const anichinScraper = require('./anichin');
 const anoboyScraper = require('./anoboy');
 const animeIndoScraper = require('./animeindo');
+const nekopoiScraper = require('./nekopoi');
+const kusonimeScraper = require('./kusonime');
+const auratailScraper = require('./auratail');
+const hlsService = require('./hls-service');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Initialize HLS service
+hlsService.initialize();
 
 // Enable CORS for public API access
 app.use(cors({
@@ -21,6 +28,11 @@ app.use(cors({
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Enable JSON body parsing
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const CACHE_DIR = path.join(__dirname, '../cache/images');
 
 const DEFAULT_REQUEST_HEADERS = {
@@ -51,19 +63,32 @@ app.use('/v3', express.static(path.join(__dirname, '../public/v3')));
 app.use('/v4', express.static(path.join(__dirname, '../public/v4')));
 app.use('/v5', express.static(path.join(__dirname, '../public/v5')));
 app.use('/v6', express.static(path.join(__dirname, '../public/v6')));
+app.use('/v7', express.static(path.join(__dirname, '../public/v7')));
+app.use('/v8', express.static(path.join(__dirname, '../public/v8')));
+app.use('/v9', express.static(path.join(__dirname, '../public/v9')));
 
 // Serve shared assets globally (CSS, docs)
 app.use(express.static(path.join(__dirname, '../public/shared')));
+
+// Serve main public directory (for index.html)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Admin Routes
+app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+
+app.get('/admin/player', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin/player.html'));
+});
 
 // Serve cached images
 app.get('/cache/img/:filename', async (req, res) => {
     try {
         const filename = req.params.filename;
         const imagePath = path.join(__dirname, '../cache/images', filename);
-        
+
         // Check if file exists
         await fs.access(imagePath);
-        
+
         // Determine content type
         const ext = path.extname(filename).toLowerCase();
         const contentType = {
@@ -73,7 +98,7 @@ app.get('/cache/img/:filename', async (req, res) => {
             '.webp': 'image/webp',
             '.gif': 'image/gif'
         }[ext] || 'image/jpeg';
-        
+
         res.setHeader('Content-Type', contentType);
         res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
         res.sendFile(imagePath);
@@ -94,7 +119,7 @@ function getFileExtension(url, contentType) {
     if (urlExt && ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(urlExt)) {
         return urlExt;
     }
-    
+
     // Fallback to content-type
     if (contentType) {
         const typeMap = {
@@ -105,7 +130,7 @@ function getFileExtension(url, contentType) {
         };
         return typeMap[contentType] || '.jpg';
     }
-    
+
     return '.jpg';
 }
 
@@ -259,11 +284,11 @@ async function resolveStreamUrl(streamUrl, depth = 0, visited = new Set()) {
 app.get('/img/:hash', async (req, res) => {
     try {
         const hash = req.params.hash;
-        
+
         // Try to find cached file
         const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
         let filePath = null;
-        
+
         for (const ext of extensions) {
             const testPath = path.join(CACHE_DIR, hash + ext);
             try {
@@ -274,7 +299,7 @@ app.get('/img/:hash', async (req, res) => {
                 // Continue checking
             }
         }
-        
+
         // If cached, serve immediately
         if (filePath) {
             const ext = path.extname(filePath);
@@ -285,14 +310,14 @@ app.get('/img/:hash', async (req, res) => {
                 '.gif': 'image/gif',
                 '.webp': 'image/webp'
             };
-            
+
             res.set('Content-Type', contentTypeMap[ext] || 'image/jpeg');
             res.set('Cache-Control', 'public, max-age=31536000'); // 1 year
-            
+
             const imageBuffer = await fs.readFile(filePath);
             return res.send(imageBuffer);
         }
-        
+
         // Not cached - need original URL to download
         // Check all scrapers for image URL
         const imageUrlMapV1 = scraper.getImageUrlMap();
@@ -300,9 +325,12 @@ app.get('/img/:hash', async (req, res) => {
         const imageUrlMapV3 = kuramanimeScraper.getImageUrlMap();
         const imageUrlMapV5 = anoboyScraper.getImageUrlMap();
         const imageUrlMapV6 = animeIndoScraper.getImageUrlMap();
+        const imageUrlMapV7 = nekopoiScraper.getImageUrlMap();
+        const imageUrlMapV8 = kusonimeScraper.getImageUrlMap();
+        const imageUrlMapV9 = auratailScraper.getImageUrlMap();
 
-        let originalUrl = imageUrlMapV1.get(hash) || imageUrlMapV2.get(hash) || imageUrlMapV3.get(hash) || imageUrlMapV5.get(hash) || imageUrlMapV6.get(hash);
-        
+        let originalUrl = imageUrlMapV1.get(hash) || imageUrlMapV2.get(hash) || imageUrlMapV3.get(hash) || imageUrlMapV5.get(hash) || imageUrlMapV6.get(hash) || imageUrlMapV7.get(hash) || imageUrlMapV8.get(hash) || imageUrlMapV9.get(hash);
+
         if (!originalUrl) {
             return res.status(404).send('Image not found and no URL mapping');
         }
@@ -314,7 +342,7 @@ app.get('/img/:hash', async (req, res) => {
         } catch (error) {
             // Keep default referer
         }
-        
+
         // Download and cache
         const fetch = (await import('node-fetch')).default;
         const response = await fetch(originalUrl, {
@@ -324,21 +352,21 @@ app.get('/img/:hash', async (req, res) => {
             },
             timeout: 10000
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const contentType = response.headers.get('content-type');
         const ext = getFileExtension(originalUrl, contentType);
         const newFilePath = path.join(CACHE_DIR, hash + ext);
-        
+
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         await fs.writeFile(newFilePath, buffer);
-        
+
         console.log(`✓ Downloaded & cached: ${hash}${ext}`);
-        
+
         res.set('Content-Type', contentType || 'image/jpeg');
         res.set('Cache-Control', 'public, max-age=31536000');
         res.send(buffer);
@@ -488,25 +516,25 @@ app.get('/api/stream/:postId/:quality/:serverIndex', async (req, res) => {
         const { postId, quality, serverIndex } = req.params;
         const shouldResolve = req.query.resolve === '1';
         console.log(`Fetching stream URL for post ${postId}, quality ${quality}, server ${serverIndex}`);
-        
+
         // Step 1: Get nonce
-        const nonceResponse = await axios.post('https://otakudesu.best/wp-admin/admin-ajax.php', 
+        const nonceResponse = await axios.post('https://otakudesu.best/wp-admin/admin-ajax.php',
             new URLSearchParams({
                 action: 'aa1208d27f29ca340c92c66d1926f13f'
             }), {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
+        }
         );
-        
+
         const nonce = nonceResponse.data.data;
-        
+
         if (!nonce) {
             throw new Error('Failed to get nonce');
         }
-        
+
         // Step 2: Get stream URL with nonce
         const streamResponse = await axios.post('https://otakudesu.best/wp-admin/admin-ajax.php',
             new URLSearchParams({
@@ -516,30 +544,30 @@ app.get('/api/stream/:postId/:quality/:serverIndex', async (req, res) => {
                 nonce: nonce,
                 action: '2a3505c93b0035d3f455df82bf976b84'
             }), {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
+        }
         );
-        
+
         // Step 3: Decode base64 response
         const base64Html = streamResponse.data.data;
         const decodedHtml = Buffer.from(base64Html, 'base64').toString('utf-8');
-        
+
         // Step 4: Extract iframe src
         const srcMatch = decodedHtml.match(/src="([^"]+)"/);
         const streamUrl = srcMatch ? srcMatch[1] : null;
-        
+
         if (!streamUrl) {
             throw new Error('Failed to extract stream URL');
         }
-        
+
         let resolved = null;
         if (shouldResolve) {
             resolved = await resolveStreamUrl(streamUrl);
         }
-        
+
         res.json({
             status: 'success',
             data: {
@@ -611,18 +639,18 @@ app.get('/api/v2/player-stream', async (req, res) => {
         const postId = req.query.post || req.query.postId;
         const nume = req.query.nume || '1';
         const type = req.query.type || 'schtml';
-        
+
         if (!postId) {
             return res.status(400).json({ status: 'error', message: 'Parameter post wajib diisi' });
         }
-        
+
         console.log(`[V2] Fetching Samehadaku player iframe post=${postId}, nume=${nume}, type=${type}`);
         const iframeSrc = await samehadakuScraper.fetchAjaxPlayerIframe({ post: postId, nume, type });
-        
+
         if (!iframeSrc) {
             return res.status(404).json({ status: 'error', message: 'Stream tidak ditemukan' });
         }
-        
+
         res.json({
             status: 'success',
             data: {
@@ -666,9 +694,9 @@ app.get('/api/v2/terbaru/:page?', async (req, res) => {
     try {
         const page = parseInt(req.params.page) || 1;
         const pagesToLoad = parseInt(req.query.pages) || 1; // Load multiple pages
-        
+
         console.log(`[V2] Scraping samehadaku anime terbaru, page ${page}, loading ${pagesToLoad} pages`);
-        
+
         if (pagesToLoad === 1) {
             const data = await samehadakuScraper.scrapeAnimeList(page);
             // Add items_per_page for consistency
@@ -681,19 +709,19 @@ app.get('/api/v2/terbaru/:page?', async (req, res) => {
             // Load multiple pages and combine results
             const allAnimeData = [];
             let basePaginationData = null;
-            
+
             for (let i = 0; i < pagesToLoad; i++) {
                 const currentPageNum = page + i;
                 try {
                     const data = await samehadakuScraper.scrapeAnimeList(currentPageNum);
                     if (data.status === 'success' && data.data.animeData) {
                         allAnimeData.push(...data.data.animeData);
-                        
+
                         // Get base pagination from first page
                         if (basePaginationData === null) {
                             basePaginationData = data.data.paginationData;
                         }
-                        
+
                         // Stop if this page has no data or is last page
                         if (!data.data.paginationData.has_next_page) {
                             break;
@@ -704,12 +732,12 @@ app.get('/api/v2/terbaru/:page?', async (req, res) => {
                     break;
                 }
             }
-            
+
             // Calculate adjusted pagination for combined pages
             const totalPages = basePaginationData ? Math.ceil(basePaginationData.last_page / pagesToLoad) : 1;
             const currentPageAdjusted = Math.ceil(page / pagesToLoad);
             const hasNextPageAdjusted = (currentPageAdjusted * pagesToLoad) < basePaginationData.last_page;
-            
+
             res.json({
                 status: 'success',
                 data: {
@@ -746,7 +774,7 @@ app.get('/api/v2/all-anime', async (req, res) => {
             order: req.query.order || 'title',
             genre: req.query.genre ? (Array.isArray(req.query.genre) ? req.query.genre : [req.query.genre]) : []
         };
-        
+
         console.log(`[V2] Scraping samehadaku all anime page ${page} with filters:`, filters);
         const data = await samehadakuScraper.scrapeAllAnime(filters, page);
         res.json(data);
@@ -821,11 +849,11 @@ app.get('/api/v3/kuramanime/search', async (req, res) => {
         const query = req.query.q || req.query.query || req.query.search;
         const page = parseInt(req.query.page) || 1;
         const orderBy = req.query.order_by || req.query.orderBy || 'ascending';
-        
+
         if (!query) {
             return res.status(400).json({ status: 'error', message: 'Query parameter is required' });
         }
-        
+
         console.log(`[V3] Searching kuramanime for: "${query}" (page ${page}, order: ${orderBy})`);
         const data = await kuramanimeScraper.scrapeSearch(query, page, orderBy);
         res.json({ status: 'success', data });
@@ -910,6 +938,25 @@ app.get('/api/v3/kuramanime/genres', async (req, res) => {
     }
 });
 
+// Genre with query parameter (e.g. ?genre=comedy)
+app.get('/api/v3/kuramanime/genre', async (req, res) => {
+    try {
+        const genreSlug = req.query.genre;
+        if (!genreSlug) {
+            return res.status(400).json({ status: 'error', message: 'Genre parameter is required' });
+        }
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'updated';
+        console.log(`[V3] Scraping kuramanime genre: ${genreSlug} (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeGenre(genreSlug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /genre:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Genre with route parameter (e.g. /genre/comedy)
 app.get('/api/v3/kuramanime/genre/:slug', async (req, res) => {
     try {
         const genreSlug = req.params.slug;
@@ -988,14 +1035,33 @@ app.get('/api/v3/kuramanime/types', async (req, res) => {
     }
 });
 
-// V3 Kuramanime Type Detail (Anime by Type)
+// V3 Kuramanime Type with query parameter (e.g. /type?type=tv)
+app.get('/api/v3/kuramanime/type', async (req, res) => {
+    try {
+        const typeSlug = req.query.type;
+        if (!typeSlug) {
+            return res.status(400).json({ status: 'error', message: 'Type parameter is required' });
+        }
+        const page = parseInt(req.query.page) || 1;
+        const orderBy = req.query.order_by || req.query.orderBy || 'updated';
+        console.log(`[V3] Fetching anime for type: ${typeSlug} (page ${page}, order: ${orderBy})`);
+        const data = await kuramanimeScraper.scrapeType(typeSlug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V3] API Error /type:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// V3 Kuramanime Type Detail with route parameter (e.g. /type/tv)
 app.get('/api/v3/kuramanime/type/:typeSlug', async (req, res) => {
     try {
         const { typeSlug } = req.params;
         const page = parseInt(req.query.page) || 1;
-        const orderBy = req.query.order_by || 'ascending';
-        console.log(`[V3] Fetching anime for type: ${typeSlug} (page ${page})`);
+        const orderBy = req.query.order_by || 'updated';
+        console.log(`[V3] Fetching anime for type: ${typeSlug} (page ${page}, order: ${orderBy})`);
         const data = await kuramanimeScraper.scrapeType(typeSlug, page, orderBy);
+        console.log(`[V3] scrapeType returned ${data.anime_list?.length || 0} anime`);
         res.json({ status: 'success', data });
     } catch (error) {
         console.error(`[V3] API Error /type/${req.params.typeSlug}:`, error.message);
@@ -1097,8 +1163,8 @@ app.get('/api/v3/kuramanime/properties', async (req, res) => {
             kuramanimeScraper.scrapeSourceList(),
             kuramanimeScraper.scrapeCountryList()
         ]);
-        res.json({ 
-            status: 'success', 
+        res.json({
+            status: 'success',
             data: {
                 genres,
                 seasons,
@@ -1128,10 +1194,10 @@ app.get('/api/v3/kuramanime/batch/:animeId/:slug/:range', async (req, res) => {
     }
 });
 
-// Route untuk halaman utama
-app.get('/', (req, res) => {
-    res.redirect('/v6/home');
-});
+// Route untuk halaman utama - now serves index.html from public/
+// app.get('/', (req, res) => {
+//     res.redirect('/v6/home');
+// });
 
 // Route untuk V1 Otakudesu home alias
 app.get('/v1/home', (req, res) => {
@@ -1150,6 +1216,64 @@ app.get('/v3', (req, res) => {
 
 app.get('/v3/home', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/v3/index.html'));
+});
+
+// Route untuk V4 Anichin home
+app.get('/v4/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v4/index.html'));
+});
+
+// Route untuk V5 Anoboy home
+app.get('/v5/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v5/index.html'));
+});
+
+// Route untuk V6 AnimeIndo home
+app.get('/v6/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v6/index.html'));
+});
+
+// Route untuk V7 Nekopoi home
+app.get('/v7/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v7/index.html'));
+});
+
+// Route untuk V8 Kusonime home
+app.get('/v8', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v8/index.html'));
+});
+
+app.get('/v9', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v9/index.html'));
+});
+
+app.get('/v8/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v8/index.html'));
+});
+
+app.get('/v9/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v9/index.html'));
+});
+
+app.get('/v9/completed', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v9/completed.html'));
+});
+
+app.get('/v9/ongoing', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v9/completed.html'));
+});
+
+app.get('/v9/popular', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v9/completed.html'));
+});
+
+// V9 Detail Routes
+app.get('/v9/detail', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v9/detail.html'));
+});
+
+app.get('/v9/episode', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/v9/episode.html'));
 });
 
 // Clean URL routes with path parameters
@@ -1321,6 +1445,21 @@ Object.entries(v6StaticRoutes).forEach(([route, file]) => {
     app.get(`/${route}.html`, (req, res) => res.sendFile(filePath));
 });
 
+// V7 static pages (Nekopoi)
+const v7StaticRoutes = {
+    'v7/home': 'index',
+    'v7/detail': 'detail',
+    'v7/episode': 'episode',
+    'v7/search': 'search',
+    'v7/list': 'list'
+};
+
+Object.entries(v7StaticRoutes).forEach(([route, file]) => {
+    const filePath = path.join(__dirname, `../public/v7/${file}.html`);
+    app.get(`/${route}`, (req, res) => res.sendFile(filePath));
+    app.get(`/${route}.html`, (req, res) => res.sendFile(filePath));
+});
+
 // Route for anime-terbaru page (V2 only)
 app.get('/anime-terbaru', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/v1/anime-list.html'));
@@ -1337,8 +1476,8 @@ app.get('/api/v4/anichin/home', async (req, res) => {
         res.json(data);
     } catch (error) {
         console.error('[V4] Anichin API - Homepage error:', error.message);
-        res.status(500).json({ 
-            status: 'error', 
+        res.status(500).json({
+            status: 'error',
             message: 'Failed to fetch homepage data',
             data: {
                 banner_recommendations: [],
@@ -1355,16 +1494,16 @@ app.get('/api/v4/anichin/banner-recommendations', async (req, res) => {
         console.log('[V4] Anichin scraper type:', typeof anichinScraper);
         console.log('[V4] Anichin scraper is function:', typeof anichinScraper.scrapeBannerRecommendations);
         const data = await anichinScraper.scrapeBannerRecommendations();
-        res.json({ 
-            status: 'success', 
+        res.json({
+            status: 'success',
             data: data,
-            total: data.length 
+            total: data.length
         });
     } catch (error) {
         console.error('[V4] Anichin API - Banner recommendations error:', error.message);
         console.error('[V4] Full error stack:', error.stack);
-        res.status(500).json({ 
-            status: 'error', 
+        res.status(500).json({
+            status: 'error',
             message: 'Failed to fetch banner recommendations',
             data: []
         });
@@ -1375,15 +1514,15 @@ app.get('/api/v4/anichin/popular-today', async (req, res) => {
     try {
         console.log('[V4] Anichin API - Popular today request');
         const data = await anichinScraper.scrapePopularToday();
-        res.json({ 
-            status: 'success', 
+        res.json({
+            status: 'success',
             data: data,
-            total: data.length 
+            total: data.length
         });
     } catch (error) {
         console.error('[V4] Anichin API - Popular today error:', error.message);
-        res.status(500).json({ 
-            status: 'error', 
+        res.status(500).json({
+            status: 'error',
             message: 'Failed to fetch popular today data',
             data: []
         });
@@ -1394,15 +1533,15 @@ app.get('/api/v4/anichin/latest-releases', async (req, res) => {
     try {
         console.log('[V4] Anichin API - Latest releases request');
         const data = await anichinScraper.scrapeLatestReleases();
-        res.json({ 
-            status: 'success', 
+        res.json({
+            status: 'success',
             data: data,
-            total: data.length 
+            total: data.length
         });
     } catch (error) {
         console.error('[V4] Anichin API - Latest releases error:', error.message);
-        res.status(500).json({ 
-            status: 'error', 
+        res.status(500).json({
+            status: 'error',
             message: 'Failed to fetch latest releases',
             data: []
         });
@@ -1802,10 +1941,737 @@ app.get('/api/v6/animeindo/search', async (req, res) => {
     }
 });
 
+// ==================== API V7 - NEKOPOI ====================
+
+app.get('/api/v7/nekopoi/home', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        console.log(`[V7] Nekopoi API - Home request (page ${page})`);
+        
+        // Fetch 2 pages at once for better content density
+        const data1 = await nekopoiScraper.scrapeHomepage(page);
+        const data2 = await nekopoiScraper.scrapeHomepage(page + 1);
+        
+        if (data1.status === 'success' && data2.status === 'success') {
+            // Combine episodes from both pages
+            const allEpisodes = [
+                ...(data1.data.episodes || []),
+                ...(data2.data.episodes || [])
+            ];
+            
+            res.json({
+                status: 'success',
+                data: {
+                    episodes: allEpisodes,
+                    currentPage: page,
+                    hasNextPage: data2.data.hasNextPage || false,
+                    hasPrevPage: data1.data.hasPrevPage || false,
+                    totalPagesFetched: 2
+                }
+            });
+        } else {
+            // Fallback to single page if double fetch fails
+            const fallbackData = data1.status === 'success' ? data1 : data2;
+            res.json(fallbackData);
+        }
+    } catch (error) {
+        console.error('[V7] Nekopoi API - Home error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch homepage data',
+            data: {
+                episodes: [],
+                currentPage: 1,
+                hasNextPage: false,
+                hasPrevPage: false
+            }
+        });
+    }
+});
+
+app.get('/api/v7/nekopoi/detail/:slug(*)', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`[V7] Nekopoi API - Detail request for: ${slug}`);
+        const data = await nekopoiScraper.scrapeAnimeDetail(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('[V7] Nekopoi API - Detail error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch anime detail',
+            data: null
+        });
+    }
+});
+
+app.get('/api/v7/nekopoi/episode/:slug(*)', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`[V7] Nekopoi API - Episode request for: ${slug}`);
+        const data = await nekopoiScraper.scrapeEpisode(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('[V7] Nekopoi API - Episode error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch episode',
+            data: null
+        });
+    }
+});
+
+app.get('/api/v7/nekopoi/search', async (req, res) => {
+    try {
+        const query = req.query.q || req.query.query || '';
+        if (!query) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Parameter q (query) is required',
+                data: {
+                    query: '',
+                    results: [],
+                    totalResults: 0
+                }
+            });
+        }
+        console.log(`[V7] Nekopoi API - Search request for: ${query}`);
+        const data = await nekopoiScraper.scrapeSearch(query);
+        res.json(data);
+    } catch (error) {
+        console.error('[V7] Nekopoi API - Search error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to search',
+            data: {
+                query: '',
+                results: [],
+                totalResults: 0
+            }
+        });
+    }
+});
+
+app.get('/api/v7/nekopoi/hentai-list', async (req, res) => {
+    try {
+        const letter = req.query.letter;
+
+        if (letter) {
+            console.log(`[V7] Nekopoi API - Hentai list request for letter: ${letter}`);
+            const data = await nekopoiScraper.scrapeHentaiListByLetter(letter);
+            res.json(data);
+        } else {
+            console.log('[V7] Nekopoi API - Full hentai list request');
+            const data = await nekopoiScraper.scrapeHentaiList();
+            res.json(data);
+        }
+    } catch (error) {
+        console.error('[V7] Nekopoi API - Hentai list error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch hentai list',
+            data: null
+        });
+    }
+});
+
+// Test endpoint to check if streaming URL can be downloaded
+app.post('/api/v7/nekopoi/test-download', async (req, res) => {
+    try {
+        const { url } = req.body;
+
+        if (!url) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'URL is required'
+            });
+        }
+
+        console.log('[V7] Testing download for URL:', url);
+
+        const axios = require('axios');
+        const testResults = {
+            url,
+            canDownload: false,
+            method: null,
+            contentType: null,
+            contentLength: null,
+            error: null,
+            details: []
+        };
+
+        // Test 1: Direct fetch with basic headers
+        try {
+            console.log('[V7] Test 1: Direct fetch with basic headers');
+            const response = await axios.head(url, {
+                timeout: 5000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                }
+            });
+
+            const contentType = response.headers['content-type'] || '';
+            const isVideoContent = contentType.includes('video/') ||
+                                  contentType.includes('application/octet-stream') ||
+                                  contentType.includes('binary/octet-stream');
+
+            testResults.details.push({
+                test: 'Direct fetch (basic)',
+                success: true,
+                status: response.status,
+                contentType: contentType,
+                contentLength: response.headers['content-length'],
+                isVideoContent: isVideoContent,
+                note: isVideoContent ? 'Valid video content-type' : 'Not a video content-type (likely HTML page)'
+            });
+
+            if (response.status === 200 && isVideoContent) {
+                testResults.canDownload = true;
+                testResults.method = 'direct-basic';
+                testResults.contentType = contentType;
+                testResults.contentLength = response.headers['content-length'];
+            }
+        } catch (error) {
+            testResults.details.push({
+                test: 'Direct fetch (basic)',
+                success: false,
+                error: error.message
+            });
+        }
+
+        // Test 2: Fetch with referer
+        if (!testResults.canDownload) {
+            try {
+                console.log('[V7] Test 2: Fetch with referer');
+                const response = await axios.head(url, {
+                    timeout: 5000,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Referer': 'https://nekopoi.care/',
+                        'Origin': 'https://nekopoi.care'
+                    }
+                });
+
+                const contentType = response.headers['content-type'] || '';
+                const isVideoContent = contentType.includes('video/') ||
+                                      contentType.includes('application/octet-stream') ||
+                                      contentType.includes('binary/octet-stream');
+
+                testResults.details.push({
+                    test: 'Fetch with referer',
+                    success: true,
+                    status: response.status,
+                    contentType: contentType,
+                    contentLength: response.headers['content-length'],
+                    isVideoContent: isVideoContent,
+                    note: isVideoContent ? 'Valid video content-type' : 'Not a video content-type (likely HTML page)'
+                });
+
+                if (response.status === 200 && isVideoContent) {
+                    testResults.canDownload = true;
+                    testResults.method = 'with-referer';
+                    testResults.contentType = contentType;
+                    testResults.contentLength = response.headers['content-length'];
+                }
+            } catch (error) {
+                testResults.details.push({
+                    test: 'Fetch with referer',
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        // Test 3: Check if it's a video file
+        const urlLower = url.toLowerCase();
+        const isVideoFile = /\.(mp4|mkv|avi|webm|m3u8)(\?|$)/i.test(urlLower);
+        testResults.details.push({
+            test: 'Video file extension check',
+            isVideoFile,
+            extension: isVideoFile ? urlLower.match(/\.(mp4|mkv|avi|webm|m3u8)/i)?.[0] : null
+        });
+
+        // Test 4: Check domain restrictions
+        try {
+            const urlObj = new URL(url);
+            const domain = urlObj.hostname;
+            const knownStreamingDomains = ['fembed', 'streamtape', 'doodstream', 'iframe', 'myvidplay'];
+            const isStreamingDomain = knownStreamingDomains.some(d => domain.includes(d));
+
+            testResults.details.push({
+                test: 'Domain check',
+                domain,
+                isStreamingDomain,
+                note: isStreamingDomain ? 'This is a streaming embed domain (not downloadable)' : 'Not a known streaming embed domain'
+            });
+
+            if (isStreamingDomain) {
+                testResults.canDownload = false;
+                testResults.error = 'Streaming embed domains cannot be downloaded directly';
+            }
+        } catch (error) {
+            testResults.details.push({
+                test: 'Domain check',
+                success: false,
+                error: error.message
+            });
+        }
+
+        // Final verdict
+        if (!testResults.canDownload && !testResults.error) {
+            // Check if it's likely a HTML page
+            const hasHtmlResponse = testResults.details.some(d =>
+                d.contentType && d.contentType.includes('text/html')
+            );
+
+            if (hasHtmlResponse) {
+                testResults.error = 'URL returns HTML page, not a direct video file. This is likely a player embed page.';
+            } else {
+                testResults.error = 'Unable to download: Not a valid video URL';
+            }
+        }
+
+        console.log('[V7] Test results:', JSON.stringify(testResults, null, 2));
+
+        res.json({
+            status: 'success',
+            data: testResults
+        });
+
+    } catch (error) {
+        console.error('[V7] Test download error:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Proxy endpoint for downloading streaming URLs
+app.get('/api/v7/nekopoi/proxy-download', async (req, res) => {
+    try {
+        const url = req.query.url;
+
+        if (!url) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'URL parameter is required'
+            });
+        }
+
+        console.log('[V7] Proxying download for URL:', url);
+
+        const axios = require('axios');
+
+        // Try to fetch the video
+        const response = await axios({
+            method: 'get',
+            url: url,
+            responseType: 'stream',
+            timeout: 30000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'https://nekopoi.care/',
+            }
+        });
+
+        // Set appropriate headers
+        res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
+        if (response.headers['content-length']) {
+            res.setHeader('Content-Length', response.headers['content-length']);
+        }
+        res.setHeader('Content-Disposition', 'attachment; filename="video.mp4"');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        // Pipe the video stream to response
+        response.data.pipe(res);
+
+        response.data.on('error', (error) => {
+            console.error('[V7] Proxy stream error:', error);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    status: 'error',
+                    message: 'Streaming error: ' + error.message
+                });
+            }
+        });
+
+    } catch (error) {
+        console.error('[V7] Proxy download error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+});
+
+
+// ==================== API V8 - KUSONIME ====================
+
+// GET /api/v8/kusonime/home - Get Kusonime homepage
+app.get('/api/v8/kusonime/home', async (req, res) => {
+    try {
+        console.log('[V9] Kusonime API - Home request');
+        const data = await kusonimeScraper.scrapeHome();
+        res.json(data);
+    } catch (error) {
+        console.error('[V9] Kusonime API - Home error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch Kusonime homepage',
+            data: null
+        });
+    }
+});
+
+// GET /api/v8/kusonime/detail/:slug - Get anime detail
+app.get('/api/v8/kusonime/detail/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        console.log(`[V9] Kusonime API - Detail request for: ${slug}`);
+        const data = await kusonimeScraper.scrapeDetail(slug);
+        res.json(data);
+    } catch (error) {
+        console.error('[V9] Kusonime API - Detail error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch anime detail',
+            data: null
+        });
+    }
+});
+
+// GET /api/v8/kusonime/search - Search anime
+app.get('/api/v8/kusonime/search', async (req, res) => {
+    try {
+        const keyword = req.query.q || req.query.keyword;
+
+        if (!keyword) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Keyword parameter is required',
+                data: null
+            });
+        }
+
+        console.log(`[V9] Kusonime API - Search request for: ${keyword}`);
+        const data = await kusonimeScraper.scrapeSearch(keyword);
+        res.json(data);
+    } catch (error) {
+        console.error('[V9] Kusonime API - Search error:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to search anime',
+            data: null
+        });
+    }
+});
+
+// ====================
+// HLS Conversion API
+// ====================
+
+// Convert video to HLS
+app.post('/api/hls/convert', async (req, res) => {
+    try {
+        const { videoUrl, episodeId, quality } = req.body;
+
+        if (!videoUrl || !episodeId) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'videoUrl and episodeId are required'
+            });
+        }
+
+        console.log('HLS Conversion Request:', { videoUrl, episodeId, quality: quality || 'auto' });
+
+        // Create HLS session with quality info
+        const session = await hlsService.createHLS(videoUrl, episodeId, quality);
+
+        res.json({
+            status: 'success',
+            message: 'HLS conversion started',
+            data: {
+                sessionId: session.sessionId,
+                playlistUrl: session.playlistUrl,
+                createdAt: session.createdAt
+            }
+        });
+
+    } catch (error) {
+        console.error('HLS Conversion Error:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Failed to convert video to HLS'
+        });
+    }
+});
+
+// Serve HLS playlist
+app.get('/api/hls/:sessionId/playlist.m3u8', async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const session = hlsService.getSession(sessionId);
+
+        if (!session) {
+            return res.status(404).send('Session not found');
+        }
+
+        // Update session access time
+        hlsService.updateSessionAccess(sessionId);
+
+        const playlistPath = path.join(session.hlsDir, 'playlist.m3u8');
+        res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.sendFile(playlistPath);
+
+    } catch (error) {
+        console.error('Error serving playlist:', error);
+        res.status(500).send('Error serving playlist');
+    }
+});
+
+// Serve HLS segments
+app.get('/api/hls/:sessionId/:segment', async (req, res) => {
+    try {
+        const { sessionId, segment } = req.params;
+        const session = hlsService.getSession(sessionId);
+
+        if (!session) {
+            return res.status(404).send('Session not found');
+        }
+
+        // Update session access time
+        hlsService.updateSessionAccess(sessionId);
+
+        const segmentPath = path.join(session.hlsDir, segment);
+        res.setHeader('Content-Type', 'video/MP2T');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.sendFile(segmentPath);
+
+    } catch (error) {
+        console.error('Error serving segment:', error);
+        res.status(500).send('Error serving segment');
+    }
+});
+
+// Close HLS session
+app.post('/api/hls/close/:sessionId', async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const result = await hlsService.closeSession(sessionId);
+
+        res.json({
+            status: 'success',
+            message: result.message
+        });
+
+    } catch (error) {
+        console.error('Error closing session:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to close session'
+        });
+    }
+});
+
+// Get active sessions (debug endpoint)
+app.get('/api/hls/sessions', (req, res) => {
+    const sessions = hlsService.getActiveSessions();
+    res.json({
+        status: 'success',
+        data: {
+            count: sessions.length,
+            sessions: sessions.map(s => ({
+                sessionId: s.sessionId,
+                episodeId: s.episodeId,
+                active: s.active,
+                createdAt: new Date(s.createdAt).toISOString(),
+                lastAccess: new Date(s.lastAccess).toISOString()
+            }))
+        }
+    });
+});
+
+// ==============================
+// Auratail.vip API Routes (V9)
+// ==============================
+
+// Auratail Homepage
+app.get('/api/v9/auratail/home', async (req, res) => {
+    try {
+        console.log('[V9] Scraping Auratail homepage...');
+        const data = await auratailScraper.scrapeHome();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /home:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Anime Detail
+app.get('/api/v9/auratail/anime/:animeId/:slug', async (req, res) => {
+    try {
+        const { animeId, slug } = req.params;
+        console.log(`[V9] Scraping Auratail anime detail: ${animeId}/${slug}`);
+        const data = await auratailScraper.scrapeDetail(animeId, slug);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /anime:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Episode Detail
+app.get('/api/v9/auratail/episode/:animeId/:slug/:episodeNum', async (req, res) => {
+    try {
+        const { animeId, slug, episodeNum } = req.params;
+        console.log(`[V9] Scraping Auratail episode: ${animeId}/${slug}/episode/${episodeNum}`);
+        const data = await auratailScraper.scrapeEpisode(animeId, slug, episodeNum);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /episode:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Search
+app.get('/api/v9/auratail/search', async (req, res) => {
+    try {
+        const { q, page = 1 } = req.query;
+        if (!q) {
+            return res.status(400).json({ status: 'error', message: 'Query parameter "q" is required' });
+        }
+        console.log(`[V9] Searching Auratail for: ${q}`);
+        const data = await auratailScraper.scrapeSearch(q, page);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /search:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Anime List
+app.get('/api/v9/auratail/anime-list', async (req, res) => {
+    try {
+        const { page = 1, status = '', type = '', order = 'update' } = req.query;
+        console.log(`[V9] Fetching Auratail anime list...`);
+        const data = await auratailScraper.scrapeAnimeList(page, status, type, order);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /anime-list:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Genres
+app.get('/api/v9/auratail/genres', async (req, res) => {
+    try {
+        console.log('[V9] Fetching Auratail genres...');
+        const data = await auratailScraper.scrapeGenreList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /genres:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Genre Detail
+app.get('/api/v9/auratail/genre/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const { page = 1, orderBy = 'ascending' } = req.query;
+        console.log(`[V9] Fetching Auratail genre: ${slug}`);
+        const data = await auratailScraper.scrapeGenre(slug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /genre:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Types
+app.get('/api/v9/auratail/types', async (req, res) => {
+    try {
+        console.log('[V9] Fetching Auratail types...');
+        const data = await auratailScraper.scrapeTypeList();
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /types:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Type Detail
+app.get('/api/v9/auratail/type/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const { page = 1, orderBy = 'ascending' } = req.query;
+        console.log(`[V9] Fetching Auratail type: ${slug}`);
+        const data = await auratailScraper.scrapeType(slug, page, orderBy);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /type:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// Auratail Batch Download
+app.get('/api/v9/auratail/batch/:animeId/:slug/:range', async (req, res) => {
+    try {
+        const { animeId, slug, range } = req.params;
+        console.log(`[V9] Scraping Auratail batch: ${animeId}/${slug}/batch/${range}`);
+        const data = await auratailScraper.scrapeBatch(animeId, slug, range);
+        res.json({ status: 'success', data });
+    } catch (error) {
+        console.error('[V9] API Error /batch:', error.message);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 // 404 handler
 app.use((req, res) => {
     res.status(404).send('<h1>404 - Halaman tidak ditemukan</h1><a href="/v1/home">Kembali ke Beranda</a>');
 });
+
+// Auto-cleanup cache images older than 1 hour
+async function cleanOldCacheImages() {
+    try {
+        const files = await fs.readdir(CACHE_DIR);
+        const now = Date.now();
+        const MAX_AGE = 60 * 60 * 1000; // 1 hour in milliseconds
+        let deletedCount = 0;
+        let deletedSize = 0;
+
+        for (const file of files) {
+            const filePath = path.join(CACHE_DIR, file);
+            try {
+                const stats = await fs.stat(filePath);
+                const age = now - stats.mtime.getTime();
+
+                if (age > MAX_AGE) {
+                    deletedSize += stats.size;
+                    await fs.unlink(filePath);
+                    deletedCount++;
+                }
+            } catch (error) {
+                console.error(`[Cache Cleanup] Error processing ${file}:`, error.message);
+            }
+        }
+
+        if (deletedCount > 0) {
+            const deletedMB = (deletedSize / (1024 * 1024)).toFixed(2);
+            console.log(`🧹 [Cache Cleanup] Deleted ${deletedCount} old images (${deletedMB} MB)`);
+        }
+    } catch (error) {
+        console.error('[Cache Cleanup] Error:', error.message);
+    }
+}
+
+// Run cleanup every 10 minutes
+setInterval(cleanOldCacheImages, 10 * 60 * 1000);
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 AnimMe Server berjalan di http://0.0.0.0:${PORT}`);
@@ -1815,6 +2681,13 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`   ├─ V3 (Kuramanime): /api/v3/kuramanime/...`);
     console.log(`   ├─ V4 (Anichin): /api/v4/anichin/...`);
     console.log(`   ├─ V5 (Anoboy): /api/v5/anoboy/...`);
-    console.log(`   └─ V6 (AnimeIndo): /api/v6/animeindo/...`);
-    console.log(`🌐 Buka browser dan akses: http://167.253.159.235:${PORT}\n`);
+    console.log(`   ├─ V6 (AnimeIndo): /api/v6/animeindo/...`);
+    console.log(`   ├─ V7 (Nekopoi): /api/v7/nekopoi/...`);
+    console.log(`   ├─ V8 (Kusonime): /api/v8/kusonime/...
+   └─ V9 (Auratail): /api/v9/auratail/...`);
+    console.log(`🌐 Buka browser dan akses: http://167.253.159.235:${PORT}`);
+    console.log(`🧹 Auto-cleanup cache: Images older than 1 hour will be deleted every 10 minutes\n`);
+
+    // Run initial cleanup on server start
+    cleanOldCacheImages();
 });

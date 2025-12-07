@@ -54,7 +54,7 @@
 
         .update-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 2rem;
         }
@@ -223,6 +223,13 @@
             background: rgba(52, 152, 219, 0.2);
             color: rgba(255, 255, 255, 0.5);
             cursor: not-allowed;
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .update-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+            }
         }
 
         @media (max-width: 768px) {

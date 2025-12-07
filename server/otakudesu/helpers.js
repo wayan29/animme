@@ -37,8 +37,20 @@ function getImageUrlMap() {
 // Extract slug from URL
 function extractSlug(url) {
     if (!url) return '';
-    const match = url.match(/\/anime\/([^\/]+)/);
-    return match ? match[1] : '';
+    
+    // Try anime URL pattern first
+    let match = url.match(/\/anime\/([^\/]+)/);
+    if (match) return match[1];
+    
+    // Try episode URL pattern
+    match = url.match(/\/episode\/([^\/]+)/);
+    if (match) return match[1];
+    
+    // Try batch URL pattern
+    match = url.match(/\/batch\/([^\/]+)/);
+    if (match) return match[1];
+    
+    return '';
 }
 
 module.exports = {

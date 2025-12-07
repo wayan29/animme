@@ -1,309 +1,234 @@
-// AnimMe V4 - Anichin Application
+// V4 Anichin Configuration
 const API_BASE = '/api/v4/anichin';
+let homeData = null;
+let currentCarouselIndex = 0;
+let carouselInterval = null;
 
-// State management
-let appState = {
-    bannerRecommendations: [],
-    popularToday: [],
-    latestReleases: [],
-    isLoading: false,
-    error: null
-};
-
-// Initialize app on page load
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('[V4] Initializing Anichin application...');
-    initializeApp();
-    initSidebarToggle();
-    initMobileSearch();
-});
-
-// Initialize application
-async function initializeApp() {
-    try {
-        appState.isLoading = true;
-
-        // Load all homepage data
-        console.log('[V4] Fetching homepage data...');
-        const homepageData = await fetchAPI('/home');
-
-        if (homepageData && homepageData.status === 'success' && homepageData.data) {
-            const { banner_recommendations, popular_today, latest_releases } = homepageData.data;
-
-            appState.bannerRecommendations = banner_recommendations || [];
-            appState.popularToday = popular_today || [];
-            appState.latestReleases = latest_releases || [];
-
-            console.log('[V4] Data loaded:', {
-                banners: appState.bannerRecommendations.length,
-                popular: appState.popularToday.length,
-                latest: appState.latestReleases.length
-            });
-
-            // Render sections
-            renderBannerRecommendations();
-            renderPopularToday();
-            renderLatestReleases();
-        } else {
-            showError('Gagal memuat data homepage');
-        }
-
-        // Setup server selector
-        setupServerSelector();
-
-    } catch (error) {
-        console.error('[V4] Error initializing app:', error);
-        showError('Terjadi kesalahan saat memuat data');
-    } finally {
-        appState.isLoading = false;
-    }
-}
-
-// Fetch data from API
-async function fetchAPI(endpoint) {
-    try {
-        const response = await fetch(`${API_BASE}${endpoint}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error(`[V4] API Error (${endpoint}):`, error);
-        throw error;
-    }
-}
-
-// Render banner recommendations carousel
-function renderBannerRecommendations() {
-    const container = document.getElementById('bannerCarousel');
-
-    if (!appState.bannerRecommendations || appState.bannerRecommendations.length === 0) {
-        container.innerHTML = '<p class="loading" style="width: 100%; text-align: center;">Tidak ada banner tersedia</p>';
-        return;
-    }
-
-    // Clear loading state
-    container.innerHTML = '';
-
-    appState.bannerRecommendations.forEach(banner => {
-        const item = createBannerElement(banner);
-        container.appendChild(item);
-    });
-}
-
-// Create banner carousel item
-function createBannerElement(banner) {
-    const div = document.createElement('div');
-    div.className = 'carousel-item';
-
-    const backdrop = banner.backdrop || '/images/placeholder.jpg';
-
-    div.innerHTML = `
-        <div class="carousel-image" style="background-image: url('${backdrop}');">
-            <div class="carousel-overlay">
-                <div class="carousel-title">${escapeHtml(banner.title)}</div>
-                ${banner.japanese_title ? `<div style="color: #aaa; font-size: 0.8rem;">${escapeHtml(banner.japanese_title)}</div>` : ''}
-            </div>
-        </div>
-    `;
-
-    div.addEventListener('click', () => {
-        if (banner.slug) {
-            window.location.href = `/v4/detail?slug=${encodeURIComponent(banner.slug)}`;
-        }
-    });
-
-    return div;
-}
-
-// Render popular today section
-function renderPopularToday() {
-    const section = document.getElementById('popularSection');
-    const container = document.getElementById('popularToday');
-    const countBadge = document.getElementById('popularCount');
-
-    if (!appState.popularToday || appState.popularToday.length === 0) {
-        section.style.display = 'none';
-        return;
-    }
-
-    section.style.display = 'block';
-    countBadge.textContent = appState.popularToday.length;
-
-    // Clear loading state
-    container.innerHTML = '';
-
-    appState.popularToday.forEach(anime => {
-        const card = createAnimeCard(anime);
-        container.appendChild(card);
-    });
-}
-
-// Render latest releases section
-function renderLatestReleases() {
-    const section = document.getElementById('latestSection');
-    const container = document.getElementById('latestReleases');
-    const countBadge = document.getElementById('latestCount');
-
-    if (!appState.latestReleases || appState.latestReleases.length === 0) {
-        section.style.display = 'none';
-        return;
-    }
-
-    section.style.display = 'block';
-    countBadge.textContent = appState.latestReleases.length;
-
-    // Clear loading state
-    container.innerHTML = '';
-
-    appState.latestReleases.forEach(anime => {
-        const card = createAnimeCard(anime);
-        container.appendChild(card);
-    });
-}
-
-// Create anime card element
-function createAnimeCard(anime) {
-    const link = document.createElement('a');
-    link.className = 'anime-card';
-    link.href = anime.slug ? `/v4/detail?slug=${encodeURIComponent(anime.slug)}` : '#';
-    link.style.textDecoration = 'none';
-    link.style.color = 'inherit';
-
-    const poster = anime.poster || '/images/placeholder.jpg';
-    const episode = anime.episode ? `<span class="anime-episode">${anime.episode}</span>` : '';
-    const type = anime.type ? `<span class="anime-type">${anime.type}</span>` : '';
-
-    link.innerHTML = `
-        <div class="anime-poster" style="background-image: url('${poster}');"></div>
-        <div class="anime-info">
-            <div class="anime-title">${escapeHtml(anime.title)}</div>
-            <div class="anime-meta">
-                ${episode}
-                ${type}
-            </div>
-        </div>
-    `;
-
-    return link;
-}
-
-// Show error message
-function showError(message) {
-    const errorContainer = document.getElementById('errorContainer');
-    errorContainer.innerHTML = `<div class="error">⚠️ ${message}</div>`;
-    errorContainer.style.display = 'block';
-    appState.error = message;
-}
-
-// Hide error message
-function hideError() {
-    const errorContainer = document.getElementById('errorContainer');
-    errorContainer.style.display = 'none';
-    appState.error = null;
-}
-
-// Setup server selector dropdown
-function setupServerSelector() {
-    const selector = document.getElementById('serverSelect');
-
-    selector.addEventListener('change', (e) => {
-        const version = e.target.value;
-        switch(version) {
-            case 'v1':
-                window.location.href = '/v1/home';
-                break;
-            case 'v2':
-                window.location.href = '/v2/home';
-                break;
-            case 'v3':
-                window.location.href = '/v3/home';
-                break;
-            case 'v4':
-                window.location.href = '/v4/home';
-                break;
-            case 'v5':
-                window.location.href = '/v5/home';
-                break;
-        }
-    });
-}
-
-// Utility function to escape HTML
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-// Initialize sidebar toggle
-function initSidebarToggle() {
-    const menuToggle = document.getElementById('menuToggle');
-    const menuCloseBtn = document.getElementById('menuCloseBtn');
-    const sidebar = document.getElementById('sidebar');
-    const backdrop = document.getElementById('sidebarBackdrop');
-
-    if (!menuToggle || !sidebar) return;
-
-    menuToggle.addEventListener('click', () => {
-        sidebar.classList.add('active');
-        if (backdrop) backdrop.classList.add('active');
-        document.body.classList.add('sidebar-open');
-    });
-
-    const closeSidebar = () => {
-        sidebar.classList.remove('active');
-        if (backdrop) backdrop.classList.remove('active');
-        document.body.classList.remove('sidebar-open');
-        document.body.style.overflow = '';
-    };
-
-    if (menuCloseBtn) {
-        menuCloseBtn.addEventListener('click', closeSidebar);
-    }
-
-    if (backdrop) {
-        backdrop.addEventListener('click', closeSidebar);
-    }
-
-    // Close on escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-            closeSidebar();
-        }
-    });
-}
-
-// Initialize mobile search
-function initMobileSearch() {
-    const searchIconBtn = document.getElementById('searchIconBtn');
-    const searchCloseBtn = document.getElementById('searchCloseBtn');
-    const searchInput = document.getElementById('searchInput');
-    const searchContainer = document.querySelector('.search-container');
-
-    if (!searchIconBtn || !searchContainer) return;
-
-    searchIconBtn.addEventListener('click', () => {
-        searchContainer.classList.add('active');
-        if (searchInput) searchInput.focus();
-    });
-
-    if (searchCloseBtn) {
-        searchCloseBtn.addEventListener('click', () => {
-            searchContainer.classList.remove('active');
-            if (searchInput) searchInput.value = '';
+    const serverSelect = document.getElementById('serverSelect');
+    if (serverSelect) {
+        serverSelect.value = 'v4';
+        serverSelect.addEventListener('change', (e) => {
+            changeServer(e.target.value);
         });
     }
 
-    // Search on enter key
+    loadHomePage();
+    initMobileSearch();
+    initSidebarToggle();
+});
+
+function changeServer(server) {
+    localStorage.setItem('selectedServer', server);
+
+    const TARGET_PATHS = {
+        v1: '/v1/home',
+        v2: '/v2/home',
+        v3: '/v3/home',
+        v4: '/v4/home',
+        v5: '/v5/home',
+        v6: '/v6/home',
+        v7: '/v7/home'
+    };
+
+    window.location.href = TARGET_PATHS[server] || '/v1/home';
+}
+
+async function fetchAPI(endpoint) {
+    try {
+        const response = await fetch(`${API_BASE}${endpoint}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        return null;
+    }
+}
+
+async function loadHomePage() {
+    console.log('[V4] Loading homepage...');
+    const data = await fetchAPI('/home');
+    console.log('[V4] Data received:', data);
+
+    if (!data || !data.data) {
+        console.error('[V4] No data received from API');
+        showError('carouselContainer');
+        showError('popularToday');
+        showError('latestReleases');
+        return;
+    }
+
+    homeData = data.data;
+
+    // Render carousel
+    if (homeData.banner_recommendations && homeData.banner_recommendations.length > 0) {
+        renderCarousel(homeData.banner_recommendations.slice(0, 6));
+    } else if (homeData.popular_today && homeData.popular_today.length > 0) {
+        renderCarousel(homeData.popular_today.slice(0, 6));
+    }
+
+    // Render popular today
+    if (homeData.popular_today && homeData.popular_today.length > 0) {
+        renderAnimeRow('popularToday', homeData.popular_today, 'popularCount');
+    }
+
+    // Render latest releases
+    if (homeData.latest_releases && homeData.latest_releases.length > 0) {
+        renderAnimeRow('latestReleases', homeData.latest_releases, 'latestCount');
+    }
+}
+
+function renderCarousel(animeList) {
+    const container = document.getElementById('carouselContainer');
+    if (!container) return;
+
+    container.innerHTML = animeList.map((anime, index) => `
+        <div class="carousel-slide ${index === 0 ? 'active' : ''}" data-index="${index}">
+            <div class="carousel-image" style="background-image: url('${anime.backdrop || anime.poster || '/placeholder.jpg'}');"></div>
+            <div class="carousel-content">
+                <h2 class="carousel-title">${anime.title}</h2>
+                <div class="carousel-meta">
+                    ${anime.episode ? `<span class="carousel-badge">Episode ${anime.episode}</span>` : ''}
+                    ${anime.type ? `<span class="carousel-type">${anime.type}</span>` : ''}
+                    ${anime.rating ? `<span class="carousel-rating">⭐ ${anime.rating}</span>` : ''}
+                </div>
+                ${anime.description ? `<p class="carousel-description">${anime.description.substring(0, 150)}...</p>` : ''}
+                <a href="${anime.watch_url || `/v4/detail?animeId=${anime.id || anime.animeId}&slug=${anime.slug}`}" class="carousel-btn-watch">
+                    ▶ Tonton Sekarang
+                </a>
+            </div>
+        </div>
+    `).join('');
+
+    // Setup carousel indicators
+    const indicators = document.getElementById('carouselIndicators');
+    if (indicators) {
+        indicators.innerHTML = animeList.map((_, index) =>
+            `<button class="indicator ${index === 0 ? 'active' : ''}" data-index="${index}"></button>`
+        ).join('');
+
+        // Add click handlers to indicators
+        indicators.querySelectorAll('.indicator').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const index = parseInt(btn.dataset.index);
+                goToSlide(index);
+            });
+        });
+    }
+
+    // Setup navigation buttons
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+
+    if (prevBtn) prevBtn.addEventListener('click', () => changeSlide(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => changeSlide(1));
+
+    // Auto-play carousel
+    startCarousel();
+}
+
+function goToSlide(index) {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const indicators = document.querySelectorAll('.indicator');
+
+    slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+    });
+
+    indicators.forEach((indicator, i) => {
+        indicator.classList.toggle('active', i === index);
+    });
+
+    currentCarouselIndex = index;
+}
+
+function changeSlide(direction) {
+    const slides = document.querySelectorAll('.carousel-slide');
+    if (slides.length === 0) return;
+
+    currentCarouselIndex += direction;
+
+    if (currentCarouselIndex >= slides.length) currentCarouselIndex = 0;
+    if (currentCarouselIndex < 0) currentCarouselIndex = slides.length - 1;
+
+    goToSlide(currentCarouselIndex);
+}
+
+function startCarousel() {
+    if (carouselInterval) clearInterval(carouselInterval);
+    carouselInterval = setInterval(() => changeSlide(1), 5000);
+}
+
+function renderAnimeRow(containerId, animeList, countBadgeId) {
+    const container = document.getElementById(containerId);
+    const badge = document.getElementById(countBadgeId);
+
+    if (!container) return;
+
+    if (badge) {
+        badge.textContent = animeList.length;
+    }
+
+    container.innerHTML = animeList.map(anime => `
+        <div class="anime-card" onclick="window.location.href='/v4/detail?animeId=${anime.id || anime.animeId}&slug=${anime.slug}'">
+            <div class="anime-poster">
+                <img src="${anime.poster || '/placeholder.jpg'}"
+                     alt="${anime.title}"
+                     onerror="this.src='/placeholder.jpg'">
+                ${anime.episode ? `<div class="anime-badge">${anime.episode}</div>` : ''}
+                ${anime.type ? `<div class="anime-type">${anime.type}</div>` : ''}
+            </div>
+            <div class="anime-info">
+                <h4 class="anime-title">${anime.title}</h4>
+                <div class="anime-meta">
+                    ${anime.rating ? `<span class="anime-rating">⭐ ${anime.rating}</span>` : ''}
+                    ${anime.releaseDate ? `<span class="anime-date">${anime.releaseDate}</span>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showError(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '<div class="error-message">Gagal memuat data. Silakan coba lagi nanti.</div>';
+    }
+}
+
+function searchAnime() {
+    const searchInput = document.getElementById('searchInput');
+    const query = searchInput?.value?.trim();
+
+    if (query) {
+        window.location.href = `/v4/search?q=${encodeURIComponent(query)}`;
+    }
+}
+
+function initMobileSearch() {
+    const searchIconBtn = document.getElementById('searchIconBtn');
+    const searchCloseBtn = document.getElementById('searchCloseBtn');
+    const searchContainer = document.querySelector('.search-container');
+    const searchInput = document.getElementById('searchInput');
+
+    if (searchIconBtn) {
+        searchIconBtn.addEventListener('click', () => {
+            searchContainer?.classList.add('active');
+            searchInput?.focus();
+        });
+    }
+
+    if (searchCloseBtn) {
+        searchCloseBtn.addEventListener('click', () => {
+            searchContainer?.classList.remove('active');
+        });
+    }
+
+    // Handle Enter key
     if (searchInput) {
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -313,16 +238,39 @@ function initMobileSearch() {
     }
 }
 
-// Search anime functionality
-function searchAnime() {
-    const searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
+function initSidebarToggle() {
+    const menuToggle = document.getElementById('menuToggle');
+    const menuCloseBtn = document.getElementById('menuCloseBtn');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const sidebarLinks = document.querySelectorAll('.sidebar-menu .nav-link');
+    const body = document.body;
 
-    const query = searchInput.value.trim();
-    if (query) {
-        window.location.href = `/v4/search?q=${encodeURIComponent(query)}`;
+    const openSidebar = () => body.classList.add('sidebar-open');
+    const closeSidebar = () => body.classList.remove('sidebar-open');
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            if (body.classList.contains('sidebar-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
     }
-}
 
-// Log app initialization
-console.log('[V4] Anichin V4 app loaded');
+    if (menuCloseBtn) {
+        menuCloseBtn.addEventListener('click', closeSidebar);
+    }
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', closeSidebar);
+    }
+
+    sidebarLinks.forEach((link) => link.addEventListener('click', closeSidebar));
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeSidebar();
+        }
+    });
+}

@@ -2,7 +2,11 @@
 let currentServer = localStorage.getItem('selectedServer') || 'v1';
 
 const pathname = window.location.pathname;
-if (pathname.startsWith('/v4')) {
+if (pathname.startsWith('/v6')) {
+    currentServer = 'v6';
+} else if (pathname.startsWith('/v5')) {
+    currentServer = 'v5';
+} else if (pathname.startsWith('/v4')) {
     currentServer = 'v4';
 } else if (pathname.startsWith('/v3')) {
     currentServer = 'v3';
@@ -10,17 +14,28 @@ if (pathname.startsWith('/v4')) {
     currentServer = 'v2';
 } else if (pathname.startsWith('/v1')) {
     currentServer = 'v1';
-} else if (pathname === '/' || pathname === '') {
-    currentServer = currentServer;
 }
 
 localStorage.setItem('selectedServer', currentServer);
 
-let API_BASE = currentServer === 'v3' ? '/api/v3/kuramanime' : (currentServer === 'v2' ? '/api/v2' : '/api');
+const SERVER_API_MAP = {
+    v1: '/api',
+    v2: '/api/v2',
+    v3: '/api/v3/kuramanime',
+    v4: '/api/v4/anichin',
+    v5: '/api/v5/anoboy',
+    v6: '/api/v6/animeindo',
+    v7: '/api/v7/nekopoi'
+};
+
+let API_BASE = SERVER_API_MAP[currentServer] || '/api';
 
 let homeData = null;
 
 function getHomePath(server) {
+    if (server === 'v7') return '/v7/home';
+    if (server === 'v6') return '/v6/home';
+    if (server === 'v5') return '/v5/home';
     if (server === 'v4') return '/v4/home';
     if (server === 'v3') return '/v3/home';
     if (server === 'v2') return '/v2/home';
@@ -55,18 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function applyServerClass(server) {
     // Remove all server classes
-    document.body.classList.remove('server-v1', 'server-v2', 'server-v3', 'server-v4');
+    document.body.classList.remove('server-v1', 'server-v2', 'server-v3', 'server-v4', 'server-v5', 'server-v6', 'server-v7');
 
     // Add current server class
-    if (server === 'v4') {
-        document.body.classList.add('server-v4');
-    } else if (server === 'v3') {
-        document.body.classList.add('server-v3');
-    } else if (server === 'v2') {
-        document.body.classList.add('server-v2');
-    } else {
-        document.body.classList.add('server-v1');
-    }
+    const allowedServers = new Set(['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7']);
+    const targetClass = allowedServers.has(server) ? `server-${server}` : 'server-v1';
+    document.body.classList.add(targetClass);
 }
 
 function changeServer(server) {
@@ -80,14 +89,23 @@ function changeServer(server) {
         return;
     }
 
-    API_BASE = server === 'v4' ? '/api/v4/anichin' : (server === 'v3' ? '/api/v3/kuramanime' : (server === 'v2' ? '/api/v2' : '/api'));
+    API_BASE = SERVER_API_MAP[server] || '/api';
     applyServerClass(server);
     showServerNotification(server);
     loadHomePage();
 }
 
 function showServerNotification(server) {
-    const serverName = server === 'v4' ? 'Anichin' : (server === 'v3' ? 'Kuramanime' : (server === 'v2' ? 'Samehadaku' : 'Otakudesu'));
+    const SERVER_NAME_MAP = {
+        v1: 'Otakudesu',
+        v2: 'Samehadaku',
+        v3: 'Kuramanime',
+        v4: 'Anichin',
+        v5: 'Anoboy',
+        v6: 'AnimeIndo',
+        v7: 'Nekopoi'
+    };
+    const serverName = SERVER_NAME_MAP[server] || 'Otakudesu';
     
     // Create notification element
     const notification = document.createElement('div');
@@ -324,9 +342,18 @@ function displayAnimeList(containerId, animeList, type = 'ongoing') {
         const cardClass = isTop10 ? 'anime-card top-ten-card' : 'anime-card';
         const rankBadge = isTop10 && anime.rank ? `<div class="rank-badge">#${anime.rank}</div>` : '';
         const ratingBadge = isTop10 && anime.rating ? `<div class="rating-badge">⭐ ${anime.rating}</div>` : '';
-        
+
+        // For V1 ongoing anime with episode_slug, go directly to episode player
+        // For V2 recent anime, go directly to episode player
+        // Only go to episode if episode_slug exists and is valid
+        const isV1OngoingAnime = currentServer === 'v1' && type === 'ongoing' && anime.episode_slug && anime.episode_slug !== anime.slug;
+        const isV2RecentAnime = currentServer === 'v2' && type === 'recent';
+        const shouldGoToEpisode = isV1OngoingAnime || isV2RecentAnime;
+        const targetSlug = isV1OngoingAnime ? anime.episode_slug : anime.slug;
+        const onclickAction = shouldGoToEpisode ? `goToEpisode('${targetSlug}')` : `goToDetail('${anime.slug}')`;
+
         return `
-            <div class="${cardClass}" onclick="goToDetail('${anime.slug}')">
+            <div class="${cardClass}" onclick="${onclickAction}">
                 <div class="anime-thumb">
                     ${rankBadge}
                     ${ratingBadge}
@@ -348,6 +375,13 @@ function goToDetail(slug) {
     if (slug) {
         const detailPath = currentServer === 'v2' ? '/detail-v2' : '/detail';
         window.location.href = `${detailPath}/${slug}`;
+    }
+}
+
+function goToEpisode(slug) {
+    if (slug) {
+        const playerPath = currentServer === 'v2' ? '/player-v2' : '/player';
+        window.location.href = `${playerPath}/${slug}`;
     }
 }
 

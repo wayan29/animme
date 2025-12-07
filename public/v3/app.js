@@ -23,15 +23,17 @@ function changeServer(server) {
     localStorage.setItem('selectedServer', server);
 
     // Navigate to appropriate page
-    if (server === 'v4') {
-        window.location.href = '/v4/home';
-    } else if (server === 'v3') {
-        window.location.href = '/v3/home';
-    } else if (server === 'v2') {
-        window.location.href = '/v2/home';
-    } else {
-        window.location.href = '/v1/home';
-    }
+    const TARGET_PATHS = {
+        v1: '/v1/home',
+        v2: '/v2/home',
+        v3: '/v3/home',
+        v4: '/v4/home',
+        v5: '/v5/home',
+        v6: '/v6/home',
+        v7: '/v7/home'
+    };
+
+    window.location.href = TARGET_PATHS[server] || '/v1/home';
 }
 
 // Navbar scroll effect

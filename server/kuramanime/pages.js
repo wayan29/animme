@@ -227,13 +227,14 @@ async function scrapeDetail(animeId, slug) {
             if (label && value) {
                 result.info[label.toLowerCase().replace(/\s+/g, '_')] = value;
             }
-        });
-
-        $('.anime__details__widget .row .col-lg-6:last-child li').each((i, el) => {
-            const $el = $(el);
-            $el.find('a').each((j, genreEl) => {
-                result.genres.push($(genreEl).text().trim());
-            });
+            
+            // Extract genres from Genre info item specifically
+            if (label && label.toLowerCase() === 'genre') {
+                $valueCol.find('a').each((j, genreEl) => {
+                    const genre = $(genreEl).text().trim().replace(/,$/, '');
+                    if (genre) result.genres.push(genre);
+                });
+            }
         });
 
         // Episodes dari popover dengan pagination support
@@ -654,13 +655,14 @@ async function scrapeBatch(animeId, slug, batchRange) {
             if (label && value) {
                 result.info[label.toLowerCase().replace(/\s+/g, '_')] = value;
             }
-        });
-
-        $('.anime__details__widget .row .col-lg-6:last-child li').each((i, el) => {
-            const $el = $(el);
-            $el.find('a').each((j, genreEl) => {
-                result.genres.push($(genreEl).text().trim());
-            });
+            
+            // Extract genres from Genre info item specifically
+            if (label && label.toLowerCase() === 'genre') {
+                $valueCol.find('a').each((j, genreEl) => {
+                    const genre = $(genreEl).text().trim().replace(/,$/, '');
+                    if (genre) result.genres.push(genre);
+                });
+            }
         });
 
         // Extract data-kk

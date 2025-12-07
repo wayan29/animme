@@ -302,6 +302,13 @@
             font-weight: 600;
         }
 
+        /* Desktop: Maksimal 6 kolom */
+        @media (min-width: 1200px) {
+            .anime-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
             .sort-menu {
                 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Anime - Kusonime V8</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <style>
+        .download-section {
+            margin-top: 30px;
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .download-quality {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border-left: 3px solid #10b981;
+        }
+        .download-quality h3 {
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+        .download-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .download-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span>AnimMe</span>
+                <span class="version-tag">V8 - Kusonime</span>
+            </a>
+
+            <div class="nav-search">
+                <input type="text" id="searchInput" placeholder="Cari anime..." onkeypress="if(event.key==='Enter') searchAnime()">
+                <button onclick="searchAnime()">🔍</button>
+            </div>
+
+            <div class="nav-links">
+                <a href="/v8/index.html">Home</a>
+                <a href="/">Ver. Lain</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <button onclick="history.back()" class="back-button">← Kembali</button>
+
+        <div id="detailContent" class="loading">
+            <div class="loading">Memuat detail anime...</div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 30px; background: rgba(0,0,0,0.3); margin-top: 50px;">
+        <p><strong>Kusonime - Batch Download</strong></p>
+        <p>Download anime batch dengan subtitle Indonesia</p>
+        <p style="margin-top: 10px; opacity: 0.7;">Powered by AnimMe API</p>
+    </footer>
+
+    <script src="/v8/detail.js"></script>
+</body>
+</html>

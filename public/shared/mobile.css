@@ -943,10 +943,17 @@
     }
 }
 
+/* Tablet - Recommendation Grid */
+@media (min-width: 769px) and (max-width: 1199px) {
+    .recommendation-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
 /* Desktop - Recommendation Grid */
 @media (min-width: 1200px) {
     .recommendation-grid {
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns: repeat(6, 1fr) !important;
     }
 }
 

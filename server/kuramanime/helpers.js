@@ -36,6 +36,13 @@ async function extractStreamingUrlsForServer(url, authToken, pageTokenKey, serve
             }
         });
 
+        // Sort sources by quality (lowest to highest) for optimal loading
+        sources.sort((a, b) => {
+            const qualityA = parseInt(a.quality) || 999;
+            const qualityB = parseInt(b.quality) || 999;
+            return qualityA - qualityB;
+        });
+
         // If no sources, try to extract iframe
         if (sources.length === 0) {
             const iframe = $video('iframe').first().attr('src');
@@ -113,30 +120,21 @@ async function extractStreamingUrls(page, url, animeId, slug, episodeNum) {
         const pageTokenKey = envVars.MIX_PAGE_TOKEN_KEY;
         const serverKey = envVars.MIX_STREAM_SERVER_KEY;
 
-        const servers = ['kuramadrive', 'filemoon', 'mega', 'rpmshare', 'streamwish', 'vidguard'];
+        // Only extract from kuramadrive (HLS source)
         const serverResults = {};
 
-        console.log('Extracting video sources from all servers...');
+        console.log('Extracting video sources from kuramadrive...');
 
-        // Extract from all servers in parallel
-        const extractPromises = servers.map(async (serverName) => {
-            const sources = await extractStreamingUrlsForServer(
-                url, authToken, pageTokenKey, serverKey, serverName
-            );
-            return { serverName, sources };
-        });
+        const sources = await extractStreamingUrlsForServer(
+            url, authToken, pageTokenKey, serverKey, 'kuramadrive'
+        );
 
-        const results = await Promise.all(extractPromises);
-
-        // Organize results by server
-        results.forEach(({ serverName, sources }) => {
-            if (sources.length > 0) {
-                serverResults[serverName] = sources;
-                console.log(`  ✓ ${serverName}: ${sources.length} source(s)`);
-            } else {
-                console.log(`  ✗ ${serverName}: no sources`);
-            }
-        });
+        if (sources.length > 0) {
+            serverResults['kuramadrive'] = sources;
+            console.log(`  ✓ kuramadrive: ${sources.length} source(s)`);
+        } else {
+            console.log(`  ✗ kuramadrive: no sources`);
+        }
 
         return {
             servers: serverResults,

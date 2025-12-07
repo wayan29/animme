@@ -1,162 +1,505 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Episode Player - Kuramanime V3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Episode Player - AnimMe V3</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link rel="stylesheet" href="/shared/youtube-player.css">
     <style>
+        /* Player Settings CSS Variables */
+        :root {
+            --player-primary-color: #ff7755;
+            --player-font-family: 'Rubik', sans-serif;
+        }
+
+        /* Prevent horizontal scroll globally */
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }
 
+        html,
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
+            max-width: 100vw;
         }
 
-        .container {
+        .episode-container {
             max-width: 1400px;
-            margin: 0 auto;
+            margin: 90px auto 0;
+            padding: 0 3%;
+            font-family: var(--player-font-family);
         }
 
-        /* Header */
-        .header {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        /* Navbar Mobile - Hide completely */
+        @media (max-width: 768px) {
+            /* Hide entire navbar on mobile episode page */
+            .navbar {
+                display: none;
+            }
+
+            /* Remove top margin since no navbar */
+            .episode-container {
+                margin: 15px auto 0;
+                padding: 0 12px;
+            }
+
+            /* Add safe area for notch devices */
+            .episode-header {
+                padding-top: env(safe-area-inset-top, 0);
+            }
         }
 
-        .header h1 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: #ff6b9d;
+        .episode-header {
+            margin-bottom: 15px;
         }
 
-        .header .anime-title {
-            font-size: 1.1rem;
-            color: #a0a0b0;
-            margin-bottom: 5px;
+        .episode-header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 6px;
+            color: #fff;
+            line-height: 1.3;
         }
 
-        .header .episode-num {
-            font-size: 0.9rem;
-            color: #60b0ff;
+        .episode-header .anime-title {
+            font-size: 0.95rem;
+            color: #999;
+            margin-bottom: 3px;
         }
 
-        /* Main Grid */
-        .main-grid {
+        .episode-header .episode-num {
+            font-size: 0.85rem;
+            color: var(--player-primary-color);
+            font-weight: 600;
+        }
+
+        .player-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 320px;
-            grid-template-areas:
-                "player sidebar"
-                "download sidebar";
+            grid-template-columns: 1fr 300px;
             gap: 20px;
             align-items: start;
         }
 
-        .player-column {
-            grid-area: player;
+        .player-main {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
-        /* Player Section */
+        .download-section {
+            order: 2;
+            /* Default: after player on desktop */
+        }
+
         .player-section {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            background: #1a1a1a;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            order: 1;
+            /* Player first */
         }
 
         .player-controls {
-            padding: 15px 20px;
-            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            background: #222;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 12px;
             flex-wrap: wrap;
-            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Floating Server Button (Mobile Only) */
+        .floating-server-btn {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--player-primary-color);
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s;
+        }
+
+        .floating-server-btn svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .floating-server-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .floating-server-btn:active {
+            transform: scale(0.95);
+        }
+
+        .server-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #e50914;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Server Selection Overlay */
+        .server-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .server-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        .server-overlay-content {
+            background: #1a1a1a;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .server-overlay.show .server-overlay-content {
+            transform: scale(1);
+        }
+
+        .server-overlay-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 2px solid var(--player-primary-color);
+            background: #222;
+        }
+
+        .server-overlay-header h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+
+        .server-overlay-close {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+
+        .server-overlay-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .server-list {
+            padding: 16px;
+            max-height: calc(80vh - 80px);
+            overflow-y: auto;
+        }
+
+        .server-item {
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .server-item:hover {
+            background: #333;
+            border-color: var(--player-primary-color);
+            transform: translateX(4px);
+        }
+
+        .server-item.active {
+            background: var(--player-primary-color);
+            border-color: var(--player-primary-color);
+            box-shadow: 0 4px 12px rgba(255, 119, 85, 0.4);
+        }
+
+        .server-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .server-item-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .server-item-quality {
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .server-item.active .server-item-quality {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .server-item-check {
+            width: 24px;
+            height: 24px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .server-item.active .server-item-check {
+            opacity: 1;
         }
 
         .control-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .control-group label {
-            font-size: 0.9rem;
-            color: #a0a0b0;
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
         }
 
-        select, button {
-            padding: 8px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #ffffff;
+        .control-group select {
+            padding: 6px 10px;
+            background: #333;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.85rem;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        select {
-            min-height: 38px;
-            appearance: auto;
-            -webkit-appearance: menulist;
-            -moz-appearance: menulist;
-        }
-        
-        select option {
-            background: #1e1e2e;
-            color: #ffffff;
-            padding: 8px;
+            min-width: 130px;
         }
 
-        .player-controls select {
-            min-width: 180px;
-        }
-
-        #qualitySelect {
-            min-width: 140px;
-        }
-
-        select:hover, button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: #ff6b9d;
-        }
-
-        select:focus, button:focus {
+        .control-group select:focus {
             outline: none;
-            border-color: #ff6b9d;
+            border-color: var(--player-primary-color);
         }
 
-        /* Video Player */
         .video-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            padding-bottom: 56.25%;
+            /* 16:9 ratio - consistent like v4 */
+            height: 0;
             background: #000;
+            overflow: hidden;
         }
 
-        .video-container video,
-        .video-container iframe {
+        .video-container iframe,
+        .video-container video {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             border: none;
+            display: block;
+            object-fit: contain;
+        }
+
+        /* CRITICAL: Fullscreen video fixes for mobile */
+        .video-container:-webkit-full-screen,
+        .video-container:-moz-full-screen,
+        .video-container:-ms-fullscreen,
+        .video-container:fullscreen {
+            padding-bottom: 0 !important;
+            height: 100vh !important;
+            width: 100vw !important;
+        }
+
+        .video-container:-webkit-full-screen video,
+        .video-container:-moz-full-screen video,
+        .video-container:-ms-fullscreen video,
+        .video-container:fullscreen video {
+            object-fit: contain !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+
+        .video-container .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            width: 80%;
+        }
+
+        /* Skip controls overlay */
+        .video-skip-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 70px);
+            /* Avoid video controls at bottom (70px safe zone) */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 5;
+            padding-bottom: 10px;
+            /* Extra safe space */
+        }
+
+        .skip-btn {
+            width: 100px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            pointer-events: all;
+            transition: all 0.2s;
+            opacity: 0;
+            padding-bottom: 20px;
+            /* Extra space from bottom */
+        }
+
+        .video-container:hover .skip-btn {
+            opacity: 0.7;
+        }
+
+        .skip-btn:hover {
+            opacity: 1;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
+        }
+
+        .skip-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Ensure video controls are clickable */
+        .video-container video::-webkit-media-controls {
+            z-index: 10 !important;
+        }
+
+        .video-container video::-webkit-media-controls-panel {
+            z-index: 10 !important;
+        }
+
+        .skip-btn svg {
+            width: 48px;
+            height: 48px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        /* Double tap areas for mobile-like skip */
+        .skip-btn.left {
+            justify-content: flex-start;
+            padding-left: 20px;
+        }
+
+        .skip-btn.right {
+            justify-content: flex-end;
+            padding-right: 20px;
+        }
+
+        /* Skip feedback animation */
+        .skip-feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .skip-feedback.show {
+            opacity: 1;
+        }
+
+        .skip-feedback svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .video-skip-controls {
+                display: none;
+                /* Hide on mobile to avoid conflicts with touch controls */
+            }
+        }
+
+        /* Small desktop - adjust skip button size */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .skip-btn {
+                width: 80px;
+            }
+
+            .skip-btn svg {
+                width: 40px;
+                height: 40px;
+            }
         }
 
         .loading-overlay {
@@ -165,429 +508,697 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
             z-index: 10;
+            pointer-events: none;
+            /* Allow clicks to pass through when hidden */
+        }
+
+        .loading-overlay[style*="display: none"] {
+            pointer-events: none;
         }
 
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid #ff6b9d;
-            border-radius: 50%;
             width: 50px;
             height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--player-primary-color);
+            border-radius: 50%;
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
-        /* Navigation Buttons */
         .episode-nav {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding: 15px 20px;
-            background: rgba(0, 0, 0, 0.2);
+            gap: 8px;
+            padding: 10px 15px;
+            background: #222;
+            border-top: 1px solid #333;
         }
 
         .nav-btn {
             flex: 1;
-            padding: 12px;
-            background: rgba(96, 176, 255, 0.2);
-            border: 1px solid rgba(96, 176, 255, 0.3);
-            border-radius: 8px;
-            color: #60b0ff;
+            padding: 10px;
+            background: #333;
+            color: #fff;
             text-decoration: none;
+            border-radius: 4px;
             text-align: center;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            border: 2px solid #444;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            white-space: nowrap;
         }
 
-        .nav-btn:hover:not(.disabled) {
-            background: rgba(96, 176, 255, 0.3);
-            border-color: #60b0ff;
-        }
-
-        .nav-btn.disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .nav-btn.detail {
-            background: rgba(255, 107, 157, 0.2);
-            border-color: rgba(255, 107, 157, 0.3);
-            color: #ff6b9d;
-        }
-
-        .nav-btn.detail:hover {
-            background: rgba(255, 107, 157, 0.3);
-            border-color: #ff6b9d;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            grid-area: sidebar;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .sidebar-section {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .sidebar-section h2 {
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-            color: #ff6b9d;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Episode List */
-        .episode-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 8px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .episode-btn {
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #ffffff;
-            cursor: pointer;
-            text-align: center;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .episode-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .nav-btn:hover {
+            background: var(--player-primary-color);
+            border-color: var(--player-primary-color);
             transform: translateY(-2px);
         }
 
-        .episode-btn.active {
-            background: #ff6b9d;
-            border-color: #ff6b9d;
+        .nav-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .nav-btn.detail {
+            background: #444;
+            border-color: #555;
+        }
+
+        .nav-btn.detail:hover {
+            background: #555;
+            border-color: #666;
+        }
+
+        .player-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .sidebar-section {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar-section h2 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--player-primary-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .episode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+            gap: 8px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        /* Mobile: EXTREMELY large grid */
+        @media (max-width: 768px) {
+            .episode-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                min-height: 400px;
+            }
+
+            .sidebar-section {
+                min-height: 70vh;
+                padding: 50px 8%;
+            }
+
+            .sidebar-section h2 {
+                font-size: 2.4rem;
+                margin-bottom: 35px;
+                font-weight: 900;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+            }
+        }
+
+        /* Custom scrollbar for episode grid */
+        .episode-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .episode-grid::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 3px;
+        }
+
+        .episode-grid::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        .episode-grid::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .episode-btn {
+            padding: 10px 8px;
+            background: #222;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            color: #ffffff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
             font-weight: bold;
         }
 
-        .episode-btn.new::after {
-            content: "🔥";
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            font-size: 0.8rem;
+        /* Mobile: EXTREMELY large buttons */
+        @media (max-width: 768px) {
+            .episode-btn {
+                padding: 28px 16px;
+                font-size: 1.3rem;
+                min-height: 80px;
+                font-weight: 900;
+                border-radius: 12px;
+                border-width: 4px;
+                letter-spacing: 0.5px;
+            }
+
+            /* Extra emphasis on active episode */
+            .episode-btn.active {
+                background: linear-gradient(135deg, #e50914 0%, #ff6b9d 100%);
+                transform: scale(1.05);
+                box-shadow: 0 8px 24px rgba(229, 9, 20, 0.7);
+            }
         }
 
-        /* Download Section */
+        .episode-btn:hover {
+            background: var(--player-primary-color);
+            border-color: var(--player-primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 119, 85, 0.4);
+        }
+
+        .episode-btn.active {
+            background: var(--player-primary-color);
+            border-color: var(--player-primary-color);
+            font-weight: bold;
+        }
+
         .download-section {
-            grid-area: download;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            margin-top: 15px;
         }
 
         .download-section h2 {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            color: #ff6b9d;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--player-primary-color);
+            font-weight: 600;
         }
 
         .quality-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            background: #222;
+            padding: 12px;
+            border-radius: 6px;
         }
 
         .quality-group h3 {
-            font-size: 1rem;
-            margin-bottom: 10px;
-            color: #60b0ff;
-            padding-bottom: 8px;
-            border-bottom: 2px solid rgba(96, 176, 255, 0.3);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: #fff;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #333;
         }
 
         .download-links {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 6px;
         }
 
         .download-btn {
-            padding: 10px 20px;
-            background: rgba(96, 176, 255, 0.2);
-            border: 1px solid rgba(96, 176, 255, 0.3);
-            border-radius: 8px;
-            color: #60b0ff;
+            padding: 7px 14px;
+            background: #333;
+            border: 2px solid #444;
+            border-radius: 4px;
+            color: #fff;
             text-decoration: none;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            transition: all 0.3s;
             display: inline-block;
+            font-weight: 500;
         }
 
         .download-btn:hover {
-            background: rgba(96, 176, 255, 0.3);
-            border-color: #60b0ff;
+            background: var(--player-primary-color);
+            border-color: var(--player-primary-color);
             transform: translateY(-2px);
         }
 
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 8px;
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 0.9rem;
         }
 
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 107, 157, 0.5);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 107, 157, 0.7);
-        }
-
-        /* Loading State */
         .loading-message {
             text-align: center;
-            padding: 40px;
-            color: #a0a0b0;
+            padding: 15px;
+            color: #999;
+            font-size: 0.85rem;
         }
 
-        /* Error State */
-        .error-message {
-            background: rgba(255, 0, 0, 0.1);
-            border: 1px solid rgba(255, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px;
-            text-align: center;
-            color: #ff6b9d;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-                grid-template-areas:
-                    "player"
-                    "sidebar"
-                    "download";
+        /* Mobile responsive - prevent horizontal scroll */
+        @media (max-width: 968px) {
+            /* Force no horizontal scroll */
+            body {
+                overflow-x: hidden;
             }
 
-            .sidebar {
+            .episode-container {
+                padding: 0 12px;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            .player-grid {
+                grid-template-columns: 1fr;
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            /* Use display: contents to flatten player-main children */
+            .player-main {
+                display: contents;
+                width: 100%;
                 max-width: 100%;
             }
-        }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
+            /* Order children directly in player-grid */
+            .player-section {
+                order: 1;
+                /* Video player first */
+                width: 100%;
+                max-width: 100%;
             }
 
-            .header h1 {
+            .player-sidebar {
+                order: 2;
+                margin: 25px 0 0;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            /* Increase episode list visibility - MUCH LARGER */
+            .episode-grid {
+                min-height: 300px;
+            }
+
+            /* Make entire section more prominent */
+            .sidebar-section {
+                border-top: 6px solid var(--player-primary-color);
+                border-bottom: 6px solid var(--player-primary-color);
+                box-shadow: 0 0 30px rgba(255, 119, 85, 0.3);
+            }
+
+            .download-section {
+                order: 3;
+                /* Download links last */
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .episode-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .episode-header .anime-title {
+                font-size: 0.85rem;
+            }
+
+            .episode-header .episode-num {
+                font-size: 0.8rem;
+            }
+
+            /* Make sidebar-section EXTREMELY LARGE for mobile */
+            .player-sidebar .sidebar-section {
+                border-radius: 8px;
+                padding: 10px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+                background: #1a1a1a;
+                min-height: auto;
+                width: 100%;
+                max-width: 100%;
+                /* Full width for grid */
+                border-top: 4px solid var(--player-primary-color);
+                border-bottom: 4px solid var(--player-primary-color);
+                box-sizing: border-box;
+            }
+
+            .player-sidebar .sidebar-section h2 {
                 font-size: 1.2rem;
+                margin-bottom: 15px;
+                font-weight: 600;
+                letter-spacing: normal;
+                text-transform: none;
             }
 
             .player-controls {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 12px;
+                display: none;
+                /* Hide on mobile - use floating button instead */
+            }
+
+            /* Show floating server button on mobile */
+            .floating-server-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
             .control-group {
                 width: 100%;
-                justify-content: space-between;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .control-group label {
+                font-size: 0.8rem;
+            }
+
+            .control-group select {
+                width: 100%;
+                max-width: 100%;
+                padding: 6px 8px;
+                font-size: 0.8rem;
+                box-sizing: border-box;
+            }
+
+            .episode-nav {
+                flex-direction: row;
+                padding: 10px 12px;
+                gap: 8px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .nav-btn {
+                padding: 12px 8px;
+                font-size: 0.9rem;
+                font-weight: 700;
+                box-sizing: border-box;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                border-width: 2px;
+            }
+
+            /* Make sure buttons fit in one line with proper flex distribution */
+            .nav-btn.prev,
+            .nav-btn.next {
+                flex: 0 1 30%;
+                min-width: 0;
+            }
+
+            .nav-btn.detail {
+                flex: 0 1 40%;
+                min-width: 0;
+            }
+
+            /* Responsive font for very small screens */
+            @media (max-width: 360px) {
+                .nav-btn {
+                    font-size: 0.8rem;
+                    padding: 10px 6px;
+                }
+            }
+
+            /* Fix quality group and download section */
+            .quality-group {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .download-links {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .download-btn {
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .episode-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                max-height: 400px;
+                min-height: auto;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                overflow-y: auto;
+                padding-right: 5px;
+            }
+
+            .episode-btn {
+                padding: 12px 10px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                border-radius: 6px;
+                border: 1px solid #333;
+                min-height: auto;
+                display: block;
+                letter-spacing: normal;
+                background: #2a2a2a;
+                width: 100%;
+                max-width: 100%;
+                text-align: center;
+                box-sizing: border-box;
+            }
+
+            .episode-btn.active {
+                transform: scale(1.05);
+                box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6);
+            }
+
+            /* Download section for mobile - normal size */
+            .download-section {
+                padding: 15px;
+                margin-top: 15px;
+            }
+
+            .download-section h2 {
+                font-size: 1rem;
+                font-weight: 600;
+                margin-bottom: 12px;
+            }
+
+            .quality-group {
+                padding: 12px;
+                margin-bottom: 15px;
+                border-radius: 6px;
+            }
+
+            .quality-group h3 {
+                font-size: 0.9rem;
+                font-weight: 600;
+                margin-bottom: 8px;
+            }
+
+            .download-btn {
+                padding: 7px 14px;
+                font-size: 0.85rem;
+                font-weight: 500;
+            }
+
+            /* Final mobile overflow fixes */
+            .video-container {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .episode-header h1,
+            .episode-header .anime-title,
+            .episode-header .episode-num {
+                max-width: 100%;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            /* Ensure all sections fit within viewport */
+            .sidebar-section,
+            .download-section,
+            .player-section {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+        }
+
+        /* Tablet view */
+        @media (min-width: 769px) and (max-width: 968px) {
+            .episode-container {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            .player-grid {
+                grid-template-columns: 1fr 280px;
+                gap: 15px;
+                max-width: 100%;
+            }
+
+            .episode-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .sidebar-section {
+                padding: 12px;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .download-section {
+                padding: 12px;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .player-main,
+            .player-section,
+            .player-sidebar {
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+        }
+
+        /* Large desktop - optimize sidebar */
+        @media (min-width: 1200px) {
+            .player-grid {
+                grid-template-columns: 1fr 280px;
+            }
+
+            .sidebar-section {
+                padding: 12px;
             }
 
             .episode-grid {
                 grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
             }
         }
-
-        @media (max-width: 640px) {
-            body {
-                padding: 12px;
-            }
-
-            .container {
-                padding: 0;
-            }
-
-            .player-controls {
-                padding: 12px 14px;
-            }
-
-            .control-group {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 6px;
-            }
-
-            .control-group label {
-                font-size: 0.85rem;
-                color: rgba(255, 255, 255, 0.75);
-            }
-
-            select, button {
-                width: 100%;
-                min-width: 0;
-                font-size: 1rem;
-            }
-
-            .episode-nav {
-                flex-direction: column;
-                padding: 12px 14px;
-            }
-
-            .nav-btn {
-                width: 100%;
-                min-height: 44px;
-                font-size: 1rem;
-            }
-
-            .download-section,
-            .sidebar-section {
-                padding: 16px;
-            }
-
-            .download-links {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .download-btn {
-                width: 100%;
-                text-align: center;
-            }
-
-            .episode-grid {
-                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-                max-height: none;
-            }
-
-            .episode-btn {
-                padding: 12px 8px;
-                font-size: 0.95rem;
-            }
-        }
-
-        @media (max-width: 420px) {
-            .header h1 {
-                font-size: 1.1rem;
-            }
-
-            .header .anime-title {
-                font-size: 0.95rem;
-            }
-
-            .player-controls {
-                padding: 10px 12px;
-            }
-
-            select, button {
-                font-size: 0.95rem;
-            }
-
-            .nav-btn {
-                font-size: 0.95rem;
-            }
-        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1 id="episodeTitle">Loading...</h1>
-            <div class="anime-title" id="animeTitle"></div>
-            <div class="episode-num">Episode <span id="episodeNum"></span></div>
-        </div>
 
-        <div class="main-grid">
-            <!-- Player Section -->
-            <div class="player-column">
-                <div class="player-section">
-                    <!-- Player Controls -->
-                    <div class="player-controls">
-                        <div class="control-group">
-                            <label for="serverSelect">🖥️ Server:</label>
-                            <select id="serverSelect">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                        <div class="control-group" id="qualityControl" style="display: none;">
-                            <label for="qualitySelect">🎬 Quality:</label>
-                            <select id="qualitySelect">
-                                <option value="">Select Quality</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Video Player -->
-                    <div class="video-container" id="videoContainer">
-                        <div class="loading-overlay" id="loadingOverlay">
-                            <div class="spinner"></div>
-                        </div>
-                    </div>
-
-                    <!-- Navigation -->
-                    <div class="episode-nav">
-                        <a href="#" class="nav-btn disabled" id="prevBtn">
-                            ← Previous
-                        </a>
-                        <a href="#" class="nav-btn detail" id="detailBtn">
-                            📖 Detail
-                        </a>
-                        <a href="#" class="nav-btn" id="nextBtn">
-                            Next →
-                        </a>
-                    </div>
-                </div>
+<body class="server-v3">
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo" onclick="window.location.href='/v3/home'">AnimMe V3</h1>
+            <div class="server-selector">
+                <select id="mainServerSelect" class="server-select">
+                    <option value="v1">V1 - Otakudesu</option>
+                    <option value="v2">V2 - Samehadaku</option>
+                    <option value="v3" selected>V3 - Kuramanime</option>
+                    <option value="v4">V4 - Anichin</option>
+                    <option value="v5">V5 - Anoboy</option>
+                    <option value="v6">V6 - AnimeIndo</option>
+                </select>
             </div>
-
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <!-- Episode List -->
-                <div class="sidebar-section">
-                    <h2>📺 Episodes</h2>
-                    <div class="episode-grid" id="episodeList">
-                        <div class="loading-message">Loading episodes...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Download Section -->
-            <div class="download-section">
-                <h2>⬇️ Download Links</h2>
-                <div id="downloadContainer">
-                    <div class="loading-message">Loading download links...</div>
-                </div>
+            <div class="nav-menu">
+                <a href="/v3/home" class="nav-link">Beranda</a>
+                <a href="/v3/search" class="nav-link">Cari Anime</a>
             </div>
         </div>
-    </div>
+    </nav>
 
+    <main class="main-content">
+        <div class="episode-container">
+            <!-- Episode Header -->
+            <div class="episode-header">
+                <h1 id="episodeTitle">Loading...</h1>
+                <div class="anime-title" id="animeTitle"></div>
+                <div class="episode-num">Episode <span id="episodeNum"></span></div>
+            </div>
+
+            <div class="player-grid">
+                <!-- Player Main Content -->
+                <div class="player-main">
+                    <!-- Player Section -->
+                    <div class="player-section">
+                        <!-- Player Controls -->
+                        <div class="player-controls">
+                            <div class="control-group" id="qualityControl" style="display: none;">
+                                <label for="qualitySelect">🎬 Quality:</label>
+                                <select id="qualitySelect">
+                                    <option value="">Select Quality</option>
+                                </select>
+                            </div>
+                            <!-- Speed control removed - now handled by YouTube player -->
+                        </div>
+
+                        <!-- Video Player -->
+                        <div class="video-container" id="videoContainer">
+                            <!-- Old controls removed - YouTube player handles all controls -->
+                        </div>
+
+                        <!-- Episode Navigation -->
+                        <div class="episode-nav">
+                            <a href="#" class="nav-btn prev disabled" id="prevBtn">
+                                ← Prev
+                            </a>
+                            <a href="#" class="nav-btn detail" id="detailBtn">
+                                📖 Detail
+                            </a>
+                            <a href="#" class="nav-btn next" id="nextBtn">
+                                Next →
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Download Section (Mobile) -->
+                    <div class="download-section">
+                        <h2>⬇️ Download Links</h2>
+                        <div id="downloadContainer">
+                            <div class="loading-message">Loading download links...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="player-sidebar">
+                    <!-- Episode List -->
+                    <div class="sidebar-section">
+                        <h2>📺 Episodes</h2>
+                        <div class="episode-grid" id="episodeList">
+                            <div class="loading-message">Loading episodes...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- HLS.js Library for HLS streaming (Kuramadrive) -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="/shared/player-config.js"></script>
+    <script src="/shared/youtube-player.js"></script>
     <script src="/v3/episode.js"></script>
 </body>
+
 </html>
