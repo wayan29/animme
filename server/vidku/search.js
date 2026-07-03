@@ -6,19 +6,22 @@ const {
     KIRANIME_API_BASE_URL,
     USER_AGENT,
     buildStaticPagination,
+    buildKeywordQuery,
     decodeHtml,
     extractSlug,
     fetchHtml,
     fetchJson,
     fetchVidkuApi,
+    mapApiAnimeItem,
+    matchesKeyword,
     normalizeText,
     normalizeUrl,
     proxyImageUrl,
-    resolveTermIds,
-    mapApiAnimeItem
+    resolveTermIds
 } = require('./helpers')
 
 const ADVANCED_SEARCH_URL = `${BASE_URL}/search/?asp=1&orderby=popular&order=desc`
+const DEFAULT_SEARCH_MAX_PAGES = 10
 const ADVANCED_ORDERBY_OPTIONS = [
     { value: 'popular', label: 'Terpopuler' },
     { value: 'favorite', label: 'Paling Difavoritkan' },
@@ -204,17 +207,91 @@ function mapAdvancedSearchItem(item = {}) {
     }
 }
 
-async function scrapeSearch(keyword) {
+// Read the pagination block from a Vidku /anime response (defensive across shapes).
+function readApiResponsePagination(response) {
+    return response?.meta || response?.pagination || null
+}
+
+// Decide whether more pages exist based on whatever pagination fields are present.
+function paginationHasNext(pagination, currentPage) {
+    if (!pagination) return false
+    if (pagination.has_next_page === true) return true
+    if (pagination.next_page != null) return true
+    const last = Number(pagination.last_page || pagination.total_pages || 0)
+    return last > 0 && Number(currentPage || 1) < last
+}
+
+function paginationNextPage(pagination, currentPage) {
+    if (pagination?.next_page != null) return Number(pagination.next_page)
+    return Number(currentPage || 1) + 1
+}
+
+/**
+ * Collect anime from the Vidku /anime endpoint, filtered client-side by `kq`.
+ *
+ * The current Vidku /anime API ignores the `q`/`search` query and returns the
+ * full paginated catalogue, so we walk pages and keep ONLY items matching the
+ * keyword. When `kq` is null (no keyword) we return a single unfiltered page.
+ *
+ * NB: this NEVER falls back to returning unfiltered items when a keyword is
+ * present — an empty result set is returned as `[]` (the previous behaviour
+ * returned the whole page, which is the bug being fixed).
+ *
+ * @param {object|null} kq        Result of buildKeywordQuery() or null.
+ * @param {object}      options   { fetcher, startPage, maxPages, limit }
+ */
+async function collectAnimeMatches(kq, options = {}) {
+    const fetcher = options.fetcher || fetchVidkuApi
+    const startPage = Math.max(1, Number(options.startPage || 1))
+    // Bounded scan so a rare/missing term can never hammer the API forever.
+    const maxPages = Math.max(1, Number(options.maxPages || DEFAULT_SEARCH_MAX_PAGES))
+    const limit = Number(options.limit || 0) // 0 = collect every match within the scan window
+    const apiKeyword = kq ? kq.text : ''
+
+    const matches = []
+    const seenSlugs = new Set()
+    let page = startPage
+    let pagesScanned = 0
+    let lastPagination = null
+
+    while (pagesScanned < maxPages) {
+        const response = await fetcher(kq ? '/anime/search' : '/anime', kq ? { page, q: apiKeyword } : { page })
+        const items = (response?.data || response?.items || [])
+            .map(mapApiAnimeItem)
+            .filter((item) => item.slug && item.title)
+        lastPagination = readApiResponsePagination(response) || lastPagination
+
+        for (const item of items) {
+            if (seenSlugs.has(item.slug)) continue
+            if (!kq || matchesKeyword(item, kq)) {
+                seenSlugs.add(item.slug)
+                matches.push(item)
+                if (limit > 0 && matches.length >= limit) {
+                    return { matches, pagination: lastPagination, pagesScanned: pagesScanned + 1 }
+                }
+            }
+        }
+
+        pagesScanned += 1
+        if (!paginationHasNext(lastPagination, page)) break
+        page = paginationNextPage(lastPagination, page)
+    }
+
+    return { matches, pagination: lastPagination, pagesScanned }
+}
+
+async function scrapeSearch(keyword, options = {}) {
     try {
         try {
-            const response = await fetchVidkuApi('/anime', { q: keyword, search: keyword })
-            const normalizedKeyword = normalizeText(keyword).toLowerCase()
-            let results = (response.data || response.items || []).map(mapApiAnimeItem).filter((item) => item.slug && item.title)
-            if (normalizedKeyword) {
-                const filtered = results.filter((item) => item.title.toLowerCase().includes(normalizedKeyword) || item.slug.includes(normalizedKeyword.replace(/\s+/g, '-')))
-                if (filtered.length > 0) results = filtered
-            }
-            return { status: 'success', data: results }
+            const kq = buildKeywordQuery(keyword)
+            const { matches } = await collectAnimeMatches(kq, {
+                fetcher: options.fetcher || fetchVidkuApi,
+                startPage: 1,
+                // Only walk multiple pages when actually filtering by a keyword;
+                // an empty keyword returns a single catalogue page as before.
+                maxPages: kq ? Number(options.maxPages || DEFAULT_SEARCH_MAX_PAGES) : 1
+            })
+            return { status: 'success', data: matches }
         } catch (apiError) {
             console.warn('Vidku search API failed, using legacy fallback:', apiError.message)
         }
@@ -329,14 +406,12 @@ async function scrapeAdvancedSearchConfig() {
     }
 }
 
-async function scrapeAdvancedSearch(filters = {}, page = 1) {
+async function scrapeAdvancedSearch(filters = {}, page = 1, options = {}) {
     try {
         try {
             const keyword = normalizeText(filters.title || filters.keyword || '')
-            const params = {
-                page,
-                q: keyword,
-                search: keyword,
+            const kq = buildKeywordQuery(keyword)
+            const baseParams = {
                 status: normalizeAdvancedSelection(filters.status)[0] || '',
                 type: normalizeAdvancedSelection(filters.type)[0] || '',
                 genre: normalizeAdvancedSelection(filters.genre).join(','),
@@ -344,21 +419,21 @@ async function scrapeAdvancedSearch(filters = {}, page = 1) {
                 order: String(filters.order || 'desc').toLowerCase(),
                 sort: String(filters.orderby || 'popular').toLowerCase()
             }
-            const response = await fetchVidkuApi('/anime', params)
-            let results = (response.data || response.items || []).map(mapApiAnimeItem).filter((item) => item.slug && item.title)
-            if (keyword) {
-                const normalizedKeyword = keyword.toLowerCase()
-                const filtered = results.filter((item) => item.title.toLowerCase().includes(normalizedKeyword) || item.slug.includes(normalizedKeyword.replace(/\s+/g, '-')))
-                if (filtered.length > 0) results = filtered
-            }
-            const pagination = response.meta || response.pagination || buildStaticPagination(page, page, results.length)
+            const doFetch = options.fetcher || fetchVidkuApi
+            const { matches, pagination: apiPagination } = await collectAnimeMatches(kq, {
+                fetcher: (path, params) => doFetch(path, { ...baseParams, ...params }),
+                startPage: page,
+                maxPages: kq ? Number(options.maxPages || DEFAULT_SEARCH_MAX_PAGES) : 1
+            })
+            const results = matches
+            const pagination = apiPagination || buildStaticPagination(page, page, results.length)
 
             return {
                 status: 'success',
                 data: {
                     animeData: results,
                     pagination,
-                    total_results: pagination.total_items || response.total || results.length,
+                    total_results: kq ? results.length : (pagination.total_items || results.length),
                     applied_filters: {
                         title: keyword,
                         orderby: String(filters.orderby || 'popular').toLowerCase(),

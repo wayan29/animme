@@ -63,6 +63,25 @@ function normalizeText(text = '') {
     return decodeHtml(text).replace(/\s+/g, ' ').trim()
 }
 
+function buildKeywordQuery(keyword) {
+    const text = normalizeText(keyword).toLowerCase()
+    if (!text) return null
+    return {
+        text,
+        slug: text.replace(/\s+/g, '-'),
+        tokens: text.split(/\s+/).filter(Boolean)
+    }
+}
+
+function matchesKeyword(item = {}, kq) {
+    if (!kq) return true
+    const title = normalizeText(item.title || '').toLowerCase()
+    const slug = String(item.slug || '').toLowerCase()
+    if (!title && !slug) return false
+    if (title.includes(kq.text) || slug.includes(kq.slug)) return true
+    return kq.tokens.length > 0 && kq.tokens.every((token) => title.includes(token) || slug.includes(token))
+}
+
 function slugify(value = '') {
     return decodeHtml(value)
         .toLowerCase()
@@ -537,6 +556,8 @@ module.exports = {
     stripHtml,
     decodeHtml,
     normalizeText,
+    buildKeywordQuery,
+    matchesKeyword,
     fetchHtml,
     fetchJson,
     fetchVidkuApi,
