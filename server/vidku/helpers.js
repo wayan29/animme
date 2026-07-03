@@ -3,6 +3,7 @@ const cheerio = require('cheerio')
 const crypto = require('crypto')
 
 const BASE_URL = 'https://vidku.me'
+const VIDKU_API_BASE_URL = 'https://api.vidku.net/api/v1'
 const API_BASE_URL = `${BASE_URL}/wp-json`
 const KIRANIME_API_BASE_URL = `${API_BASE_URL}/kiranime/v1`
 const WP_API_BASE_URL = `${API_BASE_URL}/wp/v2`
@@ -75,6 +76,7 @@ function getRequestOptions(options = {}) {
         headers: {
             'User-Agent': USER_AGENT,
             'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+            Origin: BASE_URL,
             Referer: BASE_URL,
             ...(options.headers || {})
         },
@@ -98,8 +100,8 @@ async function fetchJson(url, options = {}) {
     const response = await axios.get(normalizeUrl(url), {
         ...getRequestOptions(options),
         headers: {
-            Accept: 'application/json, text/plain, */*',
-            ...getRequestOptions(options).headers
+            ...getRequestOptions(options).headers,
+            Accept: 'application/json, text/plain, */*'
         }
     })
 
@@ -108,6 +110,45 @@ async function fetchJson(url, options = {}) {
     }
 
     return response.data
+}
+
+async function fetchVidkuApi(path, params = {}) {
+    const cleanPath = String(path || '').startsWith('/') ? path : `/${path}`
+    return fetchJson(`${VIDKU_API_BASE_URL}${cleanPath}`, { params })
+}
+
+function mapApiAnimeItem(item = {}, extra = {}) {
+    return {
+        title: decodeHtml(item.title || extra.title || ''),
+        slug: item.slug || extractSlug(item.url || extra.url || ''),
+        poster: proxyImageUrl(item.thumbnail || item.poster || extra.poster || ''),
+        type: item.type || extra.type || '',
+        status: item.status || extra.status || '',
+        rating: String(item.score || item.rating || extra.rating || ''),
+        score: String(item.score || item.rating || extra.rating || ''),
+        episode_number: String(item.episode_number || item.number || extra.episode_number || ''),
+        episode_count: String(item.episodes_count || item.total_episodes || extra.episode_count || ''),
+        genres: Array.isArray(item.genres) ? item.genres.map((genre) => ({ name: genre.name || '', slug: genre.slug || '' })) : [],
+        url: normalizeUrl(item.url || extra.url || '')
+    }
+}
+
+function mapApiEpisodeItem(item = {}, extra = {}) {
+    const title = decodeHtml(item.title || extra.title || '')
+    const parentTitle = item.parent_anime?.title || extra.anime_title || ''
+    const number = item.number || item.episode_number || extra.episode_number || ''
+
+    return {
+        title: parentTitle || extractAnimeTitleFromEpisodeTitle(title),
+        full_title: title && number ? `${title} Episode ${number}` : title,
+        slug: item.slug || extractSlug(item.url || extra.url || ''),
+        poster: proxyImageUrl(item.thumbnail || item.parent_anime?.thumbnail || extra.poster || ''),
+        type: item.type || extra.type || '',
+        episode_number: String(number || ''),
+        duration: extra.duration || '',
+        updated_at: item.released || extra.updated_at || '',
+        url: normalizeUrl(item.url || extra.url || '')
+    }
 }
 
 async function fetchDocument(url, options = {}) {
@@ -373,10 +414,14 @@ function parseLatestEpisodeCards($, rootSelector = 'section.grid.grid-episode-au
         const title = normalizeText(
             $element.find('div.bottom-0 span').last().text() ||
             $element.find('span.text-base').first().text() ||
-            $element.find('h4').first().text()
+            $element.find('span').filter((__, span) => !/^EP\s*\d+/i.test($(span).text().trim())).first().text() ||
+            $element.find('h4').first().text() ||
+            $element.find('img').first().attr('alt') ||
+            ''
         )
         const episodeLabel = normalizeText(
             $element.find('span.top-0').first().text() ||
+            $element.find('span').filter((__, span) => /^EP\s*\d+/i.test($(span).text().trim())).first().text() ||
             $element.find('span').first().text()
         )
         const episodeNumberMatch = episodeLabel.match(/(\d+(?:\.\d+)?)/)
@@ -482,6 +527,7 @@ module.exports = {
     API_BASE_URL,
     KIRANIME_API_BASE_URL,
     WP_API_BASE_URL,
+    VIDKU_API_BASE_URL,
     USER_AGENT,
     normalizeUrl,
     getImageHash,
@@ -493,6 +539,7 @@ module.exports = {
     normalizeText,
     fetchHtml,
     fetchJson,
+    fetchVidkuApi,
     fetchDocument,
     fetchWpCollection,
     fetchWpSingle,
@@ -510,6 +557,8 @@ module.exports = {
     parseLatestEpisodeCards,
     mapWpAnimeItem,
     mapWpEpisodeItem,
+    mapApiAnimeItem,
+    mapApiEpisodeItem,
     extractDuration,
     extractUpdatedDate,
     parsePlayerData,

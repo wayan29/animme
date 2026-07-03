@@ -6,6 +6,7 @@ const {
     fetchDocument,
     fetchHtml,
     fetchJson,
+    fetchVidkuApi,
     fetchWpCollection,
     extractDuration,
     extractUpdatedDate,
@@ -18,6 +19,8 @@ const {
     extractSlug,
     mapWpAnimeItem,
     mapWpEpisodeItem,
+    mapApiAnimeItem,
+    mapApiEpisodeItem,
     normalizeUrl,
     normalizeText,
     parseInfoList,
@@ -91,13 +94,21 @@ async function fetchWeeklySchedule() {
 
 async function scrapeHome() {
     try {
-        const [trending, airingArchive, latestEpisodes, schedule, featured] = await Promise.all([
-            scrapeHomepageTrending(),
-            scrapeHomepageAiring(),
-            scrapeHomepageLatestEpisodes(),
-            fetchWeeklySchedule(),
-            scrapeFeaturedSpotlight()
-        ])
+        const home = await fetchVidkuApi('/home')
+        const featured = (home.featured || []).map((item, index) => ({
+            ...mapApiAnimeItem(item),
+            label: `#${index + 1} Sorotan Utama`,
+            description: item.synopsis || item.description || '',
+            meta: [item.type, item.status].filter(Boolean),
+            qualities: item.type ? [item.type] : []
+        }))
+        const trending = (home.trending || []).map((item, index) => ({
+            ...mapApiAnimeItem(item),
+            rank: index + 1
+        }))
+        const airingArchive = (home.latest_anime || home.airing || home.trending || []).map(mapApiAnimeItem)
+        const latestEpisodes = (home.latest_episodes || home.episodes || []).map(mapApiEpisodeItem)
+        const schedule = home.schedule || home.today_schedule || {}
 
         return {
             status: 'success',
@@ -110,8 +121,29 @@ async function scrapeHome() {
             }
         }
     } catch (error) {
-        console.error('Error scraping vidku home:', error.message)
-        throw error
+        console.warn('Vidku API home failed, using HTML fallback:', error.message)
+        try {
+            const [trending, airingArchive, latestEpisodes, featured] = await Promise.all([
+                scrapeHomepageTrending(),
+                scrapeHomepageAiring(),
+                scrapeHomepageLatestEpisodes(),
+                scrapeFeaturedSpotlight()
+            ])
+
+            return {
+                status: 'success',
+                data: {
+                    featured,
+                    trending,
+                    airing: airingArchive,
+                    latest_episodes: latestEpisodes,
+                    schedule: {}
+                }
+            }
+        } catch (fallbackError) {
+            console.error('Error scraping vidku home:', fallbackError.message)
+            throw fallbackError
+        }
     }
 }
 
@@ -322,7 +354,7 @@ async function scrapeHomepageTrending() {
 }
 
 async function scrapeHomepageLatestEpisodes() {
-    const $ = await fetchDocument('https://vidku.me/watch/')
+    const $ = await fetchDocument('https://vidku.me/')
 
     return $('a[href*="/watch/"]').filter((_, element) => $(element).find('img').length > 0).slice(0, 20).map((_, element) => {
         const $element = $(element)
@@ -409,14 +441,85 @@ async function fetchAnimeEpisodesFallback(animeItem, slug) {
 
 async function scrapeAnimeDetail(slug) {
     try {
-        const animeItem = await fetchWpSingle('anime', { slug })
-
-        if (!animeItem) {
-            throw new Error(`Anime not found: ${slug}`)
+        let apiItem = null
+        try {
+            const list = await fetchVidkuApi('/anime', { q: slug, search: slug, per_page: 20 })
+            apiItem = (list.data || list.items || []).find((item) => item.slug === slug) || null
+        } catch (apiError) {
+            console.warn(`[vidku] anime API lookup failed for ${slug}:`, apiError.message)
         }
 
-        const $ = await fetchDocument(animeItem.link)
+        const detailUrl = apiItem?.url ? normalizeUrl(apiItem.url) : `https://vidku.me/anime/${slug}`
+        const $ = await fetchDocument(detailUrl)
         const info = parseInfoList($)
+
+        const htmlTitle = normalizeText($('h1').first().text() || $('title').text().replace(/\s+\|\s+Vidku$/i, ''))
+        const poster = proxyImageUrl(
+            apiItem?.thumbnail ||
+            $('meta[property="og:image"]').attr('content') ||
+            $('img[alt]').filter((_, image) => normalizeText($(image).attr('alt')) === htmlTitle).first().attr('src') ||
+            $('img').filter((_, image) => /anime\/poster|\/2026\//i.test($(image).attr('src') || '')).first().attr('src') ||
+            ''
+        )
+        const synopsis = normalizeText($('p').filter((_, element) => $(element).text().trim().length > 80).first().text())
+        const genres = Array.isArray(apiItem?.genres) ? apiItem.genres : []
+        const studioTerms = Array.isArray(apiItem?.studios) ? apiItem.studios : []
+
+        let episodeLists = $('a[href*="/watch/"]')
+            .filter((_, element) => $(element).find('img').length > 0 || /episode|EP\s*\d+/i.test($(element).text()))
+            .map((_, element) => mapDetailEpisodeAnchor($, element))
+            .get()
+            .filter((episode, index, episodes) => episode.slug && episodes.findIndex((current) => current.slug === episode.slug) === index)
+
+        if (episodeLists.length === 0 && Array.isArray(apiItem?.episodes)) {
+            episodeLists = apiItem.episodes.map(mapApiEpisodeItem).filter((episode) => episode.slug)
+        }
+
+        if (episodeLists.length === 0) {
+            console.warn(`[vidku] No episodes found for ${slug} at ${detailUrl}`)
+        }
+
+        const anime = {
+            title: decodeHtml(apiItem?.title || htmlTitle || slug.replace(/-/g, ' ')),
+            japanese_title: info.Native || info.Name || '',
+            slug,
+            poster,
+            rating: info.Score || String(apiItem?.score || ''),
+            score: info.Score || String(apiItem?.score || ''),
+            rate: info.Rate || '',
+            type: apiItem?.type || '',
+            status: apiItem?.status || '',
+            episode_count: info.Episodes || String(apiItem?.episodes_count || episodeLists.length || ''),
+            duration: info.Duration || '',
+            premiered: info.Premiered || '',
+            aired: info.Aired || '',
+            release_date: info.Premiered || info.Aired || '',
+            studio: studioTerms.map((studio) => studio.name).filter(Boolean).join(', ') || info.Studio || '',
+            producers: [],
+            producer: info.Producers || info.Producer || '',
+            genres: genres.map((genre) => ({
+                name: genre.name,
+                slug: genre.slug
+            })),
+            synopsis: synopsis || apiItem?.synopsis || '',
+            episode_lists: episodeLists
+        }
+
+        return {
+            status: 'success',
+            data: anime
+        }
+    } catch (error) {
+        console.warn('Vidku HTML/API detail failed, using legacy WP fallback:', error.message)
+        try {
+            const animeItem = await fetchWpSingle('anime', { slug })
+
+            if (!animeItem) {
+                throw new Error(`Anime not found: ${slug}`)
+            }
+
+            const $ = await fetchDocument(animeItem.link)
+            const info = parseInfoList($)
 
         const overviewLabel = $('span').filter((_, element) => $(element).text().replace(/\s+/g, ' ').trim() === 'Overview:').first()
         const overviewText = overviewLabel.parent().find('span').last().text().replace(/\s+/g, ' ').trim()
@@ -474,6 +577,7 @@ async function scrapeAnimeDetail(slug) {
         console.error('Error scraping vidku anime detail:', error.message)
         throw error
     }
+    }
 }
 
 function decodeEmbedPayload(encodedValue = '') {
@@ -489,6 +593,41 @@ function decodeEmbedPayload(encodedValue = '') {
 
 async function scrapeEpisode(episodeSlug) {
     try {
+        const apiEpisode = await fetchVidkuApi(`/episode/watch/${episodeSlug}`)
+        const parent = apiEpisode.parent_anime || {}
+        const episodes = Array.isArray(parent.episodes) ? parent.episodes : []
+        const currentIndex = episodes.findIndex((item) => item.slug === episodeSlug)
+        const previousEpisode = currentIndex >= 0 ? episodes[currentIndex + 1] : null
+        const nextEpisode = currentIndex > 0 ? episodes[currentIndex - 1] : null
+        const streamServers = (apiEpisode.players || []).map((player) => ({
+            name: player.server || player.host || player.quality || 'Default',
+            url: normalizeUrl(player.url || ''),
+            type: player.type || '',
+            quality: player.quality || ''
+        })).filter((server, index, servers) => server.url && servers.findIndex((current) => current.url === server.url) === index)
+
+        const episode = {
+            title: apiEpisode.title || `${parent.title || ''} Episode ${apiEpisode.number || ''}`.trim(),
+            slug: episodeSlug,
+            anime_title: parent.title || extractAnimeTitleFromEpisodeTitle(apiEpisode.title || ''),
+            episode_number: String(apiEpisode.number || ''),
+            stream_url: streamServers[0]?.url || '',
+            download_links: [],
+            prev_episode: previousEpisode?.slug || '',
+            next_episode: nextEpisode?.slug || '',
+            poster: proxyImageUrl(apiEpisode.thumbnail || parent.thumbnail || ''),
+            description: '',
+            anime_slug: parent.slug || '',
+            stream_servers: streamServers
+        }
+
+        return {
+            status: 'success',
+            data: episode
+        }
+    } catch (apiError) {
+        console.warn('Vidku API episode failed, using legacy fallback:', apiError.message)
+        try {
         const episodeItem = await fetchWpSingle('episode', { slug: episodeSlug })
         const episodeUrl = episodeItem?.link || `https://vidku.me/watch/${episodeSlug}/`
         const html = await fetchHtml(episodeUrl)
@@ -563,6 +702,7 @@ async function scrapeEpisode(episodeSlug) {
     } catch (error) {
         console.error('Error scraping vidku episode:', error.message)
         throw error
+    }
     }
 }
 

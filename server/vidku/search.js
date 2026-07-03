@@ -10,10 +10,12 @@ const {
     extractSlug,
     fetchHtml,
     fetchJson,
+    fetchVidkuApi,
     normalizeText,
     normalizeUrl,
     proxyImageUrl,
-    resolveTermIds
+    resolveTermIds,
+    mapApiAnimeItem
 } = require('./helpers')
 
 const ADVANCED_SEARCH_URL = `${BASE_URL}/search/?asp=1&orderby=popular&order=desc`
@@ -204,6 +206,19 @@ function mapAdvancedSearchItem(item = {}) {
 
 async function scrapeSearch(keyword) {
     try {
+        try {
+            const response = await fetchVidkuApi('/anime', { q: keyword, search: keyword })
+            const normalizedKeyword = normalizeText(keyword).toLowerCase()
+            let results = (response.data || response.items || []).map(mapApiAnimeItem).filter((item) => item.slug && item.title)
+            if (normalizedKeyword) {
+                const filtered = results.filter((item) => item.title.toLowerCase().includes(normalizedKeyword) || item.slug.includes(normalizedKeyword.replace(/\s+/g, '-')))
+                if (filtered.length > 0) results = filtered
+            }
+            return { status: 'success', data: results }
+        } catch (apiError) {
+            console.warn('Vidku search API failed, using legacy fallback:', apiError.message)
+        }
+
         const response = await fetchJson(`${KIRANIME_API_BASE_URL}/anime/search`, {
             params: { query: keyword }
         })

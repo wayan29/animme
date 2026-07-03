@@ -2,15 +2,19 @@ const {
     BASE_URL,
     KIRANIME_API_BASE_URL,
     buildPagination,
+    buildStaticPagination,
     decodeHtml,
     extractSlug,
     fetchDocument,
     fetchJson,
+    fetchVidkuApi,
     fetchWpCollection,
     getEmbeddedTerms,
     getTermName,
     mapWpAnimeItem,
     mapWpEpisodeItem,
+    mapApiAnimeItem,
+    mapApiEpisodeItem,
     normalizeUrl,
     parseArchiveAnimeCards,
     parseArchivePagination,
@@ -67,13 +71,26 @@ function shouldUseAzArchive(filters = {}) {
 
 async function scrapeAnimeList(page = 1) {
     try {
-        const $ = await fetchDocument(buildArchiveUrl(SPECIAL_ARCHIVE_PATHS.latest, page))
+        const home = page === 1 ? await fetchVidkuApi('/home') : null
+        const episodes = home ? (home.latest_episodes || home.episodes || []) : []
+
+        if (episodes.length > 0) {
+            return {
+                status: 'success',
+                data: {
+                    animeData: episodes.map(mapApiEpisodeItem),
+                    paginationData: buildStaticPagination(page, page, episodes.length)
+                }
+            }
+        }
+
+        const $ = await fetchDocument('https://vidku.me/')
 
         return {
             status: 'success',
             data: {
                 animeData: parseLatestEpisodeCards($),
-                paginationData: parseArchivePagination($, page)
+                paginationData: buildStaticPagination(page, page, 0)
             }
         }
     } catch (error) {
@@ -84,6 +101,15 @@ async function scrapeAnimeList(page = 1) {
 
 async function scrapeSchedule() {
     try {
+        try {
+            const home = await fetchVidkuApi('/home')
+            if (home.schedule || home.today_schedule) {
+                return { status: 'success', data: home.schedule || home.today_schedule || {} }
+            }
+        } catch (apiError) {
+            console.warn('Vidku schedule API fallback failed:', apiError.message)
+        }
+
         const dayEntries = await Promise.allSettled(
             SCHEDULE_DAYS.map(async (day) => {
                 const items = await fetchJson(`${KIRANIME_API_BASE_URL}/schedule/day`, {
@@ -161,6 +187,32 @@ function applySortFilters(params, order) {
 
 async function scrapeAllAnime(filters = {}, page = 1) {
     try {
+        try {
+            const api = await fetchVidkuApi('/anime', {
+                page,
+                q: filters.title || '',
+                search: filters.title || '',
+                type: filters.type || '',
+                status: filters.status || '',
+                genre: Array.isArray(filters.genre) ? filters.genre.join(',') : (filters.genre || ''),
+                letter: filters.letter || '',
+                order: filters.order || ''
+            })
+            const items = api.data || api.items || []
+            const pagination = api.meta || api.pagination || buildStaticPagination(page, page, items.length)
+
+            return {
+                status: 'success',
+                data: {
+                    animeData: items.map(mapApiAnimeItem),
+                    pagination,
+                    total_results: pagination.total_items || api.total || items.length
+                }
+            }
+        } catch (apiError) {
+            console.warn('Vidku anime API failed, using legacy archive fallback:', apiError.message)
+        }
+
         const normalizedType = String(filters.type || '').toLowerCase()
         const normalizedStatus = String(filters.status || '').toLowerCase()
 
