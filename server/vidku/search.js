@@ -259,6 +259,46 @@ async function scrapeSearch(keyword) {
 
 async function scrapeAdvancedSearchConfig() {
     try {
+        try {
+            const [genresResponse, studiosResponse] = await Promise.all([
+                fetchVidkuApi('/genres').catch(() => ({ data: [] })),
+                fetchVidkuApi('/studios').catch(() => ({ data: [] }))
+            ])
+
+            return {
+                status: 'success',
+                data: {
+                    defaults: {
+                        keyword: '',
+                        orderby: 'popular',
+                        order: 'desc',
+                        page: 1
+                    },
+                    options: {
+                        orderby: ADVANCED_ORDERBY_OPTIONS,
+                        order: ADVANCED_ORDER_OPTIONS,
+                        genre: mapConfigTerms(genresResponse.data || []),
+                        status: [
+                            { id: 0, name: 'Ongoing', slug: 'ongoing' },
+                            { id: 0, name: 'Completed', slug: 'completed' }
+                        ],
+                        producer: [],
+                        studio: mapConfigTerms(studiosResponse.data || []),
+                        type: [
+                            { id: 0, name: 'TV', slug: 'tv' },
+                            { id: 0, name: 'Movie', slug: 'movie' },
+                            { id: 0, name: 'OVA', slug: 'ova' },
+                            { id: 0, name: 'ONA', slug: 'ona' },
+                            { id: 0, name: 'Special', slug: 'special' }
+                        ],
+                        season: []
+                    }
+                }
+            }
+        } catch (apiError) {
+            console.warn('Vidku advanced config API failed, using legacy fallback:', apiError.message)
+        }
+
         const html = await fetchHtml(ADVANCED_SEARCH_URL)
         const config = parseAdvancedSearchConfig(html)
 
@@ -291,6 +331,51 @@ async function scrapeAdvancedSearchConfig() {
 
 async function scrapeAdvancedSearch(filters = {}, page = 1) {
     try {
+        try {
+            const keyword = normalizeText(filters.title || filters.keyword || '')
+            const params = {
+                page,
+                q: keyword,
+                search: keyword,
+                status: normalizeAdvancedSelection(filters.status)[0] || '',
+                type: normalizeAdvancedSelection(filters.type)[0] || '',
+                genre: normalizeAdvancedSelection(filters.genre).join(','),
+                studio: normalizeAdvancedSelection(filters.studio).join(','),
+                order: String(filters.order || 'desc').toLowerCase(),
+                sort: String(filters.orderby || 'popular').toLowerCase()
+            }
+            const response = await fetchVidkuApi('/anime', params)
+            let results = (response.data || response.items || []).map(mapApiAnimeItem).filter((item) => item.slug && item.title)
+            if (keyword) {
+                const normalizedKeyword = keyword.toLowerCase()
+                const filtered = results.filter((item) => item.title.toLowerCase().includes(normalizedKeyword) || item.slug.includes(normalizedKeyword.replace(/\s+/g, '-')))
+                if (filtered.length > 0) results = filtered
+            }
+            const pagination = response.meta || response.pagination || buildStaticPagination(page, page, results.length)
+
+            return {
+                status: 'success',
+                data: {
+                    animeData: results,
+                    pagination,
+                    total_results: pagination.total_items || response.total || results.length,
+                    applied_filters: {
+                        title: keyword,
+                        orderby: String(filters.orderby || 'popular').toLowerCase(),
+                        order: String(filters.order || 'desc').toLowerCase(),
+                        status: normalizeAdvancedSelection(filters.status),
+                        type: normalizeAdvancedSelection(filters.type),
+                        genre: normalizeAdvancedSelection(filters.genre),
+                        producer: normalizeAdvancedSelection(filters.producer),
+                        studio: normalizeAdvancedSelection(filters.studio),
+                        season: normalizeAdvancedSelection(filters.season)
+                    }
+                }
+            }
+        } catch (apiError) {
+            console.warn('Vidku advanced search API failed, using legacy fallback:', apiError.message)
+        }
+
         const payload = buildAdvancedSearchPayload(filters, page)
 
         const [
