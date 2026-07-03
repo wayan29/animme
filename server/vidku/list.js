@@ -6,6 +6,7 @@ const {
     decodeHtml,
     extractSlug,
     fetchDocument,
+    fetchHtml,
     fetchJson,
     fetchVidkuApi,
     fetchWpCollection,
@@ -24,6 +25,111 @@ const {
 } = require('./helpers')
 
 const SCHEDULE_DAYS = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu']
+const VIDKU_SCHEDULE_DAY_MAP = {
+    monday: 'senin',
+    tuesday: 'selasa',
+    wednesday: 'rabu',
+    thursday: 'kamis',
+    friday: 'jumat',
+    saturday: 'sabtu',
+    sunday: 'minggu'
+}
+
+function mapScheduleApiItem(item = {}) {
+    return {
+        title: decodeHtml(item.title || ''),
+        slug: item.slug || extractSlug(item.url),
+        poster: proxyImageUrl(item.thumbnail || item.featured_image || ''),
+        type: item.type || '',
+        score: String(item.score || ''),
+        episode_number: String(item.episode_number || ''),
+        scheduled_time: item.scheduled_time || item.air_time || '',
+        episode_date: item.last_updated || item.episode_date || '',
+        url: normalizeUrl(item.url || (item.slug ? `/anime/${item.slug}` : '')),
+        episode_url: normalizeUrl(item.episode_url || '')
+    }
+}
+
+function extractScheduleDaysFromHtml(html = '') {
+    const chunks = []
+    const chunkPattern = /self\.__next_f\.push\(\[1,"((?:\\.|[^"\\])*)"\]\)/g
+    let match
+
+    while ((match = chunkPattern.exec(html)) !== null) {
+        chunks.push(match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'))
+    }
+
+    const blob = chunks.join('')
+    const markerIndex = blob.indexOf('"days":[')
+    if (markerIndex < 0) {
+        throw new Error('Vidku schedule payload not found')
+    }
+
+    let depth = 0
+    let start = -1
+    let end = -1
+
+    for (let index = markerIndex + 6; index < blob.length; index += 1) {
+        const char = blob[index]
+        if (char === '[') {
+            if (depth === 0) start = index
+            depth += 1
+        } else if (char === ']') {
+            depth -= 1
+            if (depth === 0) {
+                end = index + 1
+                break
+            }
+        }
+    }
+
+    if (start < 0 || end < 0) {
+        throw new Error('Vidku schedule days array not found')
+    }
+
+    const days = JSON.parse(blob.slice(start, end))
+    const schedule = SCHEDULE_DAYS.reduce((result, day) => {
+        result[day] = []
+        return result
+    }, {})
+
+    for (const dayEntry of days) {
+        const dayKey = VIDKU_SCHEDULE_DAY_MAP[String(dayEntry?.key || '').toLowerCase()]
+        if (!dayKey) continue
+
+        schedule[dayKey] = (Array.isArray(dayEntry.anime) ? dayEntry.anime : [])
+            .map(mapScheduleApiItem)
+            .filter((item) => item.slug && item.title)
+    }
+
+    return schedule
+}
+
+function normalizeHomeSchedulePayload(payload = {}) {
+    if (!payload || typeof payload !== 'object') return null
+
+    const hasDayBuckets = SCHEDULE_DAYS.some((day) => Array.isArray(payload[day]))
+    if (hasDayBuckets) {
+        return SCHEDULE_DAYS.reduce((result, day) => {
+            result[day] = (payload[day] || []).map(mapScheduleApiItem).filter((item) => item.slug && item.title)
+            return result
+        }, {})
+    }
+
+    const englishDay = String(payload.day || '').toLowerCase()
+    const dayKey = VIDKU_SCHEDULE_DAY_MAP[englishDay]
+    if (!dayKey || !Array.isArray(payload.anime)) {
+        return null
+    }
+
+    const schedule = SCHEDULE_DAYS.reduce((result, day) => {
+        result[day] = []
+        return result
+    }, {})
+
+    schedule[dayKey] = payload.anime.map(mapScheduleApiItem).filter((item) => item.slug && item.title)
+    return schedule
+}
 const SPECIAL_ARCHIVE_PATHS = {
     movie: '/anime-type/movie/',
     tv: '/anime-type/tv/',
@@ -102,9 +208,18 @@ async function scrapeAnimeList(page = 1) {
 async function scrapeSchedule() {
     try {
         try {
+            const html = await fetchHtml('https://vidku.me/schedule')
+            const schedule = extractScheduleDaysFromHtml(html)
+            return { status: 'success', data: schedule }
+        } catch (schedulePageError) {
+            console.warn('Vidku schedule page parse failed, using API fallback:', schedulePageError.message)
+        }
+
+        try {
             const home = await fetchVidkuApi('/home')
-            if (home.schedule || home.today_schedule) {
-                return { status: 'success', data: home.schedule || home.today_schedule || {} }
+            const schedule = normalizeHomeSchedulePayload(home.schedule || home.today_schedule)
+            if (schedule) {
+                return { status: 'success', data: schedule }
             }
         } catch (apiError) {
             console.warn('Vidku schedule API fallback failed:', apiError.message)
